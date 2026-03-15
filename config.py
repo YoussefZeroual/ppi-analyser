@@ -1,22 +1,19 @@
 from dotenv import load_dotenv
 import os
-
 load_dotenv()
 
-# config.py
 from pathlib import Path
-
 PACKAGE_DIR = Path(__file__).parent
 SYSTEM_PROMPTS_FILE = PACKAGE_DIR / "system_prompts.txt"
 PROMPTS_FILE = PACKAGE_DIR / "prompts.txt"
-
 
 MISTRAL_API_KEY  = os.getenv("MISTRAL_API_KEY")
 GROQ_API_KEY     = os.getenv("GROQ_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 GEMINI_API_KEY   = os.getenv("GEMINI_API_KEY")
 OLLAMA_HOST      = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-STANZA_API_URL = "http://localhost:5000"
+STANZA_API_URL   = "http://localhost:5000"
+
 DEFAULT_SUBMODELS = {
     "ollama":   "mistral:7b",
     "mistral":  "mistral-medium-latest",
@@ -24,7 +21,7 @@ DEFAULT_SUBMODELS = {
     "gemini":   "gemini-3-flash-preview",
     "no_model": "no_model",
 }
-# config.py
+
 RESULT_COLUMNS = [
     "Forme", "Forme Justification",
     "Lemme", "Lemme Justification",
@@ -42,14 +39,14 @@ RESULT_COLUMNS = [
     "Fonctions spécifiques", "Fonctions spécifiques Justification",
     "Remarques diverses", "Remarques diverses Justification",
 ]
-# config.py
-from dataclasses import dataclass
+
+from dataclasses import dataclass, field
 from enum import Enum
 
 class AnalysisMode(str, Enum):
-    ORAL = "oral"
-    ECRIT = "écrit"
-    ECRIT_IA = "écrit_ia"
+    ORAL      = "oral"
+    ECRIT     = "écrit"
+    ECRIT_IA  = "écrit_ia"
     ECRIT_TEST = "écrit_test"
 
 @dataclass
@@ -70,4 +67,5 @@ class PipelineConfig:
     speaker_detection_model: str | None = None
     custom_properties: list[str] | None = None
     batch_mode: bool = False
+    batch_size: int = 5
     preprocessed_json: str | None = None

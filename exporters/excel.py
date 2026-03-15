@@ -524,13 +524,8 @@ def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None) 
 
     # copy tags from justification columns into left/node/right
     justification_cols = [c for c in df_simple.columns if "justification" in c.lower()]
-    print("DEBUG all columns     :", list(df_simple.columns))
-    print("DEBUG justif cols     :", justification_cols)
     if justification_cols:
         print("DEBUG justif sample  :", df_simple[justification_cols[0]].iloc[0])
-    print("DEBUG left  (before)  :", df_simple["left"].iloc[0]  if "left"  in df_simple.columns else "missing")
-    print("DEBUG node  (before)  :", df_simple["node"].iloc[0]  if "node"  in df_simple.columns else "missing")
-    print("DEBUG right (before)  :", df_simple["right"].iloc[0] if "right" in df_simple.columns else "missing")
 
     df_simple = copy_tags_from_multiple_sources(
         df_simple,
@@ -538,9 +533,6 @@ def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None) 
         target_cols=["left", "node", "right"]
     )
 
-    print("DEBUG left  (after)   :", df_simple["left"].iloc[0]  if "left"  in df_simple.columns else "missing")
-    print("DEBUG node  (after)   :", df_simple["node"].iloc[0]  if "node"  in df_simple.columns else "missing")
-    print("DEBUG right (after)   :", df_simple["right"].iloc[0] if "right" in df_simple.columns else "missing")
 
     # apply tag label suffixes
     for col in ["left", "right", "node"]:
@@ -556,6 +548,5 @@ def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None) 
     df_simple = df_simple.drop(columns=drop_cols)
 
     df_simple.to_csv("/tmp/debug_before_format.csv", index=False)
-    print("DEBUG CSV saved to /tmp/debug_before_format.csv")
     format_ppi_bold(df_simple, path)
     logger.info("Simple Excel exported to %s", path)
