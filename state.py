@@ -1,8 +1,11 @@
 from dataclasses import dataclass, field
 from typing import Optional,Any
-
+import threading
 @dataclass
 class SessionState:
+    total_tokens_in: int = 0
+    total_tokens_out: int = 0
+    _token_lock: Any = field(default_factory=threading.Lock)
     nlp: Any = None  # stanza pipeline if loaded
     nlp: Any = None  # stanza pipeline if loaded
     session_id: str = ""
@@ -25,3 +28,6 @@ class SessionState:
     logs: list[str] = field(default_factory=list)
     dfs: list = field(default_factory=list)
     custom_properties_list: Optional[list[str]] = None
+    
+    def __post_init__(self):
+        self._token_lock = threading.Lock()

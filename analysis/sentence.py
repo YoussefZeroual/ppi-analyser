@@ -121,8 +121,16 @@ def _call_model_batch(
     from ppi_analyser.models.factory import get_provider
     provider = get_provider(model, submodel, state)
     raw_response = provider.complete(system_prompt, prompt)
+# estimate tokens — ~4 chars per token
+    result = provider.complete(system_prompt, prompt)
 
-    return _parse_batch_response(raw_response, n_sentences)
+    # estimate tokens — ~4 chars per token
+    with state._token_lock:
+        state.total_tokens_in  += (len(system_prompt) + len(prompt)) // 4
+        state.total_tokens_out += len(result) // 4
+        print(f"DEBUG total tokens in {(len(system_prompt)) + len(prompt) // 4}")
+        print(f"DEBUG total tokens out {(len(result)) // 4}")
+    return result
 
 
 def _handle_no_model_batch(
@@ -328,4 +336,13 @@ def _call_model(
             forme_relevee=forme_relevee,
             conversation=conversation
         )
-    return provider.complete(system_prompt, prompt)
+# estimate tokens — ~4 chars per token
+    result = provider.complete(system_prompt, prompt)
+
+    # estimate tokens — ~4 chars per token
+    with state._token_lock:
+        state.total_tokens_in  += (len(system_prompt) + len(prompt)) // 4
+        state.total_tokens_out += len(result) // 4
+        print(f"DEBUG total tokens in {(len(system_prompt)) + len(prompt) // 4}")
+        print(f"DEBUG total tokens out {(len(result)) // 4}")
+    return result
