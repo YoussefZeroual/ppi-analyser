@@ -10,6 +10,32 @@ from ppi_analyser.config import RESULT_COLUMNS
 
 logger = logging.getLogger(__name__)
 
+EXPECTED_KEYS = {"Propriété", "Justification"}
+
+
+def _normalize_dict(d: dict) -> dict:
+    """
+    Ensure every result dict has exactly {"Propriété", "Justification"}.
+    Models sometimes use the property name as the key instead of "Propriété"
+    (e.g. {"Fonction spécifique": "...", "Justification": "..."}).
+    """
+    if set(d.keys()) == EXPECTED_KEYS:
+        return d
+
+    justification = d.get("Justification", "")
+
+    # Find the value that isn't "Justification" — that's the Propriété value
+    propriete = None
+    for key, val in d.items():
+        if key != "Justification":
+            propriete = val
+            break
+
+    if propriete is None:
+        propriete = ""
+
+    return {"Propriété": propriete, "Justification": justification}
+
 
 def clean_results(results: list, expression: str, conv: str) -> list:
     cleaned_results = []
@@ -33,19 +59,21 @@ def clean_results(results: list, expression: str, conv: str) -> list:
             json_str = re.sub(r',\s*\n\s*}', '}', json_str)
             json_str = re.sub(r',\s*\n\s*]', ']', json_str)
             try:
-                cleaned_results.append(json.loads(json_str))
+                parsed = json.loads(json_str)
+                cleaned_results.append(_normalize_dict(parsed))
             except json.JSONDecodeError:
                 try:
                     json_str_fixed = re.sub(r'(?<!\\)"', r'\"', json_str)
-                    cleaned_results.append(json.loads(json_str_fixed))
+                    parsed = json.loads(json_str_fixed)
+                    cleaned_results.append(_normalize_dict(parsed))
                 except Exception:
                     try:
-                        prop_match = re.search(r'"Propriété"\s*:\s*"([^"]+)"', json_str, re.IGNORECASE)
-                        just_match = re.search(r'"Justification"\s*:\s*"([^"]*(?:"[^"]+)*)"', json_str, re.DOTALL | re.IGNORECASE)
+                        prop_match  = re.search(r'"Propriété"\s*:\s*"([^"]+)"', json_str, re.IGNORECASE)
+                        just_match  = re.search(r'"Justification"\s*:\s*"([^"]*(?:"[^"]+)*)"', json_str, re.DOTALL | re.IGNORECASE)
                         if prop_match and just_match:
                             cleaned_results.append({
-                                "Propriété": prop_match.group(1),
-                                "Justification": just_match.group(1)
+                                "Propriété":    prop_match.group(1),
+                                "Justification": just_match.group(1),
                             })
                         else:
                             cleaned_results.append(None)
@@ -74,7 +102,7 @@ def create_df(results: list, df_index: int, expression: str, conv: str, state: S
         return pd.DataFrame()
 
     flat_values = df.values.flatten(order='C')
-    result_df = pd.DataFrame([flat_values]).reset_index(drop=True)
+    result_df   = pd.DataFrame([flat_values]).reset_index(drop=True)
 
     try:
         result_df.columns = RESULT_COLUMNS

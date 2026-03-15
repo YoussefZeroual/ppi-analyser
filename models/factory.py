@@ -12,13 +12,16 @@ from .gemini import GeminiProvider
 from .dummy import DummyProvider
 from .no_model import NoModelProvider
 
-# models/factory.py — just the function, keep your existing imports
 
 def get_provider(model: str, submodel: str, state=None) -> LLMProvider:
     ollama_host = state.ollama_host if state else OLLAMA_HOST
-    
+
     match model:
         case "mistral":
+            return MistralProvider(submodel, MISTRAL_API_KEY)
+        case "mistral_batch":
+            # MistralBatchProvider is not an LLMProvider — accessed directly in pipeline
+            # If called through normal path, fall back to standard Mistral
             return MistralProvider(submodel, MISTRAL_API_KEY)
         case "ollama":
             return OllamaProvider(submodel, ollama_host)
@@ -29,8 +32,13 @@ def get_provider(model: str, submodel: str, state=None) -> LLMProvider:
         case "gemini":
             return GeminiProvider(submodel, GEMINI_API_KEY)
         case "no_model":
-            return NoModelProvider(submodel,state=state)
+            return NoModelProvider(submodel, state=state)
         case "dummy":
             return DummyProvider(submodel)
         case _:
             raise ProviderNotFoundError(f"Unknown model provider: '{model}'")
+
+
+def get_mistral_batch_provider(submodel: str, output_dir: str):
+    from .mistral import MistralBatchProvider
+    return MistralBatchProvider(submodel, MISTRAL_API_KEY, output_dir)

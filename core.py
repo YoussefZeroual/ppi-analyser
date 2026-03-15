@@ -13,7 +13,13 @@ from ppi_analyser.analysis.pipeline import (
     _build_dataframe,
     _export,
 )
+
 logger = logging.getLogger(__name__)
+
+
+def _is_mistral_batch(config: PipelineConfig) -> bool:
+    return config.batch_mode and any(m.startswith("mistral_batch") for m in config.models)
+
 
 class PPIAnalyser:
     def __init__(self, tokenization_mode: str = "simple", stanza_url: str = "http://localhost:5000"):
@@ -41,22 +47,32 @@ class PPIAnalyser:
         self,
         config: PipelineConfig,
     ) -> tuple:
-        self.state.fichier = config.sentence_file
-        self.state.expression = config.expression
+        self.state.fichier               = config.sentence_file
+        self.state.expression            = config.expression
         self.state.custom_properties_list = config.custom_properties
-        self.state.n_threads = config.n_threads
-        self.state.ollama_host = config.ollama_host
-        self.state.start_time = time.perf_counter()
+        self.state.n_threads             = config.n_threads
+        self.state.ollama_host           = config.ollama_host
+        self.state.start_time            = time.perf_counter()
 
         logger.info("Chargement et préparation des concordances")
         sentences, lemmes = _load_sentences(config)
         sentences, lemmes = _validate_range(sentences, lemmes, config)
 
-        if config.batch_mode:
+        if _is_mistral_batch(config):
+            from ppi_analyser.analysis.mistral_batch_pipeline import analyse_batch_mistral_async
+            logger.info("Prétraitement des conversations (batch)")
+            preprocessed = _preprocess_all_batch(sentences, config, self.state)
+            logger.info("Traitement des conversations (Mistral async batch)")
+            preprocessed, results = analyse_batch_mistral_async(
+                preprocessed, lemmes, config, self.state
+            )
+
+        elif config.batch_mode:
             logger.info("Prétraitement des conversations (batch)")
             preprocessed = _preprocess_all_batch(sentences, config, self.state)
             logger.info("Traitement des conversations (batch)")
             preprocessed, results = _analyse_batch(preprocessed, lemmes, config, self.state)
+
         else:
             logger.info("Prétraitement et traitement séquentiels des conversations")
             preprocessed, results = _preprocess_and_analyse(sentences, lemmes, config, self.state)
