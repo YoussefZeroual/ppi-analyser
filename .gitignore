@@ -1,0 +1,28 @@
+# API keys
+*_api_key
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.myenv/
+myenv/
+venv/
+.env
+
+# outputs
+*.pdf
+*.xlsx
+ppi_analyser_logs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+.env
+*.egg-info/
+test.py

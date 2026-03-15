@@ -1,0 +1,22 @@
+# pyproject.toml
+[project]
+name = "ppi-analyser"
+version = "0.1.0"
+description = "Analyse automatique de phrases préfabriquées d'interaction (PPI)"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas",
+    "openpyxl",
+    "xlsxwriter",
+    "mistralai",
+    "groq",
+    "markdown",
+    "weasyprint",
+    "ollama"
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "mypy", "ruff"]
+
+[tool.ruff]
+line-length = 100

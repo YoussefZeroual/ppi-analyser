@@ -1,0 +1,963 @@
+start_prompt
+Prompt_Acception
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, tu dois identifier **l'acception** (le sens spécifique) de l'expression PPI ciblée dans son contexte conversationnel, en te basant sur le référentiel d'acceptions défini ci-dessous.
+
+### Référentiel d'acceptions (exemples types)
+
+- **ça va** peut avoir l'acception : `salutation` ou `exaspération`
+- **c’est pas vrai** peut avoir l'acception : `surprise` ou `faux/fausseté`
+- Adapte ce référentiel mentalement à l'expression analysée dans le corpus
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Propriété** : [glose courte, max 2 mots, descriptive]
+- **Justification** : [brève justification contextuelle, 1 phrase max]
+
+**Exemple de sortie :**
+```json
+[
+  {
+    "Propriété": "salutation",
+    "Justification": "Ouverture de l'échange, sans référence à un état antérieur"
+  },
+  {
+    "Propriété": "exaspération",
+    "Justification": "Réponse à une longue plainte de l'interlocuteur, marque la lassitude"
+  }
+]
+```
+
+### Critères d'analyse (pour chaque conversation)
+
+1. **Identifie l'acception pertinente** :
+   - Consulte **uniquement le contexte fourni** (le tour de parole contenant l'expression, et les tours adjacents si nécessaire).
+   - Si l'expression, selon le référentiel, peut avoir plusieurs acceptions très divergentes, **détermine celle qui est activée par le contexte spécifique de cette conversation**.
+   - Si l'expression **n'est pas listée comme polysémique** dans ton référentiel mental ou si son sens est **unique et évident**, indique : `Sens unique`.
+
+2. **Formule l'acception par une glose courte (max 2 mots) et descriptive** :
+   - Utilise une glose claire et précise, sur le modèle des exemples (`surprise`, `fausseté`, `salutation`, `exaspération`).
+   - La glose doit **décrire le sens porté par l'expression dans cet échange spécifique**.
+
+3. **Méthode d'analyse par conversation** :
+   - Concentre-toi sur **l'intention du locuteur** et **l'effet dans la conversation**.
+   - Observe **ce qui précède et ce qui suit immédiatement** l'expression : à quoi répond-elle ? Quel acte de parole accomplit-elle ?
+   - **Ne confonds pas** l'acception avec la **modalité grammaticale** (interrogative, exclamative...).
+
+4. **Traitement de l'ensemble du corpus** :
+   - Analyse systématiquement chaque conversation.
+   - Identifie les patterns : une même expression peut avoir des acceptions différentes selon les contextes.
+   - Sois cohérent dans tes choix d'acception pour des contextes similaires.
+
+### Note importante
+
+- Le paramètre **acception** distingue des **sens radicalement différents** pour une même expression, pas des nuances fines.
+- Limite-toi à l'analyse de la modalité et du sens pragmatique de l'expression, pas aux subtilités discursives avancées.
+- Une même expression peut avoir l'acception `Sens unique` dans tout le corpus si elle n'est pas polysémique.
+
+---
+end_prompt
+
+start_prompt
+Prompt_TypePhrase
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, tu dois déterminer si l'expression PPI est de type **Clausative** ou **Parenthétique**, en te basant sur son fonctionnement syntaxique dans le tour de parole où elle apparaît.
+
+### Définitions
+
+- **Clausative (phrase autonome)** :
+  - L’expression constitue elle-même une phrase typographiquement complète : elle débute la phrase, éventuellement suite à des marqueurs de discours, des appellatifs ou des adverbes et se termine par un point, un point-virgule, un point d’exclamation, un point d’interrogation ou des points de suspension. Exemple : *Je dois partir. Au revoir.*
+  - Segment syntaxique **autonome**, avec une tête prédicative complète.
+  - Possède sa propre **modalité d’énonciation**.
+  - Peut constituer une **proposition principale** pour une subordonnée. Exemple : *<PPI> comment se fait-il</PPI> que tu sois là*.
+  - Exemples : *Ah au secours !*, *C’est clair.*, *Mais, tu plaisantes ?*, *Franchement, il manquerait plus que ça…*
+  - **Test** : Peut être énoncée seule sans autre élément.
+
+- **Parenthétique (prédication seconde)** :
+  - Insérée dans une autre phrase sans lien de subordination et entourée dans les textes écrits de virgules ou virgule et point final. Exemple : *Je suis fatigué, <PPI> c'est le mot</PPI>.*
+  - **Insérée** dans une autre phrase, sans lien de subordination.
+  - **Facultative** : son effacement ne rend pas la phrase agrammaticale.
+  - Fonctionne souvent comme un **commentaire méta-énonciatif**.
+  - Exemples : *Il était, tu vois, mort de rire.*, *C’est un problème, c’est clair.*, *C’est un, comment dirais-je, ennui.*
+  - **Test** : Peut être supprimée sans altérer la structure de base.
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Type** : "Clausative" ou "Parenthétique"
+- **Justification** : [brève justification, 1 phrase, basée sur les tests syntaxiques]
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "Clausative",
+    "Justification": "L'expression constitue une phrase autonome, elle peut être énoncée seule."
+  },
+  {
+    "Propriété": "Parenthétique",
+    "Justification": "L'expression est insérée dans une autre phrase et peut être supprimée sans perte de grammaticalité."
+  }
+]
+```
+
+### Critères d'analyse (pour chaque conversation)
+
+1. **Isole l'occurrence** de l'expression dans le tour de parole du locuteur.
+2. **Applique le test de suppression** : si l'expression peut être retirée sans rendre la phrase agrammaticale et qu'elle est syntaxiquement intégrée à une autre proposition, c'est **Parenthétique**. Sinon, si elle forme une phrase autonome, c'est **Clausative**.
+3. **Justifie** ton choix en une phrase.
+
+### Note importante
+
+- Ne tiens pas compte du sens ou de l'intonation, uniquement de la structure syntaxique.
+- Si l'expression est une proposition principale avec une subordonnée (ex: "comment se fait-il que..."), elle est **Clausative**.
+
+---
+end_prompt
+
+start_prompt
+Prompt_Modalite
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, identifie la **modalité d’énonciation** de l'expression PPI, basée sur sa **structure syntaxique/morphologique**.
+
+### Catégories possibles
+
+- **Interrogative** :
+  - Structure interrogative (inversion, mot interrogatif, point d’interrogation à l’écrit).
+  - Exemples : *Comment oses-tu ?*, *Ça va ?*
+
+- **Déclarative** :
+  - Structure affirmative ou négative, souvent accompagnée d’un point ou d’un point d’exclamation à l’écrit.
+  - **Inclut** les énoncés perçus comme exclamatifs (ex: *C’est le pied !*).
+  - Exemples : *C’est pas vrai.*, *À bientôt.*
+
+- **Injonctive** :
+  - Mode impératif ou subjonctif d’ordre/exhortation.
+  - Exemples : *Épargne-moi les détails.*, *À table !*
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Modalite** : "Interrogative", "Déclarative" ou "Injonctive"
+- **Justification** : [brève justification basée sur la forme]
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "Interrogative",
+    "Justification": "Présence d'un mot interrogatif 'comment' et d'une inversion sujet-verbe."
+  }
+]
+```
+
+### Critères d'analyse
+
+- Examine la **structure syntaxique** de l'expression (présence d'un mot interrogatif, mode du verbe, ponctuation).
+- Attribue la modalité correspondante.
+- Justifie en mentionnant l'indice formel.
+
+### Note importante
+
+- La modalité **exclamative** n'est pas une catégorie distincte ; les énoncés exclamatifs sont classés en **Déclarative**.
+- Pour les corpus écrits, tiens compte de la **ponctuation** (?, !).
+
+---
+end_prompt
+
+start_prompt
+Prompt_ParticularitesSyntaxiques
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+- **La forme canonique (lemme)** de l'expression est également fournie
+- **La forme occurrence** (la variante réellement employée) est celle qui apparaît dans la conversation
+
+### Mission
+
+Pour chaque conversation, compare la **forme occurrence** à la **forme lemme** de l'expression et identifie les différences syntaxiques éventuelles.
+
+### Consignes d'analyse
+
+- Compare la variante **(forme occurrence)** à sa forme par défaut **(lemme)** et détermine s'il y a des différences observées dans la forme, la structure syntaxique, etc.
+  - **Deux cas :**
+    a. Il n'y a **pas de différences**.
+    b. Il y a **des différences** : cite-les.
+
+- **Note les différences** de pronoms (ex: *tu* --> *vous*), les inversions du sujet, les ajouts/suppressions de mots, les variations de temps/mode, etc.
+- **Limite-toi aux aspects syntaxiques** : n'aborde pas le sens, l'usage, le registre, les formes orales/écrites. Il faut indiquer le type de structure dans la réponse.
+
+#### Cas particuliers à traiter :
+
+- **Interrogatives partielles (avec mot interrogatif)** : Indiquer la structure selon le tableau :
+
+| Structure | Exemple |
+|-----------|---------|
+| in situ | Ils sont partis où ? |
+| Antéposition | Où ils sont partis ? |
+| Inversion du clitique | Où sont-ils partis ? |
+| Inversion complexe | Où les autres sont-ils partis ? |
+| Inversion stylistique | Où sont partis les autres ? |
+| Clivage | C'est où qu'ils sont partis ? |
+| 'Est-ce que' | Où est-ce qu'ils sont partis ? |
+| Variante de 'est-ce que' | Où c'est qu'ils sont partis ? |
+| Complémenteur | Où qu'ils sont partis ? |
+| Sujet qu- | Lesquels sont partis ? |
+
+- **Interrogatives totales** (réponses en oui ou non) : Noter la structure.
+
+| Structure | Exemple |
+|-----------|---------|
+| Intonation | Ils/Les autres sont partis ? |
+| Est-ce que | Est-ce que les autres/ils sont partis ? |
+| Inversion du clitique | Sont-ils partis ? |
+| Inversion complexe | Les autres sont-ils partis ? |
+
+- **Dislocation à gauche et à droite** : La dislocation apparaît quand on reprend un élément de la phrase avec un syntagme. À l’écrit, l’élément disloqué est généralement séparé par une virgule.
+
+| Structure | Exemple |
+|-----------|---------|
+| Dislocation gauche | **ce truc**, *c'est* un problème. |
+| Dislocation droite | *c'est* un problème **ce truc** |
+
+- **Phrase dans une subordonnée** : La PPI apparaît dans une subordonnée complétive en *que* ou *si*.
+
+| Structure | Exemple |
+|-----------|---------|
+| Complétive | Je trouve que *c'est* un problème. |
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Differences** : description des différences syntaxiques, ou "Aucune différence"
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "Ajout de 'non ?' en incise, ce qui ajoute une modalité interrogative.",
+    "Justification": "La forme détectée présente un ajout de la particule non? qui introduit une modalité interrogative différente de celle relevée dans le lemme"
+  },
+  {
+    "Propriété": "Changement de pronom : tu -> vous (forme de politesse ou pluriel).",
+    "Justification": "Le pronom tu du lemme a été substitué par vous"
+  }
+]
+```
+
+### Note importante
+
+- Ne fais **aucune analyse sémantique ou pragmatique**.
+- Si la forme est identique au lemme, indique **"Aucune différence"**.
+
+---
+end_prompt
+
+start_prompt
+Prompt_Expansions
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, identifie si l'expression PPI est **étendue par un complément régi syntaxiquement**.
+
+### Types d'expansion possibles
+
+- **Structure infinitive** :
+  - Exemple : *Comment oses-tu **dire cela** ?*, *c’est pas possible **de penser un truc pareil !***
+
+- **Proposition en *que*** :
+  - Exemple : *C’est clair **que Léa vient demain**.*
+
+- **Complément nominal ou prépositionnel** :
+  - Exemple : *Tu parles **d’un spectacle**.*, *Bonne nuit à vous. Bonne chance **pour ton spectacle**.*
+
+### À ne pas confondre avec
+
+- Les **modifieurs** (adverbes optionnels comme *un peu*, *bien*)
+- Les **cooccurrents** (éléments externes comme *j’espère*, *là*, ou des connecteurs comme *mais*, *et*, *parce que*)
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Expansion** : description du complément trouvé, ou "Aucune expansion"
+- **Justification** : [brève, si expansion, précise sa nature]
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "Proposition en 'que' : 'que Léa vient demain'",
+    "Justification": "L'expression est suivie d'une subordonnée complétive introduite par 'que'."
+  },
+  {
+    "Propriété": "Aucune expansion",
+    "Justification": "L'expression est employée seule, sans complément régi."
+  }
+]
+```
+
+### Critères d'analyse
+
+- Examine le **contexte immédiat** de l'expression dans le tour de parole.
+- Vérifie si elle est suivie (ou précédée) d'un complément **régi syntaxiquement** (c'est-à-dire obligatoire pour compléter le sens, pas un simple modifieur).
+- Si oui, **décris-le** (type et contenu). Sinon, indique **"Aucune expansion"**.
+- **Limite-toi aux aspects syntaxiques**.
+
+### Note importante
+
+- Évite d'utiliser le formatage JSON à l'intérieur des propriétés.
+
+---
+end_prompt
+
+start_prompt
+Prompt_Modifieurs
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, identifie les **modifieurs optionnels** qui intensifient ou modulent l'expression PPI.
+
+### Définition
+
+- Élément **facultatif**, **dépendant syntaxiquement** de la PPI.
+- Modifie l’**intensité** ou la **modalité** sans changer le sens de base.
+- Exemple : *Ça va **pas un peu** la tête ?* → *un peu* est un modifieur. *Très bonne soirée. Ça commence **vraiment** à bien faire !* → *très* et *vraiment* sont des modifieurs.
+
+### Formes courantes
+
+- **Adverbes** : *bien*, *vraiment*, *un peu*, *tout à fait*
+- **Locutions adverbiales ou modales**
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Modifieurs** : liste des modifieurs avec leur position (antéposé/postposé), ou "Aucun modifieur"
+- **Justification** : [brève, mentionnant les modifieurs et leur position]
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": ["bien (postposé)"],
+    "Justification": "L'expression est suivie de l'adverbe 'bien' qui intensifie le sens."
+  },
+  {
+    "Propriété": "Aucun modifieur",
+    "Justification": "L'expression apparaît sans élément modificateur."
+  }
+]
+```
+
+### Critères d'analyse
+
+- Examine le **contexte immédiat** (gauche/droite) de l'expression dans le tour de parole.
+- **Liste** les modifieurs présents (adverbes, locutions).
+- **Indique leur position** (antéposé = avant, postposé = après).
+- Si aucun, indique **"Aucun modifieur"**.
+
+---
+end_prompt
+
+start_prompt
+Prompt_Coocurrents
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, identifie les **cooccurrents** : éléments **externes à la PPI** qui apparaissent fréquemment à gauche ou à droite dans le même tour de parole.
+
+### Types de cooccurrents
+
+- **Marqueurs de discours** : *mais*, *donc*, *en fait*
+- **Interjections** : *ah*, *oh*, *hein*
+- **Appellatifs** : *mon fils*, *madame*
+- **Vérificatifs/renforceurs** : *j’espère*, *là*
+
+#### Pour les marqueurs de discours :
+- Les marqueurs de discours portent sur la PPI et apparaissent immédiatement à côté, à gauche ou à droite de la PPI.
+- Ils sont souvent séparés de la PPI par une virgule.
+- Les marqueurs de discours les plus courants sont des connecteurs comme *mais*, *donc*, *alors*, *parce que*, *et* … ou des particules énonciatives exprimant l’attitude du locuteur : *oh*, *merde*, ou la gestion de l’interaction : *quoi*, *ben*, *euh* …
+
+**Liste indicative de marqueurs de discours (adaptée de Dargnat 2024) :**
+- **adjectif** : bon, chic, chiche, tout beau, tout doux, etc.
+- **adverbe** : alors, assez, ben, bien, comment, donc, effectivement, enfin, hélas, jamais de la vie, là, quand même, tant mieux, tant pis, etc.
+- **conjonction** : mais
+- **autres** : amen, allô, aïe, ah, aha, ahou, bah, beh, ben, bernique, beuh, beurk, bof, bravo, chut, crac, eh, euh, eurêka, fi, ha, haha, hé, hein, hem, hep, heu, hip hip hip hourra, ho, holà, hop, hourra, hum, na, oh, ohé, ouah, mouais, ouf, ouh, ouille, oups, ouste, paf, patatras, peuh, pouh, pouah, pouët, pst, snif, ta ta, taratata, tchin, waouh, youp là, yes, youpi, zou, zut
+- **nom** : adieu, attention, banco, bingo, bonjour, bonsoir, bonté, bordel, bougre, camembert, catastrophe, ciel, chapeau, chiotte, Christ, con, courage, crotte, dame, diable, dommage, genre, grâce, flûte, halte, malheur, merci, merde, misère, nom de Dieu, Jésus, pardon, pétard, pitié, prout, punaise, purée, putain, respect, salut, santé, seigneur, stop, tintin, tralala, tonnerre, etc.
+- **pronom** : quoi, ça alors, ça par exemple, etc.
+- **construction nominale** : bon Dieu, bonne journée, bonne soirée, bonté divine, bon sang, chapeau bas, de l’air, Dieu du ciel, doux Jésus, du balai, du calme, grands dieux, juste ciel, la vache, la vérité, ma foi, ma parole, mon Dieu, mon salaud, point barre, ta bouche, ta/vos gueules, etc.
+- **construction prépositionnelle** : à bientôt, à la bonne heure, à la fin, à la revoyure, à la tienne/nôtre/vôtre, à plus, à tantôt, au revoir, au plaisir, d’accord, du coup, en fait, par exemple, etc.
+- **verbe, construction verbale** (Tous les éléments en gras peuvent être considérés comme des PPI dans certains contextes) :
+  - **impératif** : admettons, allons, allez, dis, dites, disons, écoute, écoutez, ferme-la, fermez-la, la ferme, figure-toi, figurez-vous, mettons, regarde, regardez, remarque, remarquez, tiens, tenez, va, voilà, voyez, voyons. La plupart peuvent être combinés avec *donc* ou *voir* : dis donc, dis voir, tiens donc, tiens voir, etc.
+  - **indicatif** : tu comprends/comprends-tu, vous comprenez/comprenez-vous, tu penses bien/ penses-tu, vous pensez bien/pensez-vous, tu parles, tu m’étonnes, tu rigoles, tu sais/sais-tu, vous savez/savez-vous, tu vois/vois-tu, vous voyez/voyez-vous, je veux dire, etc.
+
+#### Pour les Appellatifs
+- Les appellatifs sont souvent séparés de la PPI à l’écrit par une virgule.
+- Ils apparaissent dans la même phrase.
+- Il s’agit souvent d’un **nom propre**.
+- Ils apparaissent aussi souvent sous des formes comme **Mon + NOM** (*mon petit*, *mon chou*).
+- Ils peuvent aussi être des **qualificatifs insultants** (*imbécile*, *abruti*).
+
+### À noter
+
+- Un cooccurrent est **externe syntaxiquement** à la PPI. Il apparaît dans la même phrase graphique ou juste à proximité.
+- Indique s’il est **antéposé (a)** ou **postposé (p)**.
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Cooccurrents** : liste des cooccurrents avec leur type et position, ou "Aucun cooccurrent"
+- **Justification** : [brève, mentionnant les cooccurrents et leur position]
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "marqueurs du discours : bon(a), mais(a)",
+    "Justification": "Dans le tour de parole, 'mais' et 'bon' précèdent l'expression."
+  },
+  {
+    "Propriété": "Aucun cooccurrent",
+    "Justification": "L'expression est isolée dans le tour de parole."
+  }
+]
+```
+
+### Critères d'analyse
+
+- Examine le **tour de parole complet** du locuteur.
+- **Liste** les cooccurrents identifiés, avec leur position (a/p). **Attention** : Il faut bien indiquer les éléments lexicaux et leur position sauf dans le cas des appellatifs où seul le type est indiqué dans la propriété.
+- Si aucun, indique **"Aucun cooccurrent"**.
+- **N'utilise pas les symboles du formatage JSON à l'intérieur de la propriété**.
+- **Ne fais aucune analyse sur la signification ou l'usage**.
+- Dans la justification, **mets les marqueurs du discours entre des balises `<MD></MD>`**, les appellatifs entre balises `<APP></APP>` et la PPI entre des balises `<PPI></PPI>`.
+  - **Exemple** : [locuteur 1] mais `<PPI>c'est pas vrai</PPI>` Jean!
+  - **Sortie** : `{"Propriété": "Marqueur du discours: mais(a), Appellatifs(p)", "Justification": "Le marqueur du discours *mais* se trouve immédiatement avant la PPI. L'appellatif *Jean* se trouve immédiatement après la PPI: [locuteur 1] <MD>mais</MD> <PPI>c'est pas vrai</PPI> <APP>Jean!</APP>"}`
+
+---
+end_prompt
+
+start_prompt
+Prompt_Portee
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, détermine la **portée** de l'expression PPI, c'est-à-dire le segment textuel sur lequel elle porte ou qu'elle commente.
+
+### Catégories possibles
+
+- **Hétéroportée** :
+  - La PPI commente un segment **à l’extérieur** du tour du locuteur (réponse à l’allocutaire).
+  - Exemples : 
+    - `<portée>– C’est pénible.</portée> – Oui, <PPI>c’est la cata.</PPI>`
+    - `[MG384] <portée> faut que je me dépêche</portée> [SL653] <PPI>pas de problème</PPI>`
+
+- **Autoportée antérieure** :
+  - La PPI renvoie à un segment **antérieur dans le même tour**.
+  - Exemple : *Franchement, clôturer les inscriptions, c’est la cata.*
+
+- **Autoportée postérieure** :
+  - La PPI annonce ou introduit un segment **qui suit dans le même tour**.
+  - Exemples : 
+    - *Au fait, <PPI>tu sais quoi ? </PPI><portée>Finalement, on n’a pas déménagé.</portée>*
+    - *<PPI>C’est la cata</PPI> <portée>qu’il vienne demain.</portée>*
+
+- **Pas de portée** :
+  - Cas des **PPI rituelles** (salutations, vœux) qui n’ont pas d’ancrage textuel.
+  - Exemples : *Bonjour*, *Bon voyage*, *À table !*
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Portee** : "Hétéroportée", "Autoportée antérieure", "Autoportée postérieure", ou "Pas de portée"
+- **Justification** : [brève, précisant le segment commenté et sa position]
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "Hétéroportée",
+    "Justification": "L'expression réagit à l'affirmation de l'interlocuteur 'C'est pénible' dans le tour précédent."
+  }
+]
+```
+
+### Critères d'analyse
+
+- Examine la conversation (tours précédents et suivants, ainsi que le tour du locuteur).
+- Si l'expression est **rituelle** (salutation, etc.) → **Pas de portée**.
+- Sinon, identifie le **segment textuel commenté** :
+  - S'il provient du **tour de l'interlocuteur** → **Hétéroportée**.
+  - S'il se trouve dans le **même tour, avant l'expression** → **Autoportée antérieure**.
+  - S'il se trouve dans le **même tour, après l'expression** → **Autoportée postérieure**.
+- Justifie en citant le segment concerné, en utilisant les balises `<PPI>` et `<portée>`.
+
+---
+end_prompt
+
+start_prompt
+Prompt_Declenchement
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, identifie la **catégorie de déclenchement** de l'expression PPI, selon la grille PREFAB.
+
+### Catégories possibles
+
+1. **HETERO (Hétérodéclenché)** :
+   - La PPI est une **réaction directe** à un **stimulus verbal** de l’interlocuteur dans le tour précédent.
+   - Exemple : *– Merci. – Y’a pas de quoi.*
+
+2. **NEG (Non hétérodéclenché)** :
+   - Cette catégorie regroupe deux cas :
+     - **Autodéclenchement** : le stimulus est **à l’intérieur du même tour** du locuteur.
+       Exemple : *Franchement, c’est la cata.*
+     - **Non déclenché** : la PPI **initie un échange** (salutation, changement de sujet).
+       Exemple : *Salut !*, *Au fait, tu sais quoi ?*
+
+3. **CITATION (Déclenché par hétérorépétition)** :
+   - Le locuteur **reprend/rapporte** les propos de l’interlocuteur dans son propre tour, puis y réagit. Il faut que les propos répétés soient synonymes ou très proches.
+   - Fréquent dans les débats, forums, dialogues romanesques.
+   - Exemple : `[locuteur 1] Elle a eu 6 enfants [locuteur 2] Six enfants ? <PPI>Vous plaisantez</PPI>`
+
+4. **EXTRA (Déclenché par la situation extralinguistique)** :
+   - La PPI est provoquée par un **élément contextuel non verbal** (perception, situation).
+   - Exemples : En voyant quelqu’un : *Quelle bonne surprise !* ; Après une description dans un roman : `<PPI>C’est pas croyable !</PPI>`
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Declenchement** : "HETERO", "NEG", "CITATION", ou "EXTRA"
+- **Justification** : [brève, précisant le stimulus et sa source]
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "HETERO",
+    "Justification": "Réaction directe au remerciement de l'interlocuteur dans le tour précédent."
+  },
+  {
+    "Propriété": "NEG",
+    "Justification": "L'expression initie un nouvel échange (changement de sujet), sans stimulus antérieur."
+  }
+]
+```
+
+### Critères d'analyse
+
+- Analyse le **contexte conversationnel** (tours précédents).
+- Si l'expression répond à un énoncé de **l'interlocuteur immédiatement avant** → **HETERO**.
+- Si elle **reprend les mots de l'interlocuteur** (citation) → **CITATION**.
+- Si elle est déclenchée par une **situation physique** (ex: voir quelqu'un) → **EXTRA**.
+- Sinon (autodéclenchée dans le même tour ou initiative) → **NEG**.
+- **Limite-toi au déclenchement**, pas d'analyse sémantique.
+- Si cela paraît difficile à décider, indique **NSP (ne sais pas)**.
+- **Ton analyse doit être basée sur le contenu de la conversation fournie.**
+
+---
+end_prompt
+
+start_prompt
+Prompt_FonctionGlobale
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, attribue une ou plusieurs **étiquettes de fonction globale** à l'expression PPI, en te basant sur la typologie générale des PPI définie ci-dessous.
+
+### Typologie à utiliser
+
+1. **PR (Pragmatèmes / Phrases rituelles)** :
+   - **PRS** : Salutations (ex: *bonjour*, *ça va ?*, *à la prochaine*)
+   - **PRP** : Formules de politesse (ex: *merci*, *je vous en prie*, *bon voyage*)
+   - **PRA** : Autres phrases rituelles spécifiques (ex: *qui est à l’appareil ?*, *et avec ceci ?*)
+
+2. **M (Métafonctionnel – régulation du discours)** :
+   - **MMet** : Fonction métalinguistique (ex: *comment dirais-je ?*, *tu vois ce que je veux dire ?*)
+   - **MCon** : Fonction phatique/conative (ex: *d'accord* (signal d’écoute), *vas-y*, *tu sais*)
+   - **MNeg** : Fonction de négociation (ex: *c’est clair* (pour renforcer), *je pense*, *j’espère*)
+
+3. **R (Réactif – participation à l’interaction)** :
+   - **RInt** : Interactive (accord/désaccord, confirmation) (ex: *ça marche*, *pas du tout*)
+   - **RExp** : Expressive (émotions/sentiments) (ex: *ça me saoule*, *courage*, *tu parles !*)
+
+4. **S (Situationnel – description/évaluation)** :
+   - **SEval** : Évaluatif (ex: *bonne idée*, *c’est cool*, *c’est la cata*)
+   - **Sit** : Non-évaluatif (ex: *ça dépend*, *qu’est-ce qui se passe ?*)
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Fonction_globale** : une ou plusieurs étiquettes séparées par des underscores (ex: "MCon_RInt")
+- **Justification** : [brève, s'appuyant sur le contexte]
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "MCon_RInt",
+    "Justification": "L'expression sert à la fois de signal d'écoute (phatique) et de validation de l'information (interactive)."
+  }
+]
+```
+
+### Critères d'analyse
+
+- Examine le **contexte interactionnel** : à quoi répond l'expression ? que produit-elle ?
+- Identifie les fonctions saillantes (plusieurs possibles).
+- Utilise les codes de la typologie.
+- **Il faut nettement distinguer** entre les tours de paroles qui précèdent et ceux qui succèdent à l'expression pour bien comprendre à quoi elle répond et sur quoi elle porte.
+- Justifie en citant le contexte.
+
+---
+end_prompt
+
+start_prompt
+Prompt_FonctionSpecifique
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, attribue une **fonction langagière spécifique** à l'expression PPI, en utilisant le **référentiel CECRL** fourni ci-dessous.
+
+### Référentiel CECRL à utiliser
+
+**3.1. Interagir à propos d’informations**
+3.1.1. Identifier
+3.1.2. Affirmer
+3.1.3. Décrire
+3.1.4. Raconter
+3.1.5. S’informer
+3.1.6. Confirmer, démentir
+3.1.7. Rectifier
+3.1.8. Répondre à une demande d’information
+
+**3.2. Interagir à propos d’opinions ou de positions**
+3.2.1. Exprimer son point de vue
+3.2.2. Exprimer son accord
+3.2.3. Exprimer un désaccord
+3.2.4. Exprimer son approbation
+3.2.5. Exprimer sa désapprobation
+3.2.6. Protester
+3.2.7. Dire que l’on sait
+3.2.8. Exprimer son ignorance
+3.2.9. Exprimer le fait de se souvenir
+3.2.10. Exprimer le fait d’avoir oublié
+3.2.11. Rappeler quelque chose à quelqu’un
+3.2.12. Exprimer des degrés de certitude
+3.2.13. Exprimer sa capacité de faire quelque chose
+3.2.14. Exprimer son désir (de faire) quelque chose
+3.2.15. Exprimer son intention de faire quelque chose
+3.2.16. Exprimer l’obligation, l’interdit
+3.2.17. Exprimer une norme morale ou sociale
+3.2.18. Accuser, s’accuser, avouer
+3.2.19. Rejeter une accusation
+3.2.20. S’excuser
+3.2.21. Hésiter
+3.2.22. Insister
+3.2.23. Demander des précisions
+3.2.24. Exprimer la confiance
+3.2.25. Exprimer la méfiance
+
+**3.3. Interagir à propos d’émotions ou de sentiments**
+3.3.1. Exprimer le plaisir, la joie, le bonheur
+3.3.2. Exprimer la tristesse, l’abattement
+3.3.3. Interroger sur la joie ou la tristesse
+3.3.4. Consoler, encourager, réconforter
+3.3.5. Exprimer sa sympathie
+3.3.6. Exprimer son espoir
+3.3.7. Exprimer sa déception
+3.3.8. Exprimer sa peur, son inquiétude, son angoisse
+3.3.9. Rassurer
+3.3.10. Exprimer son soulagement
+3.3.11. Exprimer la souffrance physique
+3.3.12. Exprimer le fait d’aimer, d’apprécier quelque chose ou quelqu’un
+3.3.13. Exprimer le fait de ne pas aimer
+3.3.14. Exprimer la préférence
+3.3.15. Exprimer sa satisfaction
+3.3.16. Exprimer l’insatisfaction, se plaindre
+3.3.17. Interroger sur la satisfaction ou l’insatisfaction
+3.3.18. Exprimer sa colère, sa mauvaise humeur
+3.3.19. Réagir à la colère ou à la mauvaise humeur d’autrui
+3.3.20. Insulter
+3.3.21. Proférer des jurons
+3.3.22. Exprimer son intérêt pour quelque chose
+3.3.23. Exprimer son intérêt pour ce que dit quelqu’un
+3.3.24. Exprimer sa surprise
+3.3.25. Exprimer le fait de ne pas être surpris
+3.3.26. Exprimer son indifférence
+3.3.27. Exprimer sa gratitude, sa reconnaissance, remercier
+3.3.21. Réagir aux insultes de quelqu’un
+3.3.22. Proférer des jurons
+3.3.23. Exprimer son intérêt pour quelque chose
+3.3.24. Exprimer son intérêt pour ce que dit quelqu’un
+3.3.25. Exprimer sa surprise
+3.3.26. Exprimer le fait de ne pas être surpris
+3.3.27. Exprimer son indifférence
+3.3.28. Exprimer sa gratitude, sa reconnaissance
+
+**3.4. Interagir à propos d’activités ou d’actions**
+3.4.1. Demander à quelqu’un qu’il fasse quelque chose
+3.4.2. Répondre à une demande
+3.4.3. Proposer à quelqu’un qu’il fasse quelque chose
+3.4.4. Proposer à quelqu’un de faire quelque chose ensemble
+3.4.5. Proposer à quelqu’un de faire quelque chose à sa place ou pour lui, de l’aider
+3.4.6. Proposer à quelqu’un de lui donner, offrir, prêter quelque chose
+3.4.7. Répondre à une proposition
+3.4.8. Conseiller
+3.4.9. Mettre en garde
+3.4.10. Encourager
+3.4.11. Demander une autorisation, un accord
+3.4.12. Donner une autorisation
+3.4.13. Refuser
+3.4.14. Interdire
+3.4.15. Contester une interdiction
+3.4.16. Menacer
+3.4.17. Promettre
+3.4.18. Reprocher
+
+**3.5. Interagir dans les rituels sociaux**
+3.5.1. S’excuser
+3.5.2. Attirer l’attention
+3.5.3. Saluer
+3.5.4. Répondre à une salutation
+3.5.5. Présenter quelqu’un
+3.5.6. Se présenter
+3.5.7. Répondre à une présentation
+3.5.8. Accueillir quelqu’un
+3.5.9. Porter un toast, trinquer
+3.5.10. Féliciter
+3.5.11. Présenter ses condoléances
+3.5.12. Adresser un souhait à quelqu’un
+3.5.13. Prendre congé
+3.5.14. Interagir par téléphone
+3.5.15. Interagir par courrier
+3.5.16. Remercier
+3.5.17. Réagir à un remerciement
+3.5.18. Demander comment se comporter
+
+**3.6. Structurer son propos**
+3.6.1. Annoncer un plan, un développement
+3.6.2. Introduire une histoire, un récit, une anecdote
+3.6.3. Introduire une information
+3.6.4. Introduire un thème, un sujet
+3.6.5. Développer un thème, un sujet
+3.6.6. Souligner, mettre en évidence
+3.6.7. Faire une transition
+3.6.8. Proposer un nouveau thème, un nouveau sujet
+3.6.9. Rejeter un thème, un sujet
+3.6.10. Ouvrir une digression
+3.6.11. Fermer une digression
+3.6.12. Revenir sur un thème, un sujet déjà abordé
+3.6.13. Donner un exemple
+3.6.14. Rapporter des propos
+3.6.15. Citer
+3.6.16. Résumer
+3.6.17. Se corriger, se reprendre
+3.6.18. Chercher un mot ou une phrase
+3.6.19. Remplacer un mot oublié ou inconnu
+3.6.20. Demander de l’aide à propos d’un mot, d’une expression
+3.6.21. Conclure son propos
+3.6.22. Commencer un courrier
+3.6.23. Conclure un courrier
+
+**3.7. Structurer l’interaction verbale**
+3.7.1. Commencer une conversation
+3.7.2. Prendre la parole au cours d’une conversation
+3.7.3. Demander la parole
+3.7.4. Reprendre la parole après avoir été interrompu
+3.7.5. Empêcher quelqu’un de parler
+3.7.6. S’assurer que son interlocuteur a bien compris
+3.7.7. S’assurer de bien comprendre son interlocuteur
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Fonction_specifique** : libellé exact de la fonction + code (ex: "Exprimer sa désapprobation (3.2.5)")
+- **Justification** : [brève, s'appuyant sur le contexte]
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "Exprimer sa désapprobation (3.2.5)",
+    "Justification": "Le locuteur réagit avec indignation à une action de l'interlocuteur."
+  }
+]
+```
+
+### Critères d'analyse
+
+- Analyse le **contexte conversationnel** pour comprendre l'intention communicative.
+- Choisis la fonction la plus pertinente dans la liste CECRL.
+- **Utilise la formulation exacte et le code**.
+- Justifie brièvement.
+
+### Note importante
+
+- Il faut utiliser la **formulation exacte** de la fonction telle qu'elle est dans la liste fournie.
+- Il faut **BIEN VÉRIFIER le NUMÉRO** de la fonction choisie.
+
+---
+end_prompt
+
+start_prompt
+Prompt_RemarquesDiverses
+### Contexte
+
+Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les informations nécessaires sont incluses directement dans l'échange :
+
+- **Le locuteur** qui utilise l'expression cible
+- **Les interlocuteurs**
+- **La conversation complète** (tours de parole)
+- **L'expression PPI** à analyser apparaît dans son contexte naturel
+
+### Mission
+
+Pour chaque conversation du corpus, ajoute toute **remarque pertinente** non couverte par les autres paramètres.
+
+### Éléments à noter si présents
+
+- **Discours rapporté direct** :
+  - La PPI apparaît dans une **citation ou un dialogue rapporté**.
+  - Exemple : *Il a dit : "Tu plaisantes !"*
+
+- **Double fonction** déjà signalée (à repréciser si besoin).
+
+- **Particularités contextuelles** :
+  - Ton ironique, emploi métaphorique, variation dialectale, etc.
+
+- **Problèmes d’annotation** :
+  - Cas ambigus, limites de l’analyse.
+
+### Format de sortie attendu
+
+Pour chaque conversation analysée, produis une entrée structurée avec :
+
+- **Remarques** : description des particularités, ou "Aucune remarque supplémentaire"
+
+**Exemple :**
+```json
+[
+  {
+    "Propriété": "discours rapporté",
+    "Justification": "L'expression est employée dans un discours rapporté : 'Il a dit : 'c'est clair''"
+  },
+  {
+    "Propriété": "Aucune remarque supplémentaire",
+    "Justification": "Pas de remarque particulière à signaler"
+  }
+]
+```
+
+### Critères d'analyse
+
+- Vérifie si l'expression apparaît dans un **discours rapporté**.
+- Note toute **particularité contextuelle ou interprétative**.
+- Si rien de spécial, indique **"Aucune remarque supplémentaire"**.
+- **Ne fais aucune analyse psychologique ou discursive avancée**.
+
+---
+end_prompt
+
