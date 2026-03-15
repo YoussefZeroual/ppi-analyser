@@ -295,9 +295,6 @@ end_prompt
 
 start_prompt
 Prompt_Coocurrents
-J'ai compris ! Voici une version révisée des instructions qui clarifie que les marqueurs de discours ne doivent être identifiés que lorsqu'ils sont **extérieurs** à la PPI, même s'ils ressemblent à des marqueurs typiques :
-
----
 
 ## DÉFINITION
 Un **cooccurrent** est un élément **externe à la PPI** qui apparaît fréquemment à sa gauche ou à sa droite dans le même tour de parole.
@@ -351,6 +348,14 @@ Un **cooccurrent** est un élément **externe à la PPI** qui apparaît fréquem
 - Il apparaît dans la **même phrase graphique** ou à proximité immédiate
 - Indiquez sa position : **antéposé (a)** ou **postposé (p)**
 - Si le cooccurrent est un appellatif: indiquer seulement que c'est un appellatif (la réalisation lexicale est réservée à la partie Justification)
+### RÈGLE DE PROXIMITÉ — CRITIQUE
+Un cooccurrent doit être **immédiatement adjacent** à la PPI ou séparé d'elle par **au maximum une virgule ou un signe de ponctuation**.
+- **VALIDE** : `<MD>mais</MD> <PPI>comment ça se fait</PPI>` — adjacent
+- **VALIDE** : `<APP>Monsieur Hamil</APP>, <PPI>comment ça se fait</PPI>` — séparé par une virgule
+- **INVALIDE** : Un marqueur de discours situé dans une autre proposition ou un autre tour de parole que celui contenant la PPI n'est **jamais** un cooccurrent, même s'il apparaît dans la même conversation
+- **INVALIDE** : Un élément séparé de la PPI par plus d'une proposition subordonnée ou coordonnée n'est pas un cooccurrent
+- **RÈGLE ABSOLUE** : Si pour relier le candidat cooccurrent à la PPI il faut "sauter" par-dessus d'autres propositions complètes, des changements de tour de parole, ou des incises narratives, alors ce candidat **n'est pas un cooccurrent**.
+
 
 ## FORMAT DE RÉPONSE ATTENDU
 
@@ -409,6 +414,15 @@ Un **cooccurrent** est un élément **externe à la PPI** qui apparaît fréquem
 "Propriété": "Aucun cooccurrent",
 "Justification": "Bien que 'mais' soit un marqueur de discours typique, il se trouve À L'INTÉRIEUR des balises <PPI></PPI> et fait donc partie intégrante de la PPI. Aucun cooccurrent n'est détecté à l'extérieur de la PPI dans le tour de parole de [locuteur 3]"
 }}
+
+### Exemple 5 (marqueur éloigné — NON cooccurrent) :
+**Entrée** : Tour de parole = "Vous avez vu... commença-t-elle, mais ils dormaient tous. <PPI>Comment cela se fait-il</PPI>, selon vous ?"
+**Sortie** :
+{
+"Propriété": "Aucun cooccurrent",
+"Justification": "Le mot 'mais' apparaît bien dans le même tour de parole mais il est séparé de la PPI par plusieurs propositions complètes et ne porte pas sur la PPI. Seul 'selon vous' est adjacent à la PPI mais c'est une incise et non un marqueur de discours de la liste. Aucun cooccurrent détecté."
+}
+
 
 ## INSTRUCTIONS IMPORTANTES
 1. **Vérifiez TOUJOURS la position des balises** : Un élément à l'intérieur de <PPI></PPI> n'est JAMAIS un cooccurrent

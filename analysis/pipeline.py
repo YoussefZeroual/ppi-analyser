@@ -75,6 +75,7 @@ def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState) -> Pr
     match config.mode:
         case AnalysisMode.ORAL:
             cleaned = clean_conv(raw, config.mode)
+            cleaned = cleaned.replace('\\n', ' ')
         case AnalysisMode.ECRIT_IA:
             if not config.speaker_detection_model:
                 raise ValueError("speaker_detection_model must be set for ECRIT_IA mode")
@@ -115,6 +116,7 @@ def _preprocess_chunk_batch(
         state.full_ecrit_sentence.append(fixed)
         dialogue = get_dialogue(segmented)
         cleaned = fix_speaker_turns(clean_dialogue(dialogue), config.mode)
+        cleaned = cleaned.replace('\\n', ' ')
         locuteur, interlocuteurs = detect_speakers(cleaned, config.mode)
         forme_relevee = _extract_forme(cleaned, config.expression)
         results.append(PreprocessedSentence(

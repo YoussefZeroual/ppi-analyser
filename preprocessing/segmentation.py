@@ -55,7 +55,11 @@ Tu es un expert en analyse linguistique et en traitement automatique du langage 
 - Lorsqu'un verbe introducteur indique une rectification ou une hésitation du même locuteur, ne pas créer de nouveau locuteur.
 
 ### 5. Gestion spécifique des balises PPI
-- Lorsqu'une balise `<PPI>` est suivie immédiatement d'un trait d'union (**‑**) et d'un pronom, ces éléments font **partie intégrante de la PPI** et doivent être inclus **à l'intérieur** de la balise `<PPI>`.
+- Lorsqu'une balise `<PPI>` est suivie immédiatement d'un trait d'union (**‑**) et d'un pronom sujet inversé (*-il*, *-elle*, *-on*, *-je*, *-tu*, *-ils*, *-elles*, *-nous*, *-vous*), ces éléments font **partie intégrante de la PPI** et doivent être inclus **à l'intérieur** de la balise `<PPI>`.
+  - *Exemple* : `<PPI>comment ça se fait</PPI>-il` → `<PPI>comment ça se fait-il</PPI>`
+- Lorsqu'une balise `<PPI>` est suivie d'un pronom sujet inversé **sans trait d'union** (erreur typographique ou absence de ponctuation), le pronom doit néanmoins être inclus à l'intérieur de la balise `<PPI>` si la structure syntaxique indique clairement une interrogation inversée.
+  - *Exemple* : `<PPI>comment ça se fait</PPI> il` → `<PPI>comment ça se fait il</PPI>`
+- **RÈGLE ABSOLUE** : Après une balise `</PPI>`, si le mot suivant est un pronom sujet parmi (*il, elle, on, je, tu, ils, elles, nous, vous*), ce pronom appartient toujours à la PPI. Ne jamais laisser un pronom isolé immédiatement après `</PPI>`.
 
 ### 6. Identification des locuteurs
 - Si le nom du locuteur est identifiable dans le texte, place‑le entre crochets devant la réplique (ex. : `[Jean] bonjour`).
@@ -125,13 +129,19 @@ Tu es un expert en analyse linguistique et en traitement automatique du langage 
 - Sans signe formel de changement de locuteur : un seul tour de parole, un seul locuteur.
 - Répliques successives du même locuteur : regroupe‑les avec **/** comme séparateur.
 
-### 5. Identification des locuteurs
+### 5. Gestion spécifique des balises PPI
+- Lorsqu'une balise `<PPI>` est suivie d'un trait d'union (**‑**) et d'un pronom sujet inversé (*-il*, *-elle*, *-on*, *-je*, *-tu*, *-ils*, *-elles*, *-nous*, *-vous*), ces éléments font **partie intégrante de la PPI** et doivent être inclus **à l'intérieur** de la balise `<PPI>`.
+  - *Exemple* : `<PPI>comment ça se fait</PPI>-il` → `<PPI>comment ça se fait-il</PPI>`
+- Lorsqu'une balise `<PPI>` est suivie d'un pronom sujet inversé **sans trait d'union**, le pronom doit néanmoins être inclus à l'intérieur de la balise `<PPI>`.
+  - *Exemple* : `<PPI>comment ça se fait</PPI> il` → `<PPI>comment ça se fait il</PPI>`
+- **RÈGLE ABSOLUE** : Après `</PPI>`, si le mot suivant est un pronom parmi (*il, elle, on, je, tu, ils, elles, nous, vous*), ce pronom appartient toujours à la PPI.
+### 6. Identification des locuteurs
 - Nom identifiable → entre crochets (ex. `[Jean]`).
 - Sinon → `[Locuteur 1]`, `[Locuteur 2]`, etc.
-
-### 6. Cas particuliers
+### 7. Cas particuliers
 - Les appellatifs placés avant le tour de parole font partie du dialogue.
 - Les incises sont placées dans la narration.
+
 
 ## FORMAT DE SORTIE — TRÈS IMPORTANT
 Tu dois traiter TOUS les textes fournis et retourner UNE SEULE réponse.
