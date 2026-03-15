@@ -2,18 +2,20 @@
 
 import re
 import logging
+from ppi_analyser.preprocessing.segmentation_cache import get as cache_get, set as cache_set
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Single-sentence IA segmentation
-# ---------------------------------------------------------------------------
 
 def detect_segments_ia(text: str, model: str) -> str:
-    if not re.search(r'[«"''][^»"'']*[»"'']|[—–-]\s*\w+|«[^»]*»', text):
+    if not re.search(r'[«"\u2018\u2019][^»"\u2018\u2019]*[»"\u2018\u2019]|[\u2014\u2013-]\s*\w+|«[^»]*»', text):
         return "<dialogue>[Locuteur1] " + text + "</dialogue>"
 
-    system_prompt = f"""\
+    cached = cache_get(text, model)
+    if cached is not None:
+        return cached
+
+    system_prompt = """\
 Prompt_Formatage_conversation
 Tu es un expert en analyse linguistique et en traitement automatique du langage naturel. Ta mission est d'analyser un texte en français et d'y identifier deux types de segments distincts :
 
@@ -83,12 +85,11 @@ Tu es un expert en analyse linguistique et en traitement automatique du langage 
     from ppi_analyser.models.factory import get_provider
     provider = get_provider(model.split('_')[0], model.split('_')[1])
     result = provider.complete(system_prompt, prompt)
-    return result.replace("—", "")
+    result = result.replace("—", "")
 
+    cache_set(text, model, result)
+    return result
 
-# ---------------------------------------------------------------------------
-# Batch IA segmentation
-# ---------------------------------------------------------------------------
 
 _BATCH_SYSTEM_PROMPT = """\
 Prompt_Formatage_conversation
@@ -135,13 +136,14 @@ Tu es un expert en analyse linguistique et en traitement automatique du langage 
 - Lorsqu'une balise `<PPI>` est suivie d'un pronom sujet inversé **sans trait d'union**, le pronom doit néanmoins être inclus à l'intérieur de la balise `<PPI>`.
   - *Exemple* : `<PPI>comment ça se fait</PPI> il` → `<PPI>comment ça se fait il</PPI>`
 - **RÈGLE ABSOLUE** : Après `</PPI>`, si le mot suivant est un pronom parmi (*il, elle, on, je, tu, ils, elles, nous, vous*), ce pronom appartient toujours à la PPI.
+
 ### 6. Identification des locuteurs
 - Nom identifiable → entre crochets (ex. `[Jean]`).
 - Sinon → `[Locuteur 1]`, `[Locuteur 2]`, etc.
+
 ### 7. Cas particuliers
 - Les appellatifs placés avant le tour de parole font partie du dialogue.
 - Les incises sont placées dans la narration.
-
 
 ## FORMAT DE SORTIE — TRÈS IMPORTANT
 Tu dois traiter TOUS les textes fournis et retourner UNE SEULE réponse.
@@ -160,7 +162,6 @@ NE DONNE AUCUNE EXPLICATION SUPPLÉMENTAIRE.
 
 
 def _parse_batch_result(raw: str, expected: int) -> list[str]:
-    """Extract per-text results from the model's batch response."""
     chunks = raw.split("===SEPARATOR===")
     results = []
     for chunk in chunks:
@@ -175,12 +176,6 @@ def _parse_batch_result(raw: str, expected: int) -> list[str]:
 
 
 def detect_segments_ia_batch(texts: list[str], model: str) -> list[str]:
-    """
-    Batch version of detect_segments_ia.
-    Texts without dialogue cues are handled locally (no model call).
-    The rest are sent to the model in a single prompt.
-    Returns a list of segmented strings in the same order as `texts`.
-    """
     if not texts:
         return []
 
@@ -189,11 +184,15 @@ def detect_segments_ia_batch(texts: list[str], model: str) -> list[str]:
     batch_indices = []
 
     for i, text in enumerate(texts):
-        if not re.search(r'[«"''][^»"'']*[»"'']|[—–-]\s*\w+|«[^»]*»', text):
+        if not re.search(r'[«"\u2018\u2019][^»"\u2018\u2019]*[»"\u2018\u2019]|[\u2014\u2013-]\s*\w+|«[^»]*»', text):
             processed[i] = "<dialogue>[Locuteur1] " + text + "</dialogue>"
-        else:
-            batch_texts.append(text)
-            batch_indices.append(i)
+            continue
+        cached = cache_get(text, model)
+        if cached is not None:
+            processed[i] = cached
+            continue
+        batch_texts.append(text)
+        batch_indices.append(i)
 
     if batch_texts:
         batch_prompt = (
@@ -206,25 +205,19 @@ def detect_segments_ia_batch(texts: list[str], model: str) -> list[str]:
         from ppi_analyser.models.factory import get_provider
         provider = get_provider(model.split('_')[0], model.split('_')[1])
         raw_result = provider.complete(_BATCH_SYSTEM_PROMPT, batch_prompt)
-
         parsed = _parse_batch_result(raw_result, expected=len(batch_texts))
 
         for list_pos, original_idx in enumerate(batch_indices):
             if list_pos < len(parsed):
-                processed[original_idx] = parsed[list_pos]
+                result = parsed[list_pos]
+                processed[original_idx] = result
+                cache_set(batch_texts[list_pos], model, result)
             else:
-                # fallback: treat whole text as dialogue
                 logger.warning("No parsed result for text index %d, using fallback", original_idx)
-                processed[original_idx] = (
-                    "<dialogue>[Locuteur1] " + texts[original_idx] + "</dialogue>"
-                )
+                processed[original_idx] = "<dialogue>[Locuteur1] " + texts[original_idx] + "</dialogue>"
 
     return processed
 
-
-# ---------------------------------------------------------------------------
-# Rule-based segmentation (no model)
-# ---------------------------------------------------------------------------
 
 def detect_segments(text: str, nlp) -> str:
     ppi_contents = []

@@ -52,7 +52,9 @@ def analyse_batch_mistral_async(
     lemme_chunks = _chunk(lemmes, config.batch_size) if lemmes else [None] * len(chunks)
 
     # Submit one job per (chunk × property), skip NON_IA
-    job_map = {}  # "c{i}_p{j}" -> job_id
+    job_map        = {}  # "c{i}_p{j}" -> job_id
+    cached_results = {}  # "c{i}_p{j}" -> raw_response (from analysis cache)
+    prompt_map     = {}  # "c{i}_p{j}" -> {user, prompt_type} for cache saving
 
     for chunk_idx, (chunk, lemme_chunk) in enumerate(zip(chunks, lemme_chunks)):
         expression = lemme_chunk[0] if lemme_chunk else config.expression
@@ -73,19 +75,36 @@ def analyse_batch_mistral_async(
         ):
             if prop_idx in NON_IA:
                 continue
+            prompt_type = get_prompt_type(system_prompt)
+            if config.properties and prompt_type not in config.properties:
+                continue
 
-            cid    = _custom_id(chunk_idx, prop_idx)
+            cid = _custom_id(chunk_idx, prop_idx)
+
+            # Check analysis cache before submitting
+            if state.use_analysis_cache:
+                from ppi_analyser.analysis.analysis_cache import get as acache_get
+                cached = acache_get(batched_prompt, "", "mistral_batch", submodel, prompt_type)
+                if cached is not None:
+                    logger.debug("Analysis cache HIT for %s chunk %d prop %d", prompt_type, chunk_idx, prop_idx)
+                    cached_results[cid] = cached
+                    continue
+
             job_id = provider.submit([{
                 "custom_id": cid,
                 "system":    system_prompt,
                 "user":      batched_prompt,
             }])
-            job_map[cid] = job_id
+            job_map[cid]    = job_id
+            prompt_map[cid] = {"user": batched_prompt, "prompt_type": prompt_type}
             logger.info("Submitted job %s for chunk %d prop %d", job_id, chunk_idx, prop_idx)
 
     # Poll all jobs
     all_results = _poll_and_assemble(job_map, provider, preprocessed, lemmes, config, state,
-                                     preprocessed_path=str(preprocessed_path))
+                                     preprocessed_path=str(preprocessed_path),
+                                     cached_results=cached_results,
+                                     submodel=submodel,
+                                     prompt_map=prompt_map)
     if all_results is None:
         raise InterruptedError("Mistral batch jobs still running. Re-run to resume.")
 
@@ -105,12 +124,15 @@ def _poll_and_assemble(
     config: PipelineConfig,
     state: SessionState,
     preprocessed_path: str | None = None,
+    cached_results: dict | None = None,
+    submodel: str = "",
+    prompt_map: dict | None = None,
 ) -> list[list[str]] | None:
     """
     Poll all jobs in job_map. Returns assembled results or None if any timed out.
     job_map: {"c{i}_p{j}": job_id}
     """
-    raw_results = {}   # cid -> raw_response string
+    raw_results = dict(cached_results) if cached_results else {}
     timed_out   = []
 
     for cid, job_id in job_map.items():
@@ -118,11 +140,17 @@ def _poll_and_assemble(
         if result is None:
             timed_out.append(cid)
         else:
-            # result is {cid: response_str} — extract the single response
-            raw_results[cid] = result.get(cid, "")
+            raw_response = result.get(cid, "")
+            raw_results[cid] = raw_response
+            # Save to analysis cache using prompt_map for key info
+            if state.use_analysis_cache and raw_response and prompt_map and cid in prompt_map:
+                from ppi_analyser.analysis.analysis_cache import set as acache_set
+                entry = prompt_map[cid]
+                acache_set(entry["user"], "", "mistral_batch", submodel,
+                           entry["prompt_type"], raw_response)
+                logger.debug("Analysis cache SET for %s", entry["prompt_type"])
 
     if timed_out:
-        # Save full job_map so resume can retry all pending jobs
         combined = {"job_map": job_map, "preprocessed_json": preprocessed_path}
         state_path = Path(config.output_dir) / "mistral_batch_job.json"
         state_path.write_text(json.dumps(combined, indent=2), encoding="utf-8")
@@ -130,6 +158,7 @@ def _poll_and_assemble(
         return None
 
     return _assemble(raw_results, preprocessed, lemmes, config, state)
+
 
 
 # ---------------------------------------------------------------------------
@@ -180,11 +209,15 @@ def _assemble(
                     n_sentences=n_sents,
                 )
             else:
-                cid          = _custom_id(chunk_idx, prop_idx)
-                raw_response = raw_results.get(cid, "")
-                if not raw_response:
-                    logger.warning("No result for %s — filling with None", cid)
-                prop_results = _parse_batch_response(raw_response, n_sents)
+                cid = _custom_id(chunk_idx, prop_idx)
+                prompt_type = get_prompt_type(system_prompt)
+                if config.properties and prompt_type not in config.properties:
+                    prop_results = [None] * n_sents
+                else:
+                    raw_response = raw_results.get(cid, "")
+                    if not raw_response:
+                        logger.warning("No result for %s — filling with None", cid)
+                    prop_results = _parse_batch_response(raw_response, n_sents)
 
             results_per_property.append(prop_results)
 
@@ -199,7 +232,7 @@ def _assemble(
                         prop_results[sent_idx] if sent_idx < len(prop_results) else None
                     )
             all_results.append(row)
-    logger.debug("_assemble result[0]: %s", all_results[0] if all_results else "empty")
+
     return all_results
 
 

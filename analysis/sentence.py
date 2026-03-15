@@ -16,6 +16,7 @@ def process_sentences_batch(
     state,
     models: list[str],
     mode: str,
+    properties: list[str] | None = None,
 ) -> list[list[str]]:
 
     from ppi_analyser.analysis.prompts import get_prompts_batch
@@ -57,6 +58,9 @@ def process_sentences_batch(
         for i, (model, submodel, system_prompt, batched_prompt) in enumerate(
             zip(models_resolved, submodels_resolved, system_prompts, batched_prompts)
         ):
+            prompt_type = get_prompt_type(system_prompt)
+            if properties and prompt_type not in properties:
+                continue
             future = executor.submit(
                 _call_model_batch,
                 system_prompt=system_prompt,
@@ -117,12 +121,25 @@ def _call_model_batch(
         )
 
     from ppi_analyser.models.factory import get_provider
+    prompt_type = get_prompt_type(system_prompt)
+
+    # Check analysis cache — batch responses are keyed on the concatenated prompt
+    if getattr(state, 'use_analysis_cache', False):
+        from ppi_analyser.analysis.analysis_cache import get as acache_get, set as acache_set
+        cache_key_conv = prompt  # user prompt contains all conversations
+        cached = acache_get(cache_key_conv, "", model, submodel, prompt_type)
+        if cached is not None:
+            return _parse_batch_response(cached, n_sentences)
+
     provider = get_provider(model, submodel, state)
     raw_response = provider.complete(system_prompt, prompt)
 
     with state._token_lock:
         state.total_tokens_in  += (len(system_prompt) + len(prompt)) // 4
         state.total_tokens_out += len(raw_response) // 4
+
+    if getattr(state, 'use_analysis_cache', False):
+        acache_set(cache_key_conv, "", model, submodel, prompt_type, raw_response)
 
     return _parse_batch_response(raw_response, n_sentences)
 
@@ -222,6 +239,7 @@ def process_sentence(
     state,
     models: list[str],
     mode: str,
+    properties: list[str] | None = None,
 ) -> list[str]:
 
     from ppi_analyser.analysis.prompts import get_prompts
@@ -261,6 +279,7 @@ def _run_parallel(
     sent_index: int,
     state,
     mode: str,
+    properties: list[str] | None = None,
 ) -> list[str]:
 
     NON_IA = [0, 1, 5]
@@ -289,6 +308,9 @@ def _run_parallel(
         for i, (model, submodel, system_prompt, prompt) in enumerate(
             zip(resolved_models, resolved_submodels, system_prompts, prompts)
         ):
+            prompt_type = get_prompt_type(system_prompt)
+            if properties and prompt_type not in properties:
+                continue
             future = executor.submit(
                 _call_model,
                 system_prompt=system_prompt,
@@ -336,10 +358,20 @@ def _call_model(
             conversation=conversation,
         )
 
+    # Check analysis cache
+    if getattr(state, 'use_analysis_cache', False):
+        from ppi_analyser.analysis.analysis_cache import get as acache_get, set as acache_set
+        cached = acache_get(conversation, expression, model, submodel, prompt_type)
+        if cached is not None:
+            return cached
+
     result = provider.complete(system_prompt, prompt)
 
     with state._token_lock:
         state.total_tokens_in  += (len(system_prompt) + len(prompt)) // 4
         state.total_tokens_out += len(result) // 4
+
+    if getattr(state, 'use_analysis_cache', False):
+        acache_set(conversation, expression, model, submodel, prompt_type, result)
 
     return result

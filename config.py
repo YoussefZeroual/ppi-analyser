@@ -69,3 +69,6 @@ class PipelineConfig:
     batch_mode: bool = False
     batch_size: int = 5
     preprocessed_json: str | None = None
+    properties: list[str] | None = None  # if set, only these properties are executed
+    use_analysis_cache: bool = False
+    analysis_cache_path: str | None = None  # e.g. "/home/joe/.ppi_analyser/analysis_cache.json"

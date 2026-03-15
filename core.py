@@ -1,5 +1,6 @@
 # ppi_analyser/core.py
 import time
+from pathlib import Path
 import logging
 from ppi_analyser.logger import setup_logging
 from ppi_analyser.state import SessionState
@@ -53,6 +54,15 @@ class PPIAnalyser:
         self.state.n_threads             = config.n_threads
         self.state.ollama_host           = config.ollama_host
         self.state.start_time            = time.perf_counter()
+
+        self.state.use_analysis_cache = config.use_analysis_cache
+        if config.use_analysis_cache:
+            from ppi_analyser.analysis.analysis_cache import init as cache_init
+            cache_path = config.analysis_cache_path or str(
+                Path.home() / ".ppi_analyser" / "analysis_cache.json"
+            )
+            cache_init(cache_path)
+            logger.info("Analysis cache enabled: %s", cache_path)
 
         logger.info("Chargement et préparation des concordances")
         sentences, lemmes = _load_sentences(config)
