@@ -148,12 +148,12 @@ def _handle_no_model_batch(
             val = json.dumps({
                 "Propriété": forme_relevee_list[i] if i < len(forme_relevee_list) else expression,
                 "Justification": "Forme relevée dans l'échange analysé"
-            })
+            }, ensure_ascii=False)
         elif prompt_type == "Lemme":
             val = json.dumps({
                 "Propriété": expression,
                 "Justification": "Forme choisie par défaut pour représenter la PPI analysée"
-            })
+            }, ensure_ascii=False)
         elif prompt_type == "Position":
             result = get_pos(
                 conversations[i], mode,
@@ -161,11 +161,11 @@ def _handle_no_model_batch(
                 nlp=state.nlp,
             )
             if result:
-                val = json.dumps({"Propriété": result[0], "Justification": result[1]})
+                val = json.dumps({"Propriété": result[0], "Justification": result[1]}, ensure_ascii=False)
             else:
-                val = json.dumps({"Propriété": "Indéterminé", "Justification": "Position non calculée"})
+                val = json.dumps({"Propriété": "Indéterminé", "Justification": "Position non calculée"}, ensure_ascii=False)
         else:
-            val = json.dumps({"Propriété": "no_model", "Justification": "no_model"})
+            val = json.dumps({"Propriété": "no_model", "Justification": "no_model"}, ensure_ascii=False)
 
         results.append(val)
 
@@ -192,12 +192,12 @@ def _parse_batch_response(raw_response: str, n_sentences: int) -> list[str]:
                 if match:
                     idx = int(match.group(1))
                     if idx < n_sentences:
-                        results[idx] = json.dumps(val)
+                        results[idx] = json.dumps(val, ensure_ascii=False)
 
         elif isinstance(parsed, list):
             for i, val in enumerate(parsed):
                 if i < n_sentences:
-                    results[i] = json.dumps(val) if isinstance(val, dict) else str(val)
+                    results[i] = json.dumps(val, ensure_ascii=False) if isinstance(val, dict) else str(val)
 
     except json.JSONDecodeError:
         objects = re.findall(r'\{[^{}]+\}', cleaned)
