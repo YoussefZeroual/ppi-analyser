@@ -216,7 +216,8 @@ def _assemble(
                 else:
                     raw_response = raw_results.get(cid, "")
                     if not raw_response:
-                        logger.warning("No result for %s — filling with None", cid)
+                        similar = [k for k in raw_results if k.startswith(f"c{chunk_idx}_")]
+                        logger.warning("No result for %s — keys for this chunk: %s", cid, similar)
                     prop_results = _parse_batch_response(raw_response, n_sents)
 
             results_per_property.append(prop_results)

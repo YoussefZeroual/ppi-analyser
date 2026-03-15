@@ -95,8 +95,9 @@ def create_df(results: list, df_index: int, expression: str, conv: str, state: S
         return pd.DataFrame()
 
     try:
-        df = pd.DataFrame(c)
-        state.dfs.append(c)
+        c_safe = [item if item is not None else {"Propriété": "", "Justification": ""} for item in c]
+        df = pd.DataFrame(c_safe)
+        state.dfs.append(c_safe)
     except (AttributeError, TypeError) as e:
         logger.error("Could not create df from cleaned results: %s", e)
         return pd.DataFrame()
