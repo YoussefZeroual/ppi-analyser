@@ -162,24 +162,56 @@ def _preprocess_all(
 
     
 def _analyse_all(
-    preprocessed: list[PreprocessedSentence],
+    preprocessed: list,
     lemmes: list[str] | None,
     config: PipelineConfig,
     state: SessionState,
 ) -> list[list[str]]:
 
+    from ppi_analyser.analysis.sentence import process_sentence, process_sentences_batch
+    from ppi_analyser.exceptions import PPITagMissingError
+
     sleep_time = _compute_sleep(config)
+
+    if config.batch_mode:
+        logger.info("Running in batch mode for %d sentences", len(preprocessed))
+
+        conversations = [s.cleaned for s in preprocessed]
+        forme_relevee_list = [s.forme_relevee for s in preprocessed]
+        locuteurs = [s.locuteur for s in preprocessed]
+        interlocuteurs = [s.interlocuteurs for s in preprocessed]
+
+        if lemmes:
+            for lemme in lemmes:
+                state.expression_list.append(lemme)
+            expression = lemmes[0]
+        else:
+            expression = config.expression
+
+        return process_sentences_batch(
+            expression=expression,
+            forme_relevee=forme_relevee_list,
+            conversations=conversations,
+            locuteurs=locuteurs,
+            interlocuteurs=interlocuteurs,
+            state=state,
+            models=config.models,
+            mode=config.mode,
+        )
+
+    # normal mode
     all_results = []
 
     for i, sent in enumerate(preprocessed):
         expression = lemmes[i] if lemmes else config.expression
+
         if lemmes:
             state.expression_list.append(expression)
 
-        logger.info("Traitement de la conversation %d/%d — %s", i + 1, len(preprocessed), expression)
+        logger.info("Processing sentence %d/%d", i + 1, len(preprocessed))
 
         if "<PPI>" not in sent.cleaned:
-            raise PPITagMissingError(f"Sentence {i} has no <PPI> tags: {sent.cleaned[:80]}")
+            raise PPITagMissingError(f"Sentence {i} missing <PPI> tags: {sent.cleaned[:80]}")
 
         results = process_sentence(
             expression=expression,
@@ -195,6 +227,7 @@ def _analyse_all(
         all_results.append(results)
 
         if i < len(preprocessed) - 1:
+            logger.info("Sleeping %.2fs for rate limit", sleep_time)
             time.sleep(sleep_time)
 
     return all_results

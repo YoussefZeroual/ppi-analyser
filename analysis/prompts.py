@@ -4,7 +4,78 @@ import re
 import logging
 
 logger = logging.getLogger(__name__)
+GENERAL_PROMPT_BATCH = """
+Tu es un expert en analyse linguistique. Tu analyses des phrases préfabriquées d'interactions (PPI) françaises.
+Tu dois analyser TOUTES les occurrences fournies et retourner UNE SEULE réponse JSON.
+- Attention: les balises <PPI> </PPI> indiquent l'expression à traiter
+- RÉPONDS UNIQUEMENT avec un objet JSON valide
+- FORMAT REQUIS: {"sentence no.0": {"Propriété": "valeur", "Justification": "valeur"}, "sentence no.1": {...}, ...}
+- INTERDIT: markdown, texte avant/après le JSON, caractère ':' dans les valeurs
+- CHAQUE JUSTIFICATION NE DOIT PAS DÉPASSER DEUX LIGNES
+- L'ORDRE DOIT CORRESPONDRE À L'ORDRE DES PHRASES FOURNIES
+"""
 
+
+def get_prompts_batch(
+    expression: str,
+    forme_relevee_list: list[str],
+    conv_list: list[str],
+    locuteur_list: list[str],
+    interlocuteur_list: list[list[str]],
+    mode: str,
+) -> tuple[list[str], list[str]]:
+
+    from ppi_analyser.preprocessing.speakers import get_loc_full_turn
+
+    raw_system_prompts = load_system_prompts()
+    raw_system_prompts = [GENERAL_PROMPT_BATCH + p for p in raw_system_prompts]
+
+    batched_prompts = []
+
+    for sp in raw_system_prompts:
+        prompt_type_match = re.findall(r'Prompt_(\w+)', sp)
+        if not prompt_type_match:
+            continue
+        prompt_type = prompt_type_match[0]
+
+        sentence_blocks = []
+        for i, (conv, loc, interloc, forme) in enumerate(
+            zip(conv_list, locuteur_list, interlocuteur_list, forme_relevee_list)
+        ):
+            tour_parole = get_loc_full_turn(conv, "écrit_ia")[0]
+
+            if prompt_type in ["Acception", "Portee", "Declenchement",
+                               "Fonction_globale", "Fonction_specifique", "Remarques_diverses"]:
+                block = f"""
+--- Sentence no.{i} ---
+Locuteur: {loc}
+Interlocuteurs: {interloc}
+Conversation: {conv}
+Expression: {expression}
+"""
+            elif prompt_type in ["type_phrase", "Modalite", "Particularites_syntaxiques",
+                                 "Expansions", "Modifieurs", "Coocurrents"]:
+                block = f"""
+--- Sentence no.{i} ---
+Locuteur: {loc}
+Tour de parole: {tour_parole}
+Forme relevée: {forme}
+Lemme: {expression}
+"""
+            else:
+                block = f"""
+--- Sentence no.{i} ---
+Expression: {expression}
+"""
+            sentence_blocks.append(block)
+
+        batched_prompt = "\n".join(sentence_blocks) + f"""
+Réponds avec un JSON contenant une entrée par phrase:
+{{"sentence no.0": {{"Propriété": "...", "Justification": "..."}}, "sentence no.1": {{...}}, ...}}
+"""
+        batched_prompts.append(batched_prompt)
+
+    return raw_system_prompts, batched_prompts
 GENERAL_PROMPT = """
 Tu es un expert en analyse linguistique. Tu examines des phrases préfabriquées d'intéractions (PPI) françaises dans leur contexte conversationnel.
 Tu dois donner des réponses qui concernent l'expression et la conversation fournies.
