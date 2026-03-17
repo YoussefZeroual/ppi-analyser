@@ -3,7 +3,8 @@ import time
 import logging
 import concurrent.futures
 from ppi_analyser.analysis.prompts import get_prompt_type
-
+from ppi_analyser.config import predefined_responses
+ignore_response = predefined_responses.IGNORED_PROPRETY_RESPONSE
 logger = logging.getLogger(__name__)
 
 
@@ -119,9 +120,11 @@ def _call_model_batch(
             system_prompt, conversations, expression,
             forme_relevee_list, state, mode, n_sentences
         )
-
     from ppi_analyser.models.factory import get_provider
     prompt_type = get_prompt_type(system_prompt)
+
+    if (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
+    	return ignore_response
 
     # Check analysis cache — batch responses are keyed on the concatenated prompt
     if getattr(state, 'use_analysis_cache', False):
@@ -357,7 +360,10 @@ def _call_model(
             forme_relevee=forme_relevee,
             conversation=conversation,
         )
+    prompt_type = get_prompt_type(system_prompt)
 
+    if (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
+    	return ignore_response
     # Check analysis cache
     if getattr(state, 'use_analysis_cache', False):
         from ppi_analyser.analysis.analysis_cache import get as acache_get, set as acache_set

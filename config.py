@@ -2,6 +2,8 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
+
+
 from pathlib import Path
 PACKAGE_DIR = Path(__file__).parent
 SYSTEM_PROMPTS_FILE = PACKAGE_DIR / "system_prompts.txt"
@@ -42,12 +44,15 @@ RESULT_COLUMNS = [
 
 from dataclasses import dataclass, field
 from enum import Enum
-
+class predefined_responses():
+	IGNORED_PROPRETY_RESPONSE = '```json\n{"Propriété": "Ignoré par l\'utilisateur", "Justification": "Ignoré par l\'utilisateur"}\n```'
 class AnalysisMode(str, Enum):
     ORAL      = "oral"
     ECRIT     = "écrit"
     ECRIT_IA  = "écrit_ia"
     ECRIT_TEST = "écrit_test"
+
+
 
 @dataclass
 class PipelineConfig:
