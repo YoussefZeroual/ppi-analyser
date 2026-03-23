@@ -11,7 +11,6 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "simple", nlp=None) -
 
     full_turn, sent = get_loc_full_turn(conv, mode)
     loc, interloc = detect_speakers(conv, mode)
-    input(f"DEBUG get pos was called full turn = {full_turn}")
     if is_clausative(conv, mode):
         return ("Totale", f"La PPI {sent} occupe la totalité du tour de parole de **{loc}**: *{full_turn}*")
 
