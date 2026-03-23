@@ -87,5 +87,6 @@ def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
                     conv_lines[i] = line.replace(current_speaker.strip(), '').strip()
             if current_speaker:
                 previous_speaker = current_speaker
-
+    print("".join(conv_lines))
+    input("DEBUG fix speaker turn was called")
     return "".join(conv_lines)

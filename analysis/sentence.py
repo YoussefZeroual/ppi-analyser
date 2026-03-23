@@ -312,6 +312,7 @@ def _run_parallel(
             zip(resolved_models, resolved_submodels, system_prompts, prompts)
         ):
             prompt_type = get_prompt_type(system_prompt)
+            print("DEBUG prompt type",prompt_type)
             if properties and prompt_type not in properties:
                 continue
             future = executor.submit(
@@ -361,7 +362,7 @@ def _call_model(
             conversation=conversation,
         )
     prompt_type = get_prompt_type(system_prompt)
-
+    print("DEBUG prompt type",prompt_type)
     if (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
     	return ignore_response
     # Check analysis cache

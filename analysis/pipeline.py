@@ -74,8 +74,11 @@ def _chunk(lst: list, size: int) -> list[list]:
 def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState) -> PreprocessedSentence:
     match config.mode:
         case AnalysisMode.ORAL:
-            cleaned = clean_conv(raw, config.mode)
+            cleaned = fix_speaker_turns(raw)
+            cleaned = clean_conv(cleaned, config.mode)
             cleaned = cleaned.replace('\\n', ' ')
+            cleaned = cleaned.replace('[', '\n[')[1:]
+            state.conversation.append(cleaned)
         case AnalysisMode.ECRIT_IA:
             if not config.speaker_detection_model:
                 raise ValueError("speaker_detection_model must be set for ECRIT_IA mode")
