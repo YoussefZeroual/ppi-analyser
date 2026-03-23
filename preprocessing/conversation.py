@@ -57,6 +57,9 @@ def clean_conv(conv: str, mode: str) -> str:
 
 
 def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
+    # Fix missing opening bracket e.g. VE2] -> [VE2]
+    conv = re.sub(r'(?<!\[)([A-Z]{2,3}\d+\])', r'[\1', conv)
+
     conv = conv.replace("[", "\n[")
     conv_lines = conv.split("\n")
 
@@ -71,7 +74,6 @@ def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
                 break
             if speaker:
                 previous = speaker
-
     if already_cleaned:
         return conv
 
@@ -87,5 +89,23 @@ def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
                     conv_lines[i] = line.replace(current_speaker.strip(), '').strip()
             if current_speaker:
                 previous_speaker = current_speaker
-    print("".join(conv_lines))
-    return "".join(conv_lines)
+
+    # Join continuation lines (starting with /) back onto their speaker line
+    result_lines = []
+    for line in conv_lines:
+        if line.startswith('/'):
+            if result_lines:
+                result_lines[-1] += ' ' + line
+            else:
+                result_lines.append(line)
+        elif line:
+            result_lines.append(line)
+
+    result = "\n".join(result_lines)
+
+    print(conv)
+    print("---")
+    print(result)
+    input("zebbi")
+
+    return result
