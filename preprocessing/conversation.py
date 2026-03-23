@@ -103,9 +103,4 @@ def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
 
     result = "\n".join(result_lines)
 
-    print(conv)
-    print("---")
-    print(result)
-    input("zebbi")
-
     return result
