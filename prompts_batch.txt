@@ -475,19 +475,65 @@ Pour chaque conversation analysée, produis une entrée structurée avec :
 - **Cooccurrents** : liste des cooccurrents avec leur type et position, ou "Aucun cooccurrent"
 - **Justification** : [brève, mentionnant les cooccurrents et leur position]
 
-**Exemple :**
-```json
-[
-  {
-    "Propriété": "marqueurs du discours : bon(a), mais(a)",
-    "Justification": "Dans le tour de parole, 'mais' et 'bon' précèdent l'expression."
-  },
-  {
-    "Propriété": "Aucun cooccurrent",
-    "Justification": "L'expression est isolée dans le tour de parole."
-  }
-]
-```
+## EXEMPLES DE RÉPONSES
+
+### Exemple 1 (avec cooccurrents) :
+**Entrée** : Locuteur 1, tour de parole = "mais <PPI>c'est pas vrai</PPI> Jean!"
+
+**Sortie** :
+
+{{
+"Propriété": "Marqueurs de discours : mais(a), Appellatifs : (p)",
+"Justification": "Le marqueur de discours *mais* se trouve immédiatement avant la PPI. L'appellatif *Jean* se trouve immédiatement après la PPI. Tour de parole complet : [locuteur 1] <MD>mais</MD> <PPI>c'est pas vrai</PPI> <APP>Jean!</APP>"
+}}
+
+### Exemple 2 (avec cooccurrents) :
+**Entrée** : Locuteur 1, tour de parole = "Monsieur Bernard <PPI>c'est pas vrai</PPI>!"
+
+**Sortie** :
+
+{{
+"Propriété": "Appellatifs : (a)",
+"Justification": "L'appellatif *Monsieur Bernard* se trouve immédiatement avant la PPI. Tour de parole complet : [locuteur 1] <APP>Monsieur Bernard</APP> <PPI>c'est pas vrai</PPI>!"
+}}
+
+### Exemple 3 (sans cooccurrent) :
+**Entrée** : Locuteur 2, tour de parole = "je pense que c'est pas vrai", PPI = "c'est pas vrai"
+
+**Sortie** :
+
+{{
+"Propriété": "Aucun cooccurrent",
+"Justification": "Aucun marqueur de discours ou appellatif n'a été détecté à proximité de la PPI dans le tour de parole de [locuteur 2]"
+}}
+
+### Exemple 4 (pour illustrer la règle CRITIQUE) :
+**Entrée** : Locuteur 3, tour de parole = "<PPI>mais comment ça se fait</PPI>", PPI = "mais comment ça se fait"
+
+**Sortie** :
+
+{{
+"Propriété": "Aucun cooccurrent",
+"Justification": "Bien que 'mais' soit un marqueur de discours typique, il se trouve À L'INTÉRIEUR des balises <PPI></PPI> et fait donc partie intégrante de la PPI. Aucun cooccurrent n'est détecté à l'extérieur de la PPI dans le tour de parole de [locuteur 3]"
+}}
+
+### Exemple 5 (marqueur éloigné — NON cooccurrent) :
+**Entrée** : Tour de parole = "Vous avez vu... commença-t-elle, mais ils dormaient tous. <PPI>Comment cela se fait-il</PPI>, selon vous ?"
+**Sortie** :
+{
+"Propriété": "Aucun cooccurrent",
+"Justification": "Le mot 'mais' apparaît bien dans le même tour de parole mais il est séparé de la PPI par plusieurs propositions complètes et ne porte pas sur la PPI. Seul 'selon vous' est adjacent à la PPI mais c'est une incise et non un marqueur de discours de la liste. Aucun cooccurrent détecté."
+}
+
+### Exemple 6 (marqueur du discours construction) :
+**Entrée** : Tour de parole = "[Léna] ben écoute <PPI>à bientôt</PPI>, au revoir"
+**Sortie** :
+{
+"Propriété": "Marqueur du discours:ben écoute(a), au revoir(p) ",
+"Justification": "Le marqueur du discours 'ben écoute' est immédiatement antéposé à la PPI, la construction prépositionnelle 'au revoir' est immédiatement postposée à la PPI"
+}
+
+
 
 ### Critères d'analyse
 

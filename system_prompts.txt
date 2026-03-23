@@ -423,6 +423,15 @@ Un cooccurrent doit être **immédiatement adjacent** à la PPI ou séparé d'el
 "Justification": "Le mot 'mais' apparaît bien dans le même tour de parole mais il est séparé de la PPI par plusieurs propositions complètes et ne porte pas sur la PPI. Seul 'selon vous' est adjacent à la PPI mais c'est une incise et non un marqueur de discours de la liste. Aucun cooccurrent détecté."
 }
 
+### Exemple 6 (marqueur du discours construction) :
+**Entrée** : Tour de parole = "[Léna] ben écoute <PPI>à bientôt</PPI>, au revoir"
+**Sortie** :
+{
+"Propriété": "Marqueur du discours:ben écoute(a), au revoir(p) ",
+"Justification": "Le marqueur du discours 'ben écoute' est immédiatement antéposé à la PPI, la construction prépositionnelle 'au revoir' est immédiatement postposée à la PPI"
+}
+
+
 
 ## INSTRUCTIONS IMPORTANTES
 1. **Vérifiez TOUJOURS la position des balises** : Un élément à l'intérieur de <PPI></PPI> n'est JAMAIS un cooccurrent
