@@ -23,7 +23,7 @@ def _is_mistral_batch(config: PipelineConfig) -> bool:
 
 
 class PPIAnalyser:
-    def __init__(self, tokenization_mode: str = "simple", stanza_url: str = "http://localhost:5000"):
+    def __init__(self, tokenization_mode: str = "nlp", stanza_url: str = "http://localhost:5000"):
         from datetime import datetime
         self.state = SessionState()
         self.state.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
