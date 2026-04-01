@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def get_pos(conv: str, mode: str, tokenization_mode: str = "simple", nlp=None) -> tuple | None:
+def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> tuple | None:
     from ppi_analyser.preprocessing.speakers import get_loc_full_turn, detect_speakers
     full_turn, sent = get_loc_full_turn(conv, mode)
     loc, interloc = detect_speakers(conv, mode)
