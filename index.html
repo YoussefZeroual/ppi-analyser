@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Analyse automatique des PPIs</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Themes ── */
+:root{
+  --bg:#0f1117;--surface:#181b24;--surface2:#1e2130;--border:#252833;
+  --accent:#5b8dee;--accent2:#3ecf8e;--danger:#ef4444;--warn:#f59e0b;
+  --text:#e2e8f0;--muted:#64748b;--radius:8px;
+  --mono:'JetBrains Mono','Fira Mono',monospace;
+  --shadow:0 2px 12px rgba(0,0,0,.35);
+}
+[data-theme="light"]{
+  --bg:#f0f2f7;--surface:#ffffff;--surface2:#f7f8fc;--border:#dde1ea;
+  --accent:#2563eb;--accent2:#059669;--danger:#dc2626;--warn:#d97706;
+  --text:#1e2433;--muted:#6b7280;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+}
+
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.6;min-height:100vh;transition:background .2s,color .2s}
+
+/* ── Layout ── */
+.app{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── Header ── */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px}
+.header-top{display:flex;align-items:center;gap:14px;padding:10px 0 8px}
+.logos{display:flex;align-items:center;gap:10px}
+.logos img{height:32px;object-fit:contain;filter:none}
+[data-theme="light"] .logos img{filter:none}
+.header-divider{width:1px;height:28px;background:var(--border);margin:0 4px}
+.header-titles{flex:1;min-width:0}
+.header-titles h1{font-size:13px;font-weight:700;line-height:1.3;letter-spacing:.01em}
+.header-titles p{font-size:11px;color:var(--muted);margin-top:1px}
+.header-actions{display:flex;align-items:center;gap:8px}
+.theme-btn{
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+  background:var(--surface2);cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .15s,background .15s;
+}
+.theme-btn:hover{border-color:var(--accent);background:var(--bg)}
+.server-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 5px var(--accent2)}
+.server-status{font-size:11px;color:var(--muted)}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);background:var(--surface)}
+.tab{
+  padding:9px 16px;font-size:13px;cursor:pointer;
+  border:none;background:none;color:var(--muted);
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .15s,border-color .15s;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-badge{
+  display:inline-block;background:var(--accent);color:#fff;
+  font-size:10px;padding:1px 5px;border-radius:10px;margin-left:5px;
+}
+
+.content{flex:1;padding:24px;max-width:880px;margin:0 auto;width:100%}
+
+/* ── Card ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
+
+/* ── Form ── */
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.field input,.field select{
+  width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text);font-size:13px;font-family:inherit;
+  transition:border-color .15s;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.field input[type=number]{width:110px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row .field{flex:1;min-width:120px}
+.check-row{display:flex;align-items:center;gap:7px}
+.check-row label{margin:0;cursor:pointer;color:var(--text);font-size:13px}
+.check-row input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px}
+
+/* ── Mode toggle Simple/Avancé ── */
+.mode-toggle{display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.mode-btn{padding:6px 18px;font-size:12px;cursor:pointer;background:none;border:none;color:var(--muted);transition:background .15s,color .15s}
+.mode-btn.active{background:var(--accent);color:#fff}
+
+/* ── Drop zone ── */
+.dropzone{
+  border:2px dashed var(--border);border-radius:var(--radius);
+  padding:24px 20px;text-align:center;cursor:pointer;position:relative;
+  transition:border-color .2s,background .2s;
+}
+.dropzone:hover,.dropzone.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dropzone.has-file{border-style:solid;border-color:var(--accent2)}
+.dz-icon{font-size:26px;margin-bottom:6px}
+.dz-label{font-size:13px;color:var(--muted)}
+.dropzone.has-file .dz-label{color:var(--accent2);font-weight:500}
+.dz-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── Buttons ── */
+.btn{padding:8px 20px;border-radius:var(--radius);border:none;cursor:pointer;font-size:13px;font-weight:500;transition:opacity .15s,transform .1s}
+.btn:hover{opacity:.85}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--text)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ── Jobs list ── */
+.jobs-list{display:flex;flex-direction:column;gap:8px}
+.job-row{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;
+  display:grid;grid-template-columns:auto 1fr auto;
+  align-items:start;gap:14px;transition:border-color .15s;
+}
+.job-row:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.job-body{min-width:0}
+.job-expr{font-weight:600;font-size:13px;margin-bottom:2px}
+.job-meta{font-size:11px;color:var(--muted)}
+.job-meta span{margin-right:10px}
+.job-progress-wrap{margin-top:8px}
+.job-progress-bar{
+  height:3px;background:var(--border);border-radius:2px;overflow:hidden;
+}
+.job-progress-fill{
+  height:100%;background:var(--accent);border-radius:2px;
+  transition:width .5s ease;
+}
+.job-progress-fill.done{background:var(--accent2)}
+.job-progress-fill.error{background:var(--danger)}
+.job-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ── Status pill ── */
+.status-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;
+  padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:1px;
+}
+.status-pill.running{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
+.status-pill.done{background:color-mix(in srgb,var(--accent2) 15%,transparent);color:var(--accent2)}
+.status-pill.error{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+.pulse{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── Logs panel ── */
+.logs-panel{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);
+  margin-top:8px;overflow:hidden;
+}
+.logs-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 12px;background:var(--surface2);border-bottom:1px solid var(--border);
+  font-size:11px;color:var(--muted);cursor:pointer;user-select:none;
+}
+.logs-header:hover{color:var(--text)}
+.logs-body{
+  font-family:var(--mono);font-size:11px;line-height:1.7;
+  padding:10px 12px;max-height:240px;overflow-y:auto;
+  color:color-mix(in srgb,var(--text) 80%,transparent);
+}
+.log-line{white-space:pre-wrap;word-break:break-all}
+.log-line.warn{color:var(--warn)}
+.log-line.error{color:var(--danger)}
+.logs-empty{color:var(--muted);font-style:italic}
+
+/* ── Results ── */
+.results-back{font-size:12px;color:var(--muted);cursor:pointer;margin-bottom:14px;display:inline-flex;align-items:center;gap:4px}
+.results-back:hover{color:var(--accent)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;flex:1;min-width:110px}
+.stat .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stat .value{font-size:21px;font-weight:700;font-family:var(--mono);margin-top:3px}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.file-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-decoration:none;color:var(--text);display:block;transition:border-color .15s}
+.file-card:hover{border-color:var(--accent)}
+.fname{font-size:11px;font-family:var(--mono);word-break:break-all}
+.fmeta{font-size:11px;color:var(--muted);margin-top:3px}
+.ftype{display:inline-block;margin-top:5px;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:3px}
+.ftype.xlsx{background:color-mix(in srgb,var(--accent2) 15%,transparent);color:var(--accent2)}
+.ftype.pdf{background:color-mix(in srgb,#f97316 15%,transparent);color:#f97316}
+.ftype.json{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
+.ftype.other{background:var(--border);color:var(--muted)}
+.error-box{background:color-mix(in srgb,var(--danger) 8%,transparent);border:1px solid color-mix(in srgb,var(--danger) 30%,transparent);border-radius:var(--radius);padding:14px;font-size:11px;font-family:var(--mono);color:color-mix(in srgb,var(--danger) 80%,var(--text));white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto}
+
+/* ── Empty ── */
+.empty{text-align:center;padding:60px 0;color:var(--muted)}
+.empty .icon{font-size:36px;margin-bottom:10px}
+
+.err-inline{color:var(--danger);font-size:12px;margin-bottom:10px}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;font-size:13px;box-shadow:var(--shadow);animation:slideUp .2s ease;z-index:999}
+@keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+const API = "http://localhost:8000";
+
+const LIDILEM_LOGO = "https://lidilem.univ-grenoble-alpes.fr/sites/default/files/theme/logo-lidilem_0.svg";
+const UGA_LOGO     = "https://lidilem.univ-grenoble-alpes.fr/sites/default/files/2023-11/logo-uga.png";
+// PREFAB has no standalone logo — we render a styled text badge instead
+
+// ── utils ─────────────────────────────────────────────────────────────────
+
+const LS_KEY = "ppi_settings";
+function loadSettings() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; }
+}
+function saveSettings(s) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch {}
+}
+
+function timeAgo(iso) {
+  if (!iso) return "—";
+  const d = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (d < 60) return `${d}s`; if (d < 3600) return `${Math.floor(d/60)}m`; return `${Math.floor(d/3600)}h`;
+}
+function duration(a, b) {
+  if (!a || !b) return null;
+  const d = Math.round((new Date(b) - new Date(a)) / 1000);
+  return d < 60 ? `${d}s` : `${Math.floor(d/60)}m ${d%60}s`;
+}
+
+// ── StatusPill ────────────────────────────────────────────────────────────
+
+function StatusPill({ status }) {
+  return (
+    <span className={`status-pill ${status}`}>
+      {status === "running" && <span className="pulse">●</span>}
+      {status === "done" && "✓"}{status === "error" && "✗"}
+      {status}
+    </span>
+  );
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+
+function Toast({ msg, onDone }) {
+  useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, []);
+  return <div className="toast">{msg}</div>;
+}
+
+// ── PrefabBadge (text logo) ───────────────────────────────────────────────
+
+function PrefabBadge() {
+  return (
+    <span style={{
+      fontFamily:"var(--mono)", fontSize:13, fontWeight:700,
+      color:"var(--accent)", letterSpacing:".03em",
+      padding:"3px 8px", border:"1px solid var(--accent)",
+      borderRadius:4, background:"color-mix(in srgb,var(--accent) 10%,transparent)",
+      lineHeight:1,
+    }}>
+      PRE<span style={{color:"var(--text)"}}>FAB</span>
+    </span>
+  );
+}
+
+// ── FileDropzone ──────────────────────────────────────────────────────────
+
+function FileDropzone({ file, onChange }) {
+  const [over, setOver] = useState(false);
+  return (
+    <div className={`dropzone ${over?"over":""} ${file?"has-file":""}`}
+      onDragOver={e=>{e.preventDefault();setOver(true)}}
+      onDragLeave={()=>setOver(false)}
+      onDrop={e=>{e.preventDefault();setOver(false);const f=e.dataTransfer.files[0];if(f)onChange(f)}}>
+      <input type="file" accept=".xlsx" onChange={e=>e.target.files[0]&&onChange(e.target.files[0])}/>
+      <div className="dz-icon">{file?"📊":"📂"}</div>
+      <div className="dz-label">{file?file.name:"Glissez un fichier .xlsx ou cliquez pour parcourir"}</div>
+      {!file&&<div className="dz-sub">Concordances au format Excel (left / node / right)</div>}
+    </div>
+  );
+}
+
+// ── AnalyseForm ───────────────────────────────────────────────────────────
+
+const DEFAULTS = { model:"deepseek", mode:"oral", start_sent:0, max_sentences:"all", batch_size:5, n_threads:8, use_analysis_cache:true };
+
+function AnalyseForm({ onJobStarted }) {
+  const [file, setFile]         = useState(null);
+  const [expression, setExpr]   = useState("");
+  const [advanced, setAdvanced] = useState(false);
+  const [settings, setSettings] = useState(() => ({ ...DEFAULTS, ...loadSettings() }));
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
+
+  const set = (k, v) => {
+    const next = { ...settings, [k]: v };
+    setSettings(next);
+    saveSettings(next);
+  };
+
+  async function submit() {
+    if (!file)            { setError("Veuillez sélectionner un fichier .xlsx."); return; }
+    if (!expression.trim()){ setError("Veuillez saisir une expression cible."); return; }
+    setLoading(true); setError(null);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("expression", expression.trim());
+    const s = advanced ? settings : DEFAULTS;
+    Object.entries(s).forEach(([k,v]) => fd.append(k, v));
+    try {
+      const res = await fetch(`${API}/analyse`, { method:"POST", body:fd });
+      if (!res.ok) { const e = await res.json().catch(()=>({detail:res.statusText})); throw new Error(e.detail); }
+      const { job_id } = await res.json();
+      onJobStarted(job_id, expression.trim());
+    } catch(e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div className="card">
+      <div className="card-title">Nouvelle analyse</div>
+      <div className="mode-toggle">
+        <button className={`mode-btn ${!advanced?"active":""}`} onClick={()=>setAdvanced(false)}>Simple</button>
+        <button className={`mode-btn ${advanced?"active":""}`} onClick={()=>setAdvanced(true)}>Avancé</button>
+      </div>
+
+      <div className="field">
+        <label>Fichier de concordances</label>
+        <FileDropzone file={file} onChange={setFile}/>
+      </div>
+
+      <div className="field">
+        <label>Expression cible</label>
+        <input placeholder="ex. tu veux que je te dise"
+          value={expression} onChange={e=>setExpr(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&submit()}/>
+      </div>
+
+      {advanced && (
+        <div>
+          <div className="row">
+            <div className="field">
+              <label>Modèle</label>
+              <select value={settings.model} onChange={e=>set("model",e.target.value)}>
+                <option value="deepseek">DeepSeek</option>
+                <option value="mistral">Mistral (batch async)</option>
+                <option value="mistral_medium">Mistral Medium</option>
+                <option value="gemma">Gemma 3:27b (Ollama)</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>Mode</label>
+              <select value={settings.mode} onChange={e=>set("mode",e.target.value)}>
+                <option value="oral">Oral</option>
+                <option value="écrit">Écrit</option>
+                <option value="écrit_ia">Écrit IA</option>
+                <option value="écrit_test">Écrit test</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>Batch size</label>
+              <input type="number" min="1" max="50" value={settings.batch_size}
+                onChange={e=>set("batch_size",e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>Threads</label>
+              <input type="number" min="1" max="32" value={settings.n_threads}
+                onChange={e=>set("n_threads",e.target.value)}/>
+            </div>
+          </div>
+          <div className="row">
+            <div className="field">
+              <label>Index de début</label>
+              <input type="number" min="0" value={settings.start_sent}
+                onChange={e=>set("start_sent",e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>Phrases max ("all" = tout)</label>
+              <input value={settings.max_sentences} placeholder="all"
+                onChange={e=>set("max_sentences",e.target.value)}/>
+            </div>
+            <div className="field" style={{display:"flex",alignItems:"flex-end",paddingBottom:1}}>
+              <div className="check-row">
+                <input type="checkbox" id="cache" checked={settings.use_analysis_cache}
+                  onChange={e=>set("use_analysis_cache",e.target.checked)}/>
+                <label htmlFor="cache">Cache d'analyse</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && <div className="err-inline">{error}</div>}
+      <button className="btn btn-primary" onClick={submit} disabled={loading} style={{marginTop:4}}>
+        {loading ? "Envoi en cours…" : "Lancer l'analyse →"}
+      </button>
+    </div>
+  );
+}
+
+// ── LogPanel ──────────────────────────────────────────────────────────────
+
+function LogPanel({ jobId, status }) {
+  const [open, setOpen]   = useState(false);
+  const [lines, setLines] = useState([]);
+  const [since, setSince] = useState(0);
+  const bodyRef           = useRef(null);
+  const intervalRef       = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const poll = () => {
+      fetch(`${API}/jobs/${jobId}/logs?since=${since}`)
+        .then(r=>r.json())
+        .then(d => {
+          if (d.lines.length > 0) {
+            setLines(prev => [...prev, ...d.lines]);
+            setSince(d.total);
+          }
+        }).catch(()=>{});
+    };
+    poll();
+    intervalRef.current = setInterval(poll, 1500);
+    return () => clearInterval(intervalRef.current);
+  }, [open, since, jobId]);
+
+  // Auto-scroll
+  useEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+  }, [lines]);
+
+  // Stop polling when job done/error
+  useEffect(() => {
+    if (status !== "running") clearInterval(intervalRef.current);
+  }, [status]);
+
+  function lineClass(l) {
+    if (l.includes("[WARNING]") || l.includes("WARNING")) return "log-line warn";
+    if (l.includes("[ERROR]") || l.includes("ERROR")) return "log-line error";
+    return "log-line";
+  }
+
+  return (
+    <div className="logs-panel">
+      <div className="logs-header" onClick={()=>setOpen(o=>!o)}>
+        <span>📋 Logs {lines.length > 0 && `(${lines.length} lignes)`}</span>
+        <span>{open ? "▲ masquer" : "▼ afficher"}</span>
+      </div>
+      {open && (
+        <div className="logs-body" ref={bodyRef}>
+          {lines.length === 0
+            ? <span className="logs-empty">Aucun log pour l'instant…</span>
+            : lines.map((l,i) => <div key={i} className={lineClass(l)}>{l}</div>)
+          }
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── JobRow ────────────────────────────────────────────────────────────────
+
+function JobRow({ job, onView, onDelete }) {
+  const dur = duration(job.created_at, job.finished_at);
+  const pct = job.progress ?? 0;
+  return (
+    <div className="job-row">
+      <StatusPill status={job.status}/>
+
+      <div className="job-body">
+        <div className="job-expr">{job.params.expression}</div>
+        <div className="job-meta">
+          <span title="fichier source">{job.params.original_file}</span>
+          <span>{job.params.model} · {job.params.mode}</span>
+          {job.n_sentences > 0 && <span>{job.n_sentences} phrases</span>}
+          {dur && <span>{dur}</span>}
+          <span>{timeAgo(job.created_at)} ago</span>
+        </div>
+
+        {/* Progress bar */}
+        <div className="job-progress-wrap">
+          <div className="job-progress-bar">
+            <div className={`job-progress-fill ${job.status}`}
+              style={{width:`${pct}%`}}/>
+          </div>
+        </div>
+
+        {/* Logs */}
+        <LogPanel jobId={job.id} status={job.status}/>
+      </div>
+
+      <div className="job-actions">
+        {(job.status==="done"||job.status==="error") && (
+          <button className="btn btn-ghost" style={{fontSize:12,padding:"5px 12px"}}
+            onClick={()=>onView(job)}>
+            {job.status==="done"?"Résultats":"Erreur"}
+          </button>
+        )}
+        <button className="btn btn-ghost" style={{fontSize:12,padding:"5px 10px",color:"var(--muted)"}}
+          onClick={()=>onDelete(job.id)}>✕</button>
+      </div>
+    </div>
+  );
+}
+
+// ── ResultsPanel ──────────────────────────────────────────────────────────
+
+function ResultsPanel({ job, onBack }) {
+  const [files, setFiles] = useState(null);
+
+  useEffect(() => {
+    if (job.status !== "done") return;
+    fetch(`${API}/results/${job.id}`).then(r=>r.json()).then(d=>setFiles(d.files)).catch(()=>setFiles([]));
+  }, [job.id, job.status]);
+
+  function typeClass(s) {
+    if (s===".xlsx") return "xlsx"; if (s===".pdf") return "pdf";
+    if (s===".json") return "json"; return "other";
+  }
+
+  return (
+    <div>
+      <div className="results-back" onClick={onBack}>← Retour aux jobs</div>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+        <span style={{fontWeight:700,fontSize:15}}>{job.params.expression}</span>
+        <StatusPill status={job.status}/>
+      </div>
+
+      {job.status==="done" && (
+        <div className="stats">
+          {[["Phrases",job.n_sentences],["Tokens in",job.tokens_in.toLocaleString()],
+            ["Tokens out",job.tokens_out.toLocaleString()],["Total",(job.tokens_in+job.tokens_out).toLocaleString()]
+          ].map(([l,v])=>(
+            <div className="stat" key={l}><div className="label">{l}</div><div className="value">{v}</div></div>
+          ))}
+        </div>
+      )}
+
+      {job.status==="error" && (
+        <div className="card" style={{marginBottom:16}}>
+          <div className="card-title">Erreur</div>
+          <div className="error-box">{job.error}</div>
+        </div>
+      )}
+
+      {job.status==="done" && (
+        <div className="card">
+          <div className="card-title">Fichiers produits</div>
+          {!files && <p style={{color:"var(--muted)",fontSize:12}}>Chargement…</p>}
+          {files?.length===0 && <p style={{color:"var(--muted)",fontSize:12}}>Aucun fichier.</p>}
+          {files?.length>0 && (
+            <>
+              <div className="file-grid">
+                {files.map(f=>(
+                  <a key={f.path} className="file-card"
+                    href={`${API}/download/${job.id}/${encodeURIComponent(f.name)}`} download={f.name}>
+                    <div className="fname">{f.name}</div>
+                    <div className="fmeta">{f.size_kb} KB</div>
+                    <span className={`ftype ${typeClass(f.suffix)}`}>{f.suffix.replace(".","")}</span>
+                  </a>
+                ))}
+              </div>
+              <p style={{fontSize:11,color:"var(--muted)",marginTop:12}}>📁 {job.output_dir}</p>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────
+
+function App() {
+  const [theme, setTheme]   = useState(() => localStorage.getItem("ppi_theme") || "dark");
+  const [tab, setTab]       = useState("launch");
+  const [jobs, setJobs]     = useState([]);
+  const [selected, setSel]  = useState(null);
+  const [toast, setToast]   = useState(null);
+  const [serverOk, setOk]   = useState(null);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("ppi_theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
+    fetch(`${API}/health`).then(()=>setOk(true)).catch(()=>setOk(false));
+  }, []);
+
+  const fetchJobs = useCallback(() => {
+    fetch(`${API}/jobs`).then(r=>r.json()).then(setJobs).catch(()=>{});
+  }, []);
+
+  useEffect(() => {
+    fetchJobs();
+    const id = setInterval(fetchJobs, 3000);
+    return () => clearInterval(id);
+  }, [fetchJobs]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const up = jobs.find(j=>j.id===selected.id);
+    if (up) setSel(up);
+  }, [jobs]);
+
+  function handleJobStarted(job_id, expr) {
+    setToast(`Job lancé : « ${expr} »`);
+    setTab("jobs");
+    fetchJobs();
+  }
+
+  async function handleDelete(id) {
+    await fetch(`${API}/jobs/${id}`,{method:"DELETE"}).catch(()=>{});
+    fetchJobs();
+    if (selected?.id===id) setSel(null);
+  }
+
+  const running = jobs.filter(j=>j.status==="running").length;
+
+  return (
+    <div className="app">
+      <header>
+        <div className="header-top">
+          {/* Logos */}
+          <div className="logos">
+            <img src={UGA_LOGO} alt="UGA" title="Université Grenoble Alpes"
+              onError={e=>e.target.style.display="none"}/>
+            <div className="header-divider"/>
+            <img src={LIDILEM_LOGO} alt="LIDILEM" title="LIDILEM"
+              onError={e=>e.target.style.display="none"}/>
+            <div className="header-divider"/>
+            <PrefabBadge/>
+          </div>
+
+          {/* Title */}
+          <div className="header-titles">
+            <h1>Analyse automatique des Phrases préfabriquées des interactions</h1>
+            <p>Projet ANR PREFAB · LIDILEM, Université Grenoble Alpes</p>
+          </div>
+
+          {/* Actions */}
+          <div className="header-actions">
+            <button className="theme-btn" title="Basculer le thème"
+              onClick={()=>setTheme(t=>t==="dark"?"light":"dark")}>
+              {theme==="dark"?"☀️":"🌙"}
+            </button>
+            {serverOk===true  && <><div className="server-dot"/><span className="server-status">serveur actif</span></>}
+            {serverOk===false && <span className="server-status" style={{color:"var(--danger)"}}>serveur inaccessible</span>}
+          </div>
+        </div>
+      </header>
+
+      <div className="tabs">
+        <button className={`tab ${tab==="launch"?"active":""}`}
+          onClick={()=>{setTab("launch");setSel(null)}}>Lancer</button>
+        <button className={`tab ${tab==="jobs"?"active":""}`}
+          onClick={()=>{setTab("jobs");setSel(null)}}>
+          Jobs {running>0&&<span className="tab-badge">{running}</span>}
+        </button>
+      </div>
+
+      <div className="content">
+        {tab==="launch" && <AnalyseForm onJobStarted={handleJobStarted}/>}
+
+        {tab==="jobs" && !selected && (
+          jobs.length===0
+            ? <div className="empty"><div className="icon">📭</div><div>Aucun job pour l'instant.</div></div>
+            : <div className="jobs-list">
+                {jobs.map(j=><JobRow key={j.id} job={j} onView={setSel} onDelete={handleDelete}/>)}
+              </div>
+        )}
+
+        {tab==="jobs" && selected && (
+          <ResultsPanel job={selected} onBack={()=>setSel(null)}/>
+        )}
+      </div>
+
+      {toast && <Toast msg={toast} onDone={()=>setToast(null)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

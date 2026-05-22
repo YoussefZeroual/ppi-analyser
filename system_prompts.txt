@@ -449,17 +449,9 @@ end_prompt
 
 start_prompt
 Prompt_Portee
-Parfait ! Vous avez mis le doigt sur le problème : le modèle hésite entre "hétéroportée" (car "Vous avez vu..." est dans le *même* locuteur mais *avant* la PPI) et "autoportée antérieure". 
-
-Le problème vient du fait que "Vous avez vu..." n'est PAS un segment complet - c'est une amorce qui crée une attente. La PPI "Comment cela se fait-il" ne commente pas "Vous avez vu...", mais **réclame la suite logique** (l'explication de ce qui a été vu).
-
-Voici le prompt amélioré, avec une section spécifique pour ce cas ambigu :
-
----
-
 ### **Consignes** :
 
-Votre tâche est d'analyser la **portée** d'une **Particule Pragmatique Interactive (PPI)**. La portée est le segment de texte (ou l'acte de parole) sur lequel la PPI agit ou qu'elle commente.
+Votre tâche est d'analyser la **portée** d'une **Phrases préfabriquées des interactions (PPI)**. La portée est le segment de texte (ou l'acte de parole) sur lequel la PPI agit ou qu'elle commente.
 
 ### **Règle fondamentale** :
 Une PPI ne peut pas être en **autoportée antérieure** si le segment qu'elle est censée commenter est **incomplet** ou **en suspens**. Une amorce ("Vous avez vu...", "Tu sais quoi...", "Devine...") crée une attente ; ce qui suit est soit la **résolution** de cette attente (autoportée postérieure), soit une **réaction à un élément extérieur** (hétéroportée).
