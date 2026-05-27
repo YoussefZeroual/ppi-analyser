@@ -180,7 +180,6 @@ def _handle_no_model_batch(
                 tokenization_mode=state.tokenization_mode,
                 nlp=state.nlp,
             )
-            
             if result:
                 
                 val = json.dumps({"Propriété": result[0], "Justification": result[1]}, ensure_ascii=False)
