@@ -120,7 +120,6 @@ def detect_segments(text: str,nlp) -> str:
 
 
 def get_descendants(head_id, words):
-    """ دالة كترجع كاع الـ IDs ديال الكلمات اللي تابعة لواحد الـ head """
     descendants = set()
     for w in words:
         if w.head == head_id:

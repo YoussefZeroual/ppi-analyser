@@ -63,6 +63,7 @@ MODELS_MAPPING = {
     "mistral":        "mistral_batch_mistral-medium-latest",
     "gemma":          "ollama_gemma3:27b",
     "mistral_medium": "mistral_mistral-medium-2508",
+    "mistral_large":"mistral_mistral-large-latest"
 }
 MODES = ["oral", "écrit", "écrit_ia", "écrit_test"]
 
@@ -110,7 +111,7 @@ def _run_job(job_id, sentence_file, expression, model, mode,
         batch_mode=True, batch_size=batch_size, n_threads=n_threads,
         use_analysis_cache=use_analysis_cache,
         analysis_cache_path=str(Path.home() / ".ppi_analyser" / "analysis_cache.json"),
-        speaker_detection_model="deepseek_deepseek",
+        speaker_detection_model="mistral_mistral-large-latest",
     )
     try:
         with _jobs_lock:
