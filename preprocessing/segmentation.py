@@ -37,7 +37,7 @@ Tu es un expert en analyse linguistique et en traitement automatique du langage 
 - Ne supprime **aucun** élément du texte.
 - N'ajoute que les balises `<dialogue>` et `<narration>` et, si nécessaire, les étiquettes de locuteurs entre crochets `[ ]`.
 - Conserve intégralement la ponctuation, la mise en forme et les éventuelles balises `<PPI> </PPI>` (ne pas les déplacer ni les supprimer).
-
+- N'ajoute pas des balises <PPI> qui n'existaient pas dans le texte d'entrée.
 ### 2. Délimitation des segments
 - Encadre chaque segment de dialogue par `<dialogue> </dialogue>`.
 - Encadre chaque segment de narration par `<narration> </narration>`.
@@ -113,7 +113,7 @@ Tu es un expert en analyse linguistique et en traitement automatique du langage 
 - Ne supprime **aucun** élément du texte.
 - N'ajoute que les balises `<dialogue>` et `<narration>` et, si nécessaire, les étiquettes de locuteurs entre crochets `[ ]`.
 - Conserve intégralement la ponctuation, la mise en forme et les éventuelles balises `<PPI> </PPI>` (ne pas les déplacer ni les supprimer).
-
+- N'ajoute pas des balises <PPI> qui n'existaient pas dans le texte d'entrée.
 ### 2. Délimitation des segments
 - Encadre chaque segment de dialogue par `<dialogue> </dialogue>`.
 - Encadre chaque segment de narration par `<narration> </narration>`.
