@@ -175,7 +175,21 @@ Avant de produire la réponse, contrôle :
 - Texte brut uniquement, sans markdown ni formatage additionnel.
 - Seuls ajouts autorisés : balises `<dialogue>` `</dialogue>` `<narration>` `</narration>` et étiquettes `[Locuteur X]`.
 
+### exemples d'erreurs fréquentes:
 
+1. parties dialogales marquées comme narration:
+
+entrée:
+
+"-À la bonne heure, dit Darnas avec une voix fluette.  Des nouvelles des flics ?  Marc n'aurait pas pensé qu'un cou aussi épais pouvait produire un timbre aussi léger.  -Ça discute encore avec le maire, dit Louis. ... 
+"
+sortie:
+"
+ "<dialogue>[Locuteur 1] À la bonne heure,</dialogue>\n<narration>dit Darnas avec une voix fluette. Des nouvelles des flics ? Marc n'aurait pas pensé qu'un cou aussi épais pouvait produire un timbre aussi léger.</narration>\n<dialogue>[Locuteur 2] Ça discute encore avec le maire,</dialogue>\n<narration>dit Louis.</narration>\..."
+"
+
+problème: le segment "Des nouvelles des flics ?" n' a pas été marqué comme dialogue
+solution: marque ce segment comme dialogue : <dialogue>Des nouvelles des flics ? </dialogue>
 """
 
     prompt = (
@@ -382,8 +396,21 @@ Traite **tous** les textes et retourne **une seule réponse**, structurée ainsi
 > ⚠️ `===SEPARATOR===` doit apparaître **entre** les blocs, jamais avant le premier ni après le dernier.
 
 **NE DONNE AUCUNE EXPLICATION SUPPLÉMENTAIRE.**
+### exemples d'erreurs fréquentes:
 
+1. parties dialogales marquées comme narration:
 
+entrée:
+
+"-À la bonne heure, dit Darnas avec une voix fluette.  Des nouvelles des flics ?  Marc n'aurait pas pensé qu'un cou aussi épais pouvait produire un timbre aussi léger.  -Ça discute encore avec le maire, dit Louis. ... 
+"
+sortie:
+"
+ "<dialogue>[Locuteur 1] À la bonne heure,</dialogue>\n<narration>dit Darnas avec une voix fluette. Des nouvelles des flics ? Marc n'aurait pas pensé qu'un cou aussi épais pouvait produire un timbre aussi léger.</narration>\n<dialogue>[Locuteur 2] Ça discute encore avec le maire,</dialogue>\n<narration>dit Louis.</narration>\..."
+"
+
+problème: le segment "Des nouvelles des flics ?" n' a pas été marqué comme dialogue
+solution: marque ce segment comme dialogue : <dialogue>Des nouvelles des flics ? </dialogue>
 """
 
 

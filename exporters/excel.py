@@ -525,7 +525,6 @@ def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None, 
         else:
         	end = int(config.max_sentences)
         df_full = df_full.iloc[start:end].reset_index(drop=True) # added to match df with sent file indices
-        logger.debug(df_full)
         df_simple = pd.concat([df_simple, df_full[found_cols]], axis=1)
 
     # copy tags from justification columns into left/node/right

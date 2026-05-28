@@ -86,6 +86,13 @@ Choisis entre **Clausative** et **Parenthétique**.
 3. **Justifie** ton choix.
 
 
+### exemples d'erreurs fréquentes à éviter
+
+* Entrée: Tour de parole [Locuteur 1] Bon, ça suffit. Les funérailles, <PPI>c est pas mon truc</PPI>,
+* Sortie: Parenthétique
+
+* Problème: la PPI  <PPI>c'est pas mon truc</PPI> même si elle est entourée de virgules, elle n'est pas parenthétique car elle n'est pas optionnelle dans la phrase: on ne peut pas dire seulement Les funérailles. (la phrase est incomplète syntaxiquement
+* solution: considérer cette PPI comme "Clausative"
 ---
 end_prompt
 
@@ -357,6 +364,7 @@ Un cooccurrent doit être **immédiatement adjacent** à la PPI ou séparé d'el
 - **RÈGLE ABSOLUE** : Si pour relier le candidat cooccurrent à la PPI il faut "sauter" par-dessus d'autres propositions complètes, des changements de tour de parole, ou des incises narratives, alors ce candidat **n'est pas un cooccurrent**.
 
 
+
 ## FORMAT DE RÉPONSE ATTENDU
 
 ### Si des cooccurrents sont identifiés :
@@ -430,7 +438,12 @@ Un cooccurrent doit être **immédiatement adjacent** à la PPI ou séparé d'el
 "Propriété": "Marqueur du discours:ben écoute(a), au revoir(p) ",
 "Justification": "Le marqueur du discours 'ben écoute' est immédiatement antéposé à la PPI, la construction prépositionnelle 'au revoir' est immédiatement postposée à la PPI"
 }
+### exemples d'erreurs fréquentes:
 
+1) Détection d'un cooccurrent qui ne porte pas sur la PPI cible et qui porte sur un segment différent du tour de parole
+* Entrée: tour de parole: « Bon, ça suffit. Les funérailles, <PPI>c est pas mon truc</PPI> » 
+* problème: Bon est détecté comme un cooccurrent de la PPI "c est pas mon truc" alors que ce marqueur discursif ne porte pas sur la PPI elle même.Le cooccurrent doit porter sur la PPI elle-même: e.g: Tu sais, c'est pas mon truc --> le marqueur discursif "tu sais" est donc un cooccurrent antéposé de la PPI
+* Solution: considérer ce cas comme "Aucun cooccurrent" au lieu de "marqueur de discours(a)"
 
 
 ## INSTRUCTIONS IMPORTANTES
@@ -443,6 +456,8 @@ Un cooccurrent doit être **immédiatement adjacent** à la PPI ou séparé d'el
 4. Pour les appellatifs, indiquez le contenu lexical uniquement dans la justification (pas dans la propriété)
 5. N'utilisez pas de syntaxe JSON à l'intérieur du champ "Propriété"
 6. Reproduisez le tour de parole complet dans la justification, avec les balises appropriées
+
+
 
 end_prompt
 
