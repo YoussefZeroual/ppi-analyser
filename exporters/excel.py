@@ -546,7 +546,32 @@ def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None) 
 
     drop_cols = [c for c in ["Conversation", "Locuteur", "Interlocuteur(s)"] if c in df_simple.columns]
     df_simple = df_simple.drop(columns=drop_cols)
-
+    
+    # drop justification cols from simple df
+    
+    justification_cols = [c for c in df_simple.columns if c.lower().find("justification")>0 ]
+    df_simple = df_simple.drop(justification_cols,axis=1)
+    
+    # save
     df_simple.to_csv("/tmp/debug_before_format.csv", index=False)
     format_ppi_bold(df_simple, path)
     logger.info("Simple Excel exported to %s", path)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
