@@ -29,6 +29,7 @@ class SessionState:
     dfs: list = field(default_factory=list)
     custom_properties_list: Optional[list[str]] = None
     use_analysis_cache: bool = False
+    sent_ids : list[str] = None
     
     def __post_init__(self):
         self._token_lock = threading.Lock()

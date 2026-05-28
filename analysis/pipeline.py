@@ -261,7 +261,7 @@ def _export(df: pd.DataFrame, config: PipelineConfig, state: SessionState) -> No
     paths = _build_output_paths(config)
     state.total_time = time.perf_counter() - state.start_time
     export_excel(df, paths.excel)
-    export_excel_simple(df, paths.excel_simple, sentence_file=config.sentence_file)
+    export_excel_simple(df, paths.excel_simple, sentence_file=config.sentence_file, config=config) # added session state to account for sent id and fix indices problem
     try:
         export_pdf(df, state, paths.pdf, config.mode)
     except Exception as e:

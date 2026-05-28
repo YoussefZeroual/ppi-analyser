@@ -65,7 +65,7 @@ class PPIAnalyser:
             logger.info("Analysis cache enabled: %s", cache_path)
 
         logger.info("Chargement et préparation des concordances")
-        sentences, lemmes = _load_sentences(config)
+        sentences, lemmes = _load_sentences(config) 
         sentences, lemmes = _validate_range(sentences, lemmes, config)
 
         if _is_mistral_batch(config):

@@ -1,7 +1,6 @@
 import logging
 import pandas as pd
-
-
+from ppi_analyser.config import PipelineConfig
 logger = logging.getLogger(__name__)
 
 ORIGINAL_COLS = [
@@ -513,13 +512,20 @@ def export_excel(df: pd.DataFrame, path: str) -> None:
     logger.info("Excel exported to %s", path)
 
 
-def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None) -> None:
-    df_simple = df.copy()
+def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None, config:PipelineConfig = None ) -> None:
 
+    df_simple = df.copy()
     if sentence_file:
         df_full = pd.read_excel(sentence_file)
-        df_full = df_full[df_full.index.isin(df_simple.index)]
         found_cols = [c for c in ORIGINAL_COLS if c in df_full.columns]
+        start = int(config.start_sent)
+        end = config.max_sentences
+        if config.max_sentences == "all":
+        	end = len(df_full)
+        else:
+        	end = int(config.max_sentences)
+        df_full = df_full.iloc[start:end].reset_index(drop=True) # added to match df with sent file indices
+        logger.debug(df_full)
         df_simple = pd.concat([df_simple, df_full[found_cols]], axis=1)
 
     # copy tags from justification columns into left/node/right
@@ -544,7 +550,7 @@ def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None) 
     if "node" in df_simple.columns:
         df_simple["node"] = df_simple["node"].apply(lambda x: f"  <PPI>{x}</PPI>  ")
 
-    drop_cols = [c for c in ["Conversation", "Locuteur", "Interlocuteur(s)"] if c in df_simple.columns]
+    drop_cols = [c for c in ["Locuteur", "Interlocuteur(s)"] if c in df_simple.columns]
     df_simple = df_simple.drop(columns=drop_cols)
     
     # drop justification cols from simple df
