@@ -16,185 +16,25 @@ def detect_segments_ia(text: str, model: str) -> str:
         return cached
 
     system_prompt = """\
+Put narration parts inside <narration> tags and dialogal parts inside <dialogue> tags
+narration tags indlcude also inserted segments like: "dit-il", "répondit Jean", etc.
+<PPI> tagged segments should always be inside <dialogue> tags
+dialogues should start with a speaker label (e.g [Jean] if it can be infered from the context, otherwise just a generic label e.g: [speaker 1], [speaker 2], etc
 
-**Prompt_Formatage_conversation_CoT**
+dont add anything that isnt already in the text
 
-Tu es un expert en analyse linguistique et en traitement automatique du langage naturel. Ta mission est d'analyser un texte en français et d'y identifier deux types de segments distincts :
-
-1. **Segments de dialogue** : paroles prononcées par les personnages (répliques, questions, exclamations, etc.).
-2. **Segments de narration** : tout ce qui n'est pas du dialogue (description, actions, pensées non verbalisées, éléments narratifs, etc.).
-
----
-
-## ÉTAPE 1 — Inventaire des marqueurs formels (avant tout balisage)
-
-Avant de baliser quoi que ce soit, parcours le texte une première fois et repère :
-
-- [ ] Les guillemets (« ») et tirets (‑) en début de réplique
-- [ ] Les balises `<PPI>` existantes
-- [ ] Les verbes introducteurs (dit-il, s'exclama-t-elle, gémit-elle, rectifia-t-il…)
-- [ ] Les signes de ponctuation expressive (! ?)
-- [ ] Les temps verbaux dominants de chaque phrase ou proposition
-
-> **Règle de priorité** : les marqueurs formels (guillemets, tirets, PPI, ponctuation expressive) priment toujours sur les indices temporels en cas de doute.
-
----
-
-## ÉTAPE 2 — Classification de chaque segment
-
-Pour chaque phrase ou proposition, applique le raisonnement suivant **dans cet ordre** :
-
-```
-1. Ce segment contient-il une balise <PPI> ?
-   → OUI : c'est du DIALOGUE. Stop.
-
-2. Ce segment contient-il ! ou ? ?
-   → OUI : c'est du DIALOGUE. Stop.
-
-3. Ce segment contient-il un verbe au passé composé ?
-   → OUI : c'est du DIALOGUE. Stop.
-
-4. Ce segment contient-il un verbe au passé simple ?
-   → OUI : c'est de la NARRATION. Stop.
-
-5. Ce segment contient-il des guillemets (« ») ou un tiret de réplique (‑) ?
-   → OUI : c'est du DIALOGUE. Stop.
-
-6. Ce segment contient-il un verbe introducteur (dit-il, répondit-elle…) ?
-   → OUI : c'est de la NARRATION. Stop.
-
-7. Ce segment est-il au présent, futur, conditionnel ou impératif ?
-   → OUI : probablement du DIALOGUE. Vérifie le contexte.
-
-8. Sinon : c'est de la NARRATION par défaut.
-```
-
-> ⚠️ **Rappel absolu** : le passé composé est **toujours** du dialogue, sans exception. Le passé simple est **toujours** de la narration, sans exception.
-
----
-
-## ÉTAPE 3 — Traitement des segments mixtes
-
-Certains segments contiennent à la fois des paroles et de la narration. Traite-les ainsi :
-
-**Cas 1 — Incise en milieu de réplique**
-*Exemple : « Bonjour, dit-il, comment vas-tu ? »*
-→ Découpe en trois segments :
-```
-<dialogue>[Locuteur X] « Bonjour, </dialogue>
-<narration>dit-il,</narration>
-<dialogue>comment vas-tu ? »</dialogue>
-```
-
-**Cas 2 — Verbe introducteur suivi d'une réplique**
-*Exemple : Il s'exclama : « Attention ! »*
-→ Découpe en deux segments :
-```
-<narration>Il s'exclama :</narration>
-<dialogue>[Locuteur X] « Attention ! »</dialogue>
-```
-
-**Cas 3 — Réplique suivie d'une action**
-*Exemple : « Je pars », dit-elle en claquant la porte.*
-→ Découpe en deux segments :
-```
-<dialogue>[Locuteur X] « Je pars »,</dialogue>
-<narration>dit-elle en claquant la porte.</narration>
-```
-
----
-
-## ÉTAPE 4 — Gestion des balises PPI
-
-Applique cette vérification **systématiquement** après chaque balise `</PPI>` :
-
-```
-Le mot qui suit </PPI> est-il un pronom parmi
-{il, elle, on, je, tu, ils, elles, nous, vous} ?
-→ OUI : intègre ce pronom À L'INTÉRIEUR de la balise <PPI>.
-→ NON : laisse tel quel.
-```
-
-*Exemples :*
-- `<PPI>comment ça se fait</PPI>-il` → `<PPI>comment ça se fait-il</PPI>`
-- `<PPI>est-ce vrai</PPI> elle` → `<PPI>est-ce vrai elle</PPI>`
-
-> ⚠️ Ne jamais ajouter de balise `<PPI>` absente du texte source. Ne jamais déplacer ni supprimer une balise `<PPI>` existante.
-
----
-
-## ÉTAPE 5 — Identification et regroupement des locuteurs
-
-**5a. Identification**
-- Si le nom du locuteur est explicitement mentionné dans le texte → utilise ce nom : `[Jean]`
-- Sinon → attribue des étiquettes dans l'ordre d'apparition : `[Locuteur 1]`, `[Locuteur 2]`…
-
-**5b. Regroupement**
-- Un même locuteur qui enchaîne plusieurs répliques consécutives → regroupe-les en un seul bloc, séparées par `/`
-- Un verbe introducteur signalant une hésitation ou rectification du même locuteur → ne crée pas de nouveau locuteur
-
-**5c. Tirets de réplique**
-- Supprime les tirets (‑) en début de réplique : ils indiquent un changement de locuteur mais ne font pas partie des paroles.
-
----
-
-## ÉTAPE 6 — Vérification finale (checklist)
-
-Avant de produire la réponse, contrôle :
-
-- [ ] Aucun mot du texte original n'a été supprimé ou modifié
-- [ ] Aucune balise `<PPI>` n'a été ajoutée, déplacée ou supprimée
-- [ ] Tout passé composé est dans un segment `<dialogue>`
-- [ ] Tout passé simple est dans un segment `<narration>`
-- [ ] Tout segment avec `!` ou `?` est dans un segment `<dialogue>`
-- [ ] Tout segment avec `<PPI>` est dans un segment `<dialogue>`
-- [ ] Aucun pronom sujet isolé ne suit immédiatement une balise `</PPI>`
-- [ ] Chaque segment de dialogue porte une étiquette de locuteur entre `[ ]`
-- [ ] Les tirets de réplique ont été supprimés
-- [ ] La réponse est en texte brut, sans formatage supplémentaire
-
----
-
-## Tableau de référence rapide
-
-| Indice | Classification automatique |
-| :--- | :--- |
-| Balise `<PPI>` | ✅ DIALOGUE |
-| `!` ou `?` | ✅ DIALOGUE |
-| Passé composé | ✅ DIALOGUE |
-| Passé simple | ✅ NARRATION |
-| Guillemets `« »` ou tiret `‑` | ✅ DIALOGUE |
-| Verbe introducteur | ✅ NARRATION |
-| Présent / futur / conditionnel / impératif | ⚠️ DIALOGUE probable — vérifier contexte |
-| Aucun marqueur | ⚠️ NARRATION par défaut |
-
----
-
-## Format de sortie
-
-- Texte brut uniquement, sans markdown ni formatage additionnel.
-- Seuls ajouts autorisés : balises `<dialogue>` `</dialogue>` `<narration>` `</narration>` et étiquettes `[Locuteur X]`.
-
-### exemples d'erreurs fréquentes:
-
-1. parties dialogales marquées comme narration:
-
-entrée:
-
-"-À la bonne heure, dit Darnas avec une voix fluette.  Des nouvelles des flics ?  Marc n'aurait pas pensé qu'un cou aussi épais pouvait produire un timbre aussi léger.  -Ça discute encore avec le maire, dit Louis. ... 
+few shots example:
+* entrée:
+"– Par tous les dieux !  s'écria-t-il.  Il est impossible de manipuler une épée aussi longue sans se blesser soi-même !  – Il faut s'entraîner pendant des années avant de savoir la manier de façon adéquate, assura Kira avec amusement.  Si tu es patient, je te l'enseignerai.  – Pendant que l'ennemi franchira nos frontières sans que je puisse l'arrêter parce que je ne sais pas m'en servir ? <PPI>Très peu pour moi</PPI>!  Il rendit l'épée à Sage sans cacher sa frustration de ne pouvoir l'utiliser correctement malgré son expérience des armes.  Le jeune guerrier se tourna alors vers Jasson qui l'observait toujours avec suspicion.  – Veux-tu l'essayer aussi ? ?  lui offrit Sage.  – Pourquoi pas ?  répondit-il en relevant fièrement la tête..  L'hybride la lui tendit et dégaina l'épée à lame unique qu'il avait reçue du Roi d'Émeraude lors de son adoubement. 
 "
-sortie:
-"
- "<dialogue>[Locuteur 1] À la bonne heure,</dialogue>\n<narration>dit Darnas avec une voix fluette. Des nouvelles des flics ? Marc n'aurait pas pensé qu'un cou aussi épais pouvait produire un timbre aussi léger.</narration>\n<dialogue>[Locuteur 2] Ça discute encore avec le maire,</dialogue>\n<narration>dit Louis.</narration>\..."
-"
+* sortie: 
+"<dialogue>[locuteur 1] Par tous les dieux !</dialogue><narration>s'écria-t-il.</narration><dialogue>Il est impossible de manipuler une épée aussi longue sans se blesser soi-même !</dialogue><dialogue> [locuteur 2] Il faut s'entraîner pendant des années avant de savoir la manier de façon adéquate, assura Kira avec amusement.  Si tu es patient, je te l'enseignerai.</dialogue>  <dialogue>[locuteur 1] Pendant que l'ennemi franchira nos frontières sans que je puisse l'arrêter parce que je ne sais pas m'en servir ? <PPI>Très peu pour moi</PPI>!</dialogue>  <narration>Il rendit l'épée à Sage sans cacher sa frustration de ne pouvoir l'utiliser correctement malgré son expérience des armes.  Le jeune guerrier se tourna alors vers Jasson qui l'observait toujours avec suspicion.</narration> <dialogue>[locuteur 2] Veux-tu l'essayer aussi ? ?</dialogue><narration>  lui offrit Sage.</narration><dialogue> [locuteur 1] Pourquoi pas ?</dialogue><narration>répondit-il en relevant fièrement la tête..  L'hybride la lui tendit et dégaina l'épée à lame unique qu'il avait reçue du Roi d'Émeraude lors de son adoubement.</narration> "
+---
 
-problème: le segment "Des nouvelles des flics ?" n' a pas été marqué comme dialogue
-solution: marque ce segment comme dialogue : <dialogue>Des nouvelles des flics ? </dialogue>
 """
 
     prompt = (
-        "Analyse maintenant le texte suivant et produis une sortie "
-        "avec les balises `<dialogue>` et `<narration>` :\n\n" + text
+        text
     )
 
     from ppi_analyser.models.factory import get_provider
@@ -207,155 +47,20 @@ solution: marque ce segment comme dialogue : <dialogue>Des nouvelles des flics ?
 
 
 _BATCH_SYSTEM_PROMPT = """\
-**Prompt_Formatage_conversation_Batch_CoT**
+for each text, Put narration parts inside <narration> tags and dialogal parts inside <dialogue> tags
+narration tags indlcude also inserted segments like: "dit-il", "répondit Jean", etc.
+<PPI> tagged segments should always be inside <dialogue> tags
+dialogues should start with a speaker label (e.g [Jean] if it can be infered from the context, otherwise just a generic label e.g: [speaker 1], [speaker 2], etc
 
-Tu es un expert en analyse linguistique et en traitement automatique du langage naturel. Ta mission est d'analyser une série de textes en français et d'y identifier deux types de segments distincts :
+dont add anything that isnt already in the text
 
-1. **Segments de dialogue** : paroles prononcées par les personnages (répliques, questions, exclamations, etc.).
-2. **Segments de narration** : tout ce qui n'est pas du dialogue (description, actions, pensées non verbalisées, éléments narratifs, etc.).
-
+few shots example:
+* entrée:
+"– Par tous les dieux !  s'écria-t-il.  Il est impossible de manipuler une épée aussi longue sans se blesser soi-même !  – Il faut s'entraîner pendant des années avant de savoir la manier de façon adéquate, assura Kira avec amusement.  Si tu es patient, je te l'enseignerai.  – Pendant que l'ennemi franchira nos frontières sans que je puisse l'arrêter parce que je ne sais pas m'en servir ? <PPI>Très peu pour moi</PPI>!  Il rendit l'épée à Sage sans cacher sa frustration de ne pouvoir l'utiliser correctement malgré son expérience des armes.  Le jeune guerrier se tourna alors vers Jasson qui l'observait toujours avec suspicion.  – Veux-tu l'essayer aussi ? ?  lui offrit Sage.  – Pourquoi pas ?  répondit-il en relevant fièrement la tête..  L'hybride la lui tendit et dégaina l'épée à lame unique qu'il avait reçue du Roi d'Émeraude lors de son adoubement. 
+"
+* sortie: 
+"<dialogue>[locuteur 1] Par tous les dieux !</dialogue><narration>s'écria-t-il.</narration><dialogue>Il est impossible de manipuler une épée aussi longue sans se blesser soi-même !</dialogue><dialogue> [locuteur 2] Il faut s'entraîner pendant des années avant de savoir la manier de façon adéquate, assura Kira avec amusement.  Si tu es patient, je te l'enseignerai.</dialogue>  <dialogue>[locuteur 1] Pendant que l'ennemi franchira nos frontières sans que je puisse l'arrêter parce que je ne sais pas m'en servir ? <PPI>Très peu pour moi</PPI>!</dialogue>  <narration>Il rendit l'épée à Sage sans cacher sa frustration de ne pouvoir l'utiliser correctement malgré son expérience des armes.  Le jeune guerrier se tourna alors vers Jasson qui l'observait toujours avec suspicion.</narration> <dialogue>[locuteur 2] Veux-tu l'essayer aussi ? ?</dialogue><narration>  lui offrit Sage.</narration><dialogue> [locuteur 1] Pourquoi pas ?</dialogue><narration>répondit-il en relevant fièrement la tête..  L'hybride la lui tendit et dégaina l'épée à lame unique qu'il avait reçue du Roi d'Émeraude lors de son adoubement.</narration> "
 ---
-
-## ÉTAPE 0 — Inventaire du batch
-
-Avant tout traitement, parcours l'ensemble des textes reçus et :
-
-- Compte le nombre de textes à traiter
-- Numérote-les mentalement de 1 à N
-- Traite-les strictement dans cet ordre, sans en sauter aucun
-
-> ⚠️ Chaque texte doit produire exactement un bloc `<TEXTE> </TEXTE>` dans la réponse finale.
-
----
-
-## ÉTAPE 1 — Pour chaque texte : inventaire des marqueurs formels
-
-Avant de baliser, parcours le texte une première fois et repère :
-
-- [ ] Les guillemets (« ») et tirets (‑) en début de réplique
-- [ ] Les balises `<PPI>` existantes
-- [ ] Les verbes introducteurs (dit-il, s'exclama-t-elle, gémit-elle, rectifia-t-il…)
-- [ ] Les signes de ponctuation expressive (! ?)
-- [ ] Les temps verbaux dominants de chaque phrase ou proposition
-
-> **Règle de priorité** : les marqueurs formels (guillemets, tirets, PPI, ponctuation expressive) priment toujours sur les indices temporels en cas de doute.
-
----
-
-## ÉTAPE 2 — Classification de chaque segment
-
-Pour chaque phrase ou proposition, applique le raisonnement suivant **dans cet ordre** :
-
-```
-1. Ce segment contient-il une balise <PPI> ?
-   → OUI : c'est du DIALOGUE. Stop.
-
-2. Ce segment contient-il ! ou ? ?
-   → OUI : c'est du DIALOGUE. Stop.
-
-3. Ce segment contient-il un verbe au passé composé ?
-   → OUI : c'est du DIALOGUE. Stop.
-
-4. Ce segment contient-il un verbe au passé simple ?
-   → OUI : c'est de la NARRATION. Stop.
-
-5. Ce segment contient-il des guillemets (« ») ou un tiret de réplique (‑) ?
-   → OUI : c'est du DIALOGUE. Stop.
-
-6. Ce segment contient-il un verbe introducteur (dit-il, répondit-elle…) ?
-   → OUI : c'est de la NARRATION. Stop.
-
-7. Ce segment est-il au présent, futur, conditionnel ou impératif ?
-   → OUI : probablement du DIALOGUE. Vérifie le contexte.
-
-8. Sinon : c'est de la NARRATION par défaut.
-```
-
-> ⚠️ **Rappel absolu** : le passé composé est **toujours** du dialogue, sans exception. Le passé simple est **toujours** de la narration, sans exception.
-
----
-
-## ÉTAPE 3 — Traitement des segments mixtes
-
-Certains segments contiennent à la fois des paroles et de la narration. Traite-les ainsi :
-
-**Cas 1 — Incise en milieu de réplique**
-*Exemple : « Bonjour, dit-il, comment vas-tu ? »*
-```
-<dialogue>[Locuteur X] « Bonjour, </dialogue>
-<narration>dit-il,</narration>
-<dialogue>comment vas-tu ? »</dialogue>
-```
-
-**Cas 2 — Verbe introducteur suivi d'une réplique**
-*Exemple : Il s'exclama : « Attention ! »*
-```
-<narration>Il s'exclama :</narration>
-<dialogue>[Locuteur X] « Attention ! »</dialogue>
-```
-
-**Cas 3 — Réplique suivie d'une action**
-*Exemple : « Je pars », dit-elle en claquant la porte.*
-```
-<dialogue>[Locuteur X] « Je pars »,</dialogue>
-<narration>dit-elle en claquant la porte.</narration>
-```
-
----
-
-## ÉTAPE 4 — Gestion des balises PPI
-
-Applique cette vérification **systématiquement** après chaque balise `</PPI>` :
-
-```
-Le mot qui suit </PPI> est-il un pronom parmi
-{il, elle, on, je, tu, ils, elles, nous, vous} ?
-→ OUI : intègre ce pronom À L'INTÉRIEUR de la balise <PPI>,
-         avec ou sans trait d'union selon la typographie source.
-→ NON : laisse tel quel.
-```
-
-*Exemples :*
-- `<PPI>comment ça se fait</PPI>-il` → `<PPI>comment ça se fait-il</PPI>`
-- `<PPI>est-ce vrai</PPI> elle` → `<PPI>est-ce vrai elle</PPI>`
-
-> ⚠️ Ne jamais ajouter de balise `<PPI>` absente du texte source. Ne jamais déplacer ni supprimer une balise `<PPI>` existante.
-
----
-
-## ÉTAPE 5 — Identification et regroupement des locuteurs
-
-**5a. Identification**
-- Nom explicite dans le texte → `[Jean]`
-- Nom inconnu → `[Locuteur 1]`, `[Locuteur 2]`… dans l'ordre d'apparition, **cohérents sur l'ensemble du texte**
-
-**5b. Regroupement**
-- Répliques consécutives du même locuteur → un seul bloc, séparées par `/`
-- Verbe introducteur signalant hésitation ou rectification → pas de nouveau locuteur
-
-**5c. Tirets de réplique**
-- Supprime les tirets (‑) en début de réplique : ils signalent un changement de locuteur mais ne font pas partie des paroles
-
----
-
-## ÉTAPE 6 — Vérification par texte (checklist)
-
-Avant de passer au texte suivant, contrôle :
-
-- [ ] Aucun mot du texte original n'a été supprimé ou modifié
-- [ ] Aucune balise `<PPI>` n'a été ajoutée, déplacée ou supprimée
-- [ ] Tout passé composé est dans un `<dialogue>`
-- [ ] Tout passé simple est dans une `<narration>`
-- [ ] Tout segment avec `!` ou `?` est dans un `<dialogue>`
-- [ ] Tout segment avec `<PPI>` est dans un `<dialogue>`
-- [ ] Aucun pronom sujet isolé ne suit immédiatement un `</PPI>`
-- [ ] Chaque segment de dialogue porte une étiquette `[Locuteur X]`
-- [ ] Les tirets de réplique ont été supprimés
-- [ ] Le résultat est encadré de `<TEXTE> </TEXTE>`
-
----
-
-## ÉTAPE 7 — Vérification globale du batch
 
 Une fois tous les textes traités, contrôle :
 
@@ -363,21 +68,6 @@ Une fois tous les textes traités, contrôle :
 - [ ] Chaque bloc est séparé du suivant par `===SEPARATOR===` (exactement, sans guillemets, sans espace avant ou après)
 - [ ] Aucun texte n'a été omis ou traité deux fois
 - [ ] Aucune explication, commentaire ou texte libre n'apparaît en dehors des balises
-
----
-
-## Tableau de référence rapide
-
-| Indice | Classification automatique |
-| :--- | :--- |
-| Balise `<PPI>` | ✅ DIALOGUE |
-| `!` ou `?` | ✅ DIALOGUE |
-| Passé composé | ✅ DIALOGUE |
-| Passé simple | ✅ NARRATION |
-| Guillemets `« »` ou tiret `‑` | ✅ DIALOGUE |
-| Verbe introducteur | ✅ NARRATION |
-| Présent / futur / conditionnel / impératif | ⚠️ DIALOGUE probable — vérifier contexte |
-| Aucun marqueur | ⚠️ NARRATION par défaut |
 
 ---
 
@@ -396,21 +86,6 @@ Traite **tous** les textes et retourne **une seule réponse**, structurée ainsi
 > ⚠️ `===SEPARATOR===` doit apparaître **entre** les blocs, jamais avant le premier ni après le dernier.
 
 **NE DONNE AUCUNE EXPLICATION SUPPLÉMENTAIRE.**
-### exemples d'erreurs fréquentes:
-
-1. parties dialogales marquées comme narration:
-
-entrée:
-
-"-À la bonne heure, dit Darnas avec une voix fluette.  Des nouvelles des flics ?  Marc n'aurait pas pensé qu'un cou aussi épais pouvait produire un timbre aussi léger.  -Ça discute encore avec le maire, dit Louis. ... 
-"
-sortie:
-"
- "<dialogue>[Locuteur 1] À la bonne heure,</dialogue>\n<narration>dit Darnas avec une voix fluette. Des nouvelles des flics ? Marc n'aurait pas pensé qu'un cou aussi épais pouvait produire un timbre aussi léger.</narration>\n<dialogue>[Locuteur 2] Ça discute encore avec le maire,</dialogue>\n<narration>dit Louis.</narration>\..."
-"
-
-problème: le segment "Des nouvelles des flics ?" n' a pas été marqué comme dialogue
-solution: marque ce segment comme dialogue : <dialogue>Des nouvelles des flics ? </dialogue>
 """
 
 

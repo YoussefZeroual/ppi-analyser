@@ -302,7 +302,15 @@ end_prompt
 
 start_prompt
 Prompt_Coocurrents
+### role général:
+ton rôle c'est de trouver des éléments qu'on appelle des cooccurrents qui fonctionnent avec l'expression à analyser
 
+par exemple: bon, à bientôt
+
+le marqueur du discours 'bon' est un cooccurrent de l'expression 'à bientôt'
+
+le sens du cooccurrent doit vraiment porter sur l'expression cible.
+ 
 ## DÉFINITION
 Un **cooccurrent** est un élément **externe à la PPI** qui apparaît fréquemment à sa gauche ou à sa droite dans le même tour de parole.
 
@@ -313,10 +321,10 @@ Un **cooccurrent** est un élément **externe à la PPI** qui apparaît fréquem
 - Portent sur la PPI et apparaissent immédiatement à côté (gauche ou droite)
 - Souvent séparés de la PPI par une virgule
 - Peuvent être des **connecteurs** (mais, donc, alors, parce que, et) ou des **particules énonciatives** (quoi, ben, euh, oh, merde)
-- Dans ta réponse, il faut OBLIGATOIREMENT les entourer des balises <MD></MD>
+- Dans ta réponse, il faut OBLIGATOIREMENT les entourer des balises `<MD></MD>`
 
 **ATTENTION - RÈGLE CRITIQUE** :
-- Ne **JAMAIS** identifier un élément comme marqueur de discours s'il se trouve **À L'INTÉRIEUR** des balises <PPI></PPI>
+- Ne **JAMAIS** identifier un élément comme marqueur de discours s'il se trouve **À L'INTÉRIEUR** des balises `<PPI></PPI>`
 - Un élément qui fait **partie intégrante de la PPI** n'est PAS un cooccurrent, même s'il ressemble à un marqueur typique
 - Exemple : dans `<PPI>mais comment ça se fait</PPI>`, le mot "mais" n'est PAS un cooccurrent car il est à l'intérieur de la PPI
 - Exemple : dans `<PPI>ben oui</PPI>`, "ben" n'est PAS un cooccurrent car il fait partie de la PPI
@@ -334,120 +342,284 @@ Un **cooccurrent** est un élément **externe à la PPI** qui apparaît fréquem
 | **Pronoms** | quoi, ça alors, ça par exemple |
 | **Constructions nominales** | bon Dieu, bonne journée, bonne soirée, bonté divine, bon sang, chapeau bas, de l'air, Dieu du ciel, doux Jésus, du balai, du calme, grands dieux, juste ciel, la vache, la vérité, ma foi, ma parole, mon Dieu, mon salaud, point barre, ta bouche, ta/vos gueules |
 | **Constructions prépositionnelles** | à bientôt, à la bonne heure, à la fin, à la revoyure, à la tienne/nôtre/vôtre, à plus, à tantôt, au revoir, au plaisir, d'accord, du coup, en fait, par exemple |
-| **Verbes/constructions verbales** (impératif) | admettons, allons, allez, dis, dites, disons, écoute, écoutez, ferme-la, fermez-la, la ferme, figure-toi, figurez-vous, mettons, regarde, regardez, remarque, remarquez, tiens, tenez, va, voilà, voyez, voyons (peuvent être combinés avec *donc* ou *voir* : dis donc, dis voir, tiens donc, tiens voir) |
-| **Verbes/constructions verbales (indicatif) | tu comprends/comprends-tu, vous comprenez/comprenez-vous, tu penses bien/penses-tu, vous pensez bien/pensez-vous, tu parles, tu m'étonnes, tu rigoles, tu sais/sais-tu, vous savez/savez-vous, tu vois/vois-tu, vous voyez/voyez-vous, je veux dire |
+| **Verbes/constructions verbales (impératif)** | admettons, allons, allez, dis, dites, disons, écoute, écoutez, ferme-la, fermez-la, la ferme, figure-toi, figurez-vous, mettons, regarde, regardez, remarque, remarquez, tiens, tenez, va, voilà, voyez, voyons (peuvent être combinés avec *donc* ou *voir* : dis donc, dis voir, tiens donc, tiens voir) |
+| **Verbes/constructions verbales (indicatif)** | tu comprends/comprends-tu, vous comprenez/comprenez-vous, tu penses bien/penses-tu, vous pensez bien/pensez-vous, tu parles, tu m'étonnes, tu rigoles, tu sais/sais-tu, vous savez/savez-vous, tu vois/vois-tu, vous voyez/voyez-vous, je veux dire |
 
 ### 2. APPELLATIFS
 **Caractéristiques** :
 - Apparaissent dans la même phrase que la PPI
 - Souvent séparés de la PPI par une virgule
-- Parfois pas de séparation par la virgule: e.g: Monsieur Jacques <PPI>bonne soirée</PPI> --> <APP>Monsieur Jacques</APP>
+- Parfois pas de séparation par la virgule : e.g. Monsieur Jacques `<PPI>bonne soirée</PPI>` → `<APP>Monsieur Jacques</APP>`
 - Types courants :
   - **Noms propres** : Jean, Madame Dupont, Monsieur Hamil, Monsieur/Madame X, etc.
   - **"Mon + NOM"** : mon petit, mon chou, mon fils
   - **Qualificatifs** (y compris insultants) : imbécile, abruti, madame, monsieur
 
 **ATTENTION - RÈGLE CRITIQUE** :
-- Ne **JAMAIS** identifier un appellatif s'il se trouve **À L'INTÉRIEUR** des balises <PPI></PPI>
+- Ne **JAMAIS** identifier un appellatif s'il se trouve **À L'INTÉRIEUR** des balises `<PPI></PPI>`
 
-## RÈGLES D'IDENTIFICATION
-- Un cooccurrent est **syntaxiquement externe** à la PPI
-- Il apparaît dans la **même phrase graphique** ou à proximité immédiate
-- Indiquez sa position : **antéposé (a)** ou **postposé (p)**
-- Si le cooccurrent est un appellatif: indiquer seulement que c'est un appellatif (la réalisation lexicale est réservée à la partie Justification)
-### RÈGLE DE PROXIMITÉ — CRITIQUE
+---
+
+## RÈGLE DE PROXIMITÉ — CRITIQUE
+
 Un cooccurrent doit être **immédiatement adjacent** à la PPI ou séparé d'elle par **au maximum une virgule ou un signe de ponctuation**.
+
 - **VALIDE** : `<MD>mais</MD> <PPI>comment ça se fait</PPI>` — adjacent
 - **VALIDE** : `<APP>Monsieur Hamil</APP>, <PPI>comment ça se fait</PPI>` — séparé par une virgule
 - **INVALIDE** : Un marqueur de discours situé dans une autre proposition ou un autre tour de parole que celui contenant la PPI n'est **jamais** un cooccurrent, même s'il apparaît dans la même conversation
 - **INVALIDE** : Un élément séparé de la PPI par plus d'une proposition subordonnée ou coordonnée n'est pas un cooccurrent
-- **RÈGLE ABSOLUE** : Si pour relier le candidat cooccurrent à la PPI il faut "sauter" par-dessus d'autres propositions complètes, des changements de tour de parole, ou des incises narratives, alors ce candidat **n'est pas un cooccurrent**.
+- **RÈGLE ABSOLUE** : Si pour relier le candidat cooccurrent à la PPI il faut "sauter" par-dessus d'autres propositions complètes, des changements de tour de parole, ou des incises narratives, alors ce candidat **n'est pas un cooccurrent**
 
+---
 
+## RAISONNEMENT EN CHAÎNE — ÉTAPES OBLIGATOIRES
+
+Avant de produire la réponse, parcours **mentalement et dans l'ordre** les étapes suivantes. Ne saute aucune étape.
+
+---
+
+### ÉTAPE 1 — Localiser et isoler la PPI
+
+```
+1a. Repère les balises <PPI></PPI> dans le tour de parole.
+1b. Délimite précisément ce qui est INTÉRIEUR à la PPI
+    (entre les balises) et ce qui est EXTÉRIEUR (hors des balises).
+1c. Pose-toi la question : "Qu'est-ce qui est strictement
+    à gauche de <PPI> ? Strictement à droite de </PPI> ?"
+```
+
+> ⚠️ Tout ce qui est entre `<PPI>` et `</PPI>` est **hors jeu** pour l'identification des cooccurrents. Ne pas franchir cette frontière.
+
+---
+
+### ÉTAPE 2 — Vérifier la proximité des candidats
+
+Pour chaque élément identifié à gauche ou à droite de la PPI :
+
+```
+2a. Cet élément est-il immédiatement adjacent à la PPI,
+    ou séparé d'elle par au plus une virgule/ponctuation ?
+    → NON : ce n'est PAS un cooccurrent. Stop.
+    → OUI : passer à l'étape 3.
+
+2b. Pour relier cet élément à la PPI, faut-il "sauter"
+    par-dessus une ou plusieurs propositions complètes,
+    un changement de tour de parole, ou une incise narrative ?
+    → OUI : ce n'est PAS un cooccurrent. Stop.
+    → NON : passer à l'étape 3.
+```
+
+---
+
+### ÉTAPE 3 — Tester si le candidat porte sur la PPI
+
+```
+3a. Cet élément se rapporte-t-il directement à la PPI,
+    ou porte-t-il sur un autre segment du tour de parole ?
+
+    Exemple : « Bon, ça suffit. <PPI>c'est pas mon truc</PPI> »
+    → "Bon" porte sur "ça suffit", PAS sur la PPI.
+    → Ce n'est PAS un cooccurrent.
+
+    Exemple : « Tu sais, <PPI>c'est pas mon truc</PPI> »
+    → "Tu sais" porte directement sur la PPI.
+    → Candidat valide : passer à l'étape 4.
+```
+
+> ⚠️ Un marqueur de discours ne devient cooccurrent que s'il **porte sur la PPI elle-même**, pas sur un autre segment adjacent.
+
+---
+
+### ÉTAPE 4 — Classer le candidat validé
+
+```
+4a. Est-ce un APPELLATIF ?
+    → Critères : nom propre, "mon + nom", qualificatif
+      désignant un interlocuteur
+    → OUI : c'est un <APP>, noter sa position (a) ou (p)
+
+4b. Est-ce un MARQUEUR DE DISCOURS ?
+    → Critères : figure dans la liste indicative
+      OU fonctionne comme connecteur / particule énonciative
+    → OUI : c'est un <MD>, noter sa position (a) ou (p)
+
+4c. Si ni l'un ni l'autre : ce n'est pas un cooccurrent.
+```
+
+---
+
+### ÉTAPE 5 — Vérification finale avant réponse
+
+Avant de rédiger la réponse, contrôle point par point :
+
+- [ ] Tous les candidats retenus sont **à l'extérieur** des balises `<PPI></PPI>`
+- [ ] Tous les candidats retenus sont **immédiatement adjacents** à la PPI (au plus une virgule/ponctuation de distance)
+- [ ] Chaque candidat retenu **porte bien sur la PPI** et non sur un autre segment
+- [ ] Les `<MD>` sont entourés de balises `<MD></MD>` dans la justification
+- [ ] Les `<APP>` sont entourés de balises `<APP></APP>` dans la justification
+- [ ] La `<PPI>` est entourée de balises `<PPI></PPI>` dans la justification
+- [ ] Le tour de parole complet est reproduit dans la justification avec toutes les balises
+- [ ] Le contenu lexical des appellatifs n'apparaît que dans la justification, pas dans la propriété
+- [ ] Aucune syntaxe JSON n'apparaît dans le champ "Propriété"
+
+---
 
 ## FORMAT DE RÉPONSE ATTENDU
 
 ### Si des cooccurrents sont identifiés :
-
-{{
+```
+{
 "Propriété": "Marqueurs de discours : [type](position), Appellatifs : (position)",
 "Justification": "Description précise incluant le tour de parole complet avec balises <MD>, <APP> et <PPI>"
-}}
+}
+```
 
 ### Si aucun cooccurrent n'est identifié :
-
-{{
+```
+{
 "Propriété": "Aucun cooccurrent",
 "Justification": "Aucun marqueur de discours ou appellatif n'a été détecté à proximité de la PPI dans le tour de parole de [locuteur]"
-}}
+}
+```
+
+---
 
 ## EXEMPLES DE RÉPONSES
 
 ### Exemple 1 (avec cooccurrents) :
-**Entrée** : Locuteur 1, tour de parole = "mais <PPI>c'est pas vrai</PPI> Jean!"
+**Entrée** : Locuteur 1, tour de parole = "mais `<PPI>c'est pas vrai</PPI>` Jean!"
+
+**Raisonnement** :
+- Étape 1 : PPI = "c'est pas vrai". Extérieur gauche : "mais". Extérieur droit : "Jean!"
+- Étape 2 : "mais" est immédiatement adjacent à gauche ✓. "Jean" est immédiatement adjacent à droite ✓
+- Étape 3 : "mais" porte sur la PPI ✓. "Jean" désigne l'interlocuteur ✓
+- Étape 4 : "mais" → MD antéposé. "Jean" → APP postposé
 
 **Sortie** :
-
-{{
+```
+{
 "Propriété": "Marqueurs de discours : mais(a), Appellatifs : (p)",
 "Justification": "Le marqueur de discours *mais* se trouve immédiatement avant la PPI. L'appellatif *Jean* se trouve immédiatement après la PPI. Tour de parole complet : [locuteur 1] <MD>mais</MD> <PPI>c'est pas vrai</PPI> <APP>Jean!</APP>"
-}}
+}
+```
+
+---
 
 ### Exemple 2 (avec cooccurrents) :
-**Entrée** : Locuteur 1, tour de parole = "Monsieur Bernard <PPI>c'est pas vrai</PPI>!"
+**Entrée** : Locuteur 1, tour de parole = "Monsieur Bernard `<PPI>c'est pas vrai</PPI>`!"
+
+**Raisonnement** :
+- Étape 1 : PPI = "c'est pas vrai". Extérieur gauche : "Monsieur Bernard". Extérieur droit : "!"
+- Étape 2 : "Monsieur Bernard" est immédiatement adjacent à gauche ✓
+- Étape 3 : "Monsieur Bernard" désigne l'interlocuteur ✓
+- Étape 4 : "Monsieur Bernard" → APP antéposé
 
 **Sortie** :
-
-{{
+```
+{
 "Propriété": "Appellatifs : (a)",
 "Justification": "L'appellatif *Monsieur Bernard* se trouve immédiatement avant la PPI. Tour de parole complet : [locuteur 1] <APP>Monsieur Bernard</APP> <PPI>c'est pas vrai</PPI>!"
-}}
+}
+```
+
+---
 
 ### Exemple 3 (sans cooccurrent) :
 **Entrée** : Locuteur 2, tour de parole = "je pense que c'est pas vrai", PPI = "c'est pas vrai"
 
-**Sortie** :
+**Raisonnement** :
+- Étape 1 : PPI = "c'est pas vrai". Extérieur gauche : "je pense que"
+- Étape 2 : "je pense que" est séparé de la PPI par une proposition subordonnante complète ✗
+- Étape 3 : Test de proximité échoué → pas de cooccurrent
 
-{{
+**Sortie** :
+```
+{
 "Propriété": "Aucun cooccurrent",
 "Justification": "Aucun marqueur de discours ou appellatif n'a été détecté à proximité de la PPI dans le tour de parole de [locuteur 2]"
-}}
+}
+```
 
-### Exemple 4 (pour illustrer la règle CRITIQUE) :
-**Entrée** : Locuteur 3, tour de parole = "<PPI>mais comment ça se fait</PPI>", PPI = "mais comment ça se fait"
+---
+
+### Exemple 4 (règle CRITIQUE — élément intérieur à la PPI) :
+**Entrée** : Locuteur 3, tour de parole = "`<PPI>mais comment ça se fait</PPI>`", PPI = "mais comment ça se fait"
+
+**Raisonnement** :
+- Étape 1 : PPI = "mais comment ça se fait". "mais" est INTÉRIEUR à la PPI ✗
+- Étape 2 : Aucun candidat extérieur à la PPI
+- Étape 3 : Pas de candidat à tester
 
 **Sortie** :
-
-{{
+```
+{
 "Propriété": "Aucun cooccurrent",
 "Justification": "Bien que 'mais' soit un marqueur de discours typique, il se trouve À L'INTÉRIEUR des balises <PPI></PPI> et fait donc partie intégrante de la PPI. Aucun cooccurrent n'est détecté à l'extérieur de la PPI dans le tour de parole de [locuteur 3]"
-}}
+}
+```
+
+---
 
 ### Exemple 5 (marqueur éloigné — NON cooccurrent) :
-**Entrée** : Tour de parole = "Vous avez vu... commença-t-elle, mais ils dormaient tous. <PPI>Comment cela se fait-il</PPI>, selon vous ?"
+**Entrée** : Tour de parole = "Vous avez vu... commença-t-elle, mais ils dormaient tous. `<PPI>Comment cela se fait-il</PPI>`, selon vous ?"
+
+**Raisonnement** :
+- Étape 1 : PPI = "Comment cela se fait-il". Extérieur gauche lointain : "mais". Extérieur droit immédiat : "selon vous"
+- Étape 2 : "mais" → pour le relier à la PPI, il faut sauter plusieurs propositions complètes ✗. "selon vous" → immédiatement adjacent ✓
+- Étape 3 : "selon vous" → incise, pas un marqueur de discours de la liste ✗
+- Étape 4 : Aucun candidat valide
+
 **Sortie** :
+```
 {
 "Propriété": "Aucun cooccurrent",
 "Justification": "Le mot 'mais' apparaît bien dans le même tour de parole mais il est séparé de la PPI par plusieurs propositions complètes et ne porte pas sur la PPI. Seul 'selon vous' est adjacent à la PPI mais c'est une incise et non un marqueur de discours de la liste. Aucun cooccurrent détecté."
 }
+```
+
+---
 
 ### Exemple 6 (marqueur du discours construction) :
-**Entrée** : Tour de parole = "[Léna] ben écoute <PPI>à bientôt</PPI>, au revoir"
+**Entrée** : Tour de parole = "[Léna] ben écoute `<PPI>à bientôt</PPI>`, au revoir"
+
+**Raisonnement** :
+- Étape 1 : PPI = "à bientôt". Extérieur gauche : "ben écoute". Extérieur droit : "au revoir"
+- Étape 2 : "ben écoute" immédiatement adjacent à gauche ✓. "au revoir" immédiatement adjacent à droite ✓
+- Étape 3 : "ben écoute" porte sur la PPI ✓. "au revoir" porte sur la PPI ✓
+- Étape 4 : "ben écoute" → MD antéposé (construction verbale impératif + interjection). "au revoir" → MD postposé (construction prépositionnelle)
+
 **Sortie** :
+```
 {
-"Propriété": "Marqueur du discours:ben écoute(a), au revoir(p) ",
-"Justification": "Le marqueur du discours 'ben écoute' est immédiatement antéposé à la PPI, la construction prépositionnelle 'au revoir' est immédiatement postposée à la PPI"
+"Propriété": "Marqueurs de discours : ben écoute(a), au revoir(p)",
+"Justification": "Le marqueur du discours 'ben écoute' est immédiatement antéposé à la PPI, la construction prépositionnelle 'au revoir' est immédiatement postposée à la PPI. Tour de parole complet : [Léna] <MD>ben écoute</MD> <PPI>à bientôt</PPI>, <MD>au revoir</MD>"
 }
-### exemples d'erreurs fréquentes:
+```
 
-1) Détection d'un cooccurrent qui ne porte pas sur la PPI cible et qui porte sur un segment différent du tour de parole
-* Entrée: tour de parole: « Bon, ça suffit. Les funérailles, <PPI>c est pas mon truc</PPI> » 
-* problème: Bon est détecté comme un cooccurrent de la PPI "c est pas mon truc" alors que ce marqueur discursif ne porte pas sur la PPI elle même.Le cooccurrent doit porter sur la PPI elle-même: e.g: Tu sais, c'est pas mon truc --> le marqueur discursif "tu sais" est donc un cooccurrent antéposé de la PPI
-* Solution: considérer ce cas comme "Aucun cooccurrent" au lieu de "marqueur de discours(a)"
+---
 
+### Exemple 7 (erreur fréquente — marqueur ne portant pas sur la PPI) :
+**Entrée** : Tour de parole = "« Bon, ça suffit. Les funérailles, `<PPI>c'est pas mon truc</PPI> »"
+
+**Raisonnement** :
+- Étape 1 : PPI = "c'est pas mon truc". Extérieur gauche : "Bon, ça suffit. Les funérailles,"
+- Étape 2 : "Bon" est séparé de la PPI par d'autres propositions complètes ✗
+- Étape 3 : Même si "Bon" était adjacent, il porte sur "ça suffit", pas sur la PPI ✗
+- Étape 4 : Aucun candidat valide
+
+**Sortie** :
+```
+{
+"Propriété": "Aucun cooccurrent",
+"Justification": "'Bon' est un marqueur discursif typique mais il porte sur 'ça suffit' et non sur la PPI elle-même, dont il est de plus séparé par plusieurs propositions. Aucun cooccurrent détecté dans le tour de parole."
+}
+```
+
+---
 
 ## INSTRUCTIONS IMPORTANTES
-1. **Vérifiez TOUJOURS la position des balises** : Un élément à l'intérieur de <PPI></PPI> n'est JAMAIS un cooccurrent
+
+1. **Vérifiez TOUJOURS la position des balises** : Un élément à l'intérieur de `<PPI></PPI>` n'est JAMAIS un cooccurrent
 2. **Limitez-vous** à relever les cooccurrents détectés (pas d'analyse sur la signification ou l'usage)
 3. Dans la justification, encadrez systématiquement :
    - Les marqueurs de discours avec `<MD></MD>`
@@ -456,6 +628,10 @@ Un cooccurrent doit être **immédiatement adjacent** à la PPI ou séparé d'el
 4. Pour les appellatifs, indiquez le contenu lexical uniquement dans la justification (pas dans la propriété)
 5. N'utilisez pas de syntaxe JSON à l'intérieur du champ "Propriété"
 6. Reproduisez le tour de parole complet dans la justification, avec les balises appropriées
+
+
+
+
 
 
 

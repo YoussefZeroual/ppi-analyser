@@ -191,6 +191,7 @@ def _preprocess_and_analyse(
         if i < len(sentences) - 1:
             logger.info("Sleeping %.2fs for rate limit", sleep_time)
             time.sleep(sleep_time)
+            logger.debug(sleep_time)
 
     return preprocessed, all_results
 
