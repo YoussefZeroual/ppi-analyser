@@ -1,10 +1,12 @@
 # server.py — drop next to core.py
 # Run: uvicorn server:app --reload --port 8000
 
-import uuid, shutil, threading, traceback, logging, json
+import uuid, shutil, threading, traceback, logging, json, io
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+import openpyxl
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -108,7 +110,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         mode_enum = AnalysisMode(mode)
     except ValueError:
         return fail(f"Mode inconnu : '{mode}'. Valeurs acceptées : {[m.value for m in AnalysisMode]}")
-
+    model_key = "gemma" # override for test purpose
     if model_key not in MODELS_MAPPING:
         return fail(f"Modèle inconnu : '{model_key}'. Valeurs acceptées : {list(MODELS_MAPPING)}")
 
@@ -144,7 +146,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         use_analysis_cache=use_analysis_cache,
         analysis_cache_path=str(Path.home() / ".ppi_analyser" / "analysis_cache.json"),
         speaker_detection_model=SPEAKER_DETECTION_MODEL,
-        properties=props_for_pipeline,  # None → all props; list → only those
+        custom_properties=props_for_pipeline,  # None → all props; list → only those
     )
 
     try:
@@ -221,6 +223,31 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
+
+@app.post("/preview")
+async def preview_file(
+    file: UploadFile = File(...),
+    max_rows: int = 50,
+):
+    """Return the first max_rows rows of an xlsx file as JSON (header + rows)."""
+    if not file.filename.endswith(".xlsx"):
+        raise HTTPException(400, "Seuls les fichiers .xlsx sont acceptés.")
+    data = await file.read()
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+        ws = wb.active
+        rows_iter = ws.iter_rows(values_only=True)
+        header = [str(c) if c is not None else "" for c in next(rows_iter, [])]
+        rows = []
+        for i, row in enumerate(rows_iter):
+            if i >= max_rows:
+                break
+            rows.append([str(c) if c is not None else "" for c in row])
+        wb.close()
+    except Exception as e:
+        raise HTTPException(500, f"Erreur lecture fichier : {e}")
+    return {"header": header, "rows": rows, "total_preview": len(rows)}
+
 
 @app.post("/analyse", status_code=202)
 async def start_analysis(

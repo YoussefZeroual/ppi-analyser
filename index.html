@@ -372,17 +372,130 @@ function PrefabBadge() {
 
 // ── FileDropzone ──────────────────────────────────────────────────────────
 
-function FileDropzone({ file, onChange }) {
+// ── ExcelPreviewModal ─────────────────────────────────────────────────────
+
+function ExcelPreviewModal({ file, onClose }) {
+  const [rows, setRows]     = useState(null);
+  const [headers, setHdrs]  = useState([]);
+  const [error, setError]   = useState(null);
+
+  useEffect(() => {
+    if (!file) return;
+    setRows(null); setHdrs([]); setError(null);
+    const fd = new FormData();
+    fd.append("file", file);
+    fetch(`${API}/preview`, { method: "POST", body: fd })
+      .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e.detail)))
+      .then(d => { setHdrs(d.header); setRows(d.rows); })
+      .catch(e => setError("Erreur : " + e));
+  }, [file]);
+
+  return (
+    <div style={{
+      position:"fixed",inset:0,background:"rgba(0,0,0,.7)",
+      display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,
+    }} onClick={onClose}>
+      <div style={{
+        background:"var(--surface)",border:"1px solid var(--border)",
+        borderRadius:"var(--radius)",padding:20,maxWidth:"92vw",width:860,
+        maxHeight:"82vh",display:"flex",flexDirection:"column",
+      }} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+          <span style={{fontWeight:700,fontSize:14}}>Aperçu — {file?.name}</span>
+          <button className="btn btn-ghost" style={{padding:"4px 10px",fontSize:12}} onClick={onClose}>Fermer</button>
+        </div>
+        {error && <div className="err-inline">{error}</div>}
+        {!rows && !error && <p style={{color:"var(--muted)",fontSize:13}}>Chargement…</p>}
+        {rows && (
+          <div style={{overflowX:"auto",overflowY:"auto",flex:1}}>
+            <table style={{borderCollapse:"collapse",fontSize:11,width:"100%",fontFamily:"var(--mono)"}}>
+              <thead>
+                <tr style={{background:"var(--surface2)"}}>
+                  <th style={{padding:"5px 8px",border:"1px solid var(--border)",color:"var(--muted)",textAlign:"center"}}>#</th>
+                  {headers.map((h,i)=>(
+                    <th key={i} style={{padding:"5px 8px",border:"1px solid var(--border)",color:"var(--accent)",whiteSpace:"nowrap",textAlign:"left"}}>{String(h)}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row,ri)=>(
+                  <tr key={ri} style={{background:ri%2===0?"var(--bg)":"var(--surface2)"}}>
+                    <td style={{padding:"4px 8px",border:"1px solid var(--border)",color:"var(--muted)",textAlign:"center"}}>{ri+2}</td>
+                    {headers.map((_,ci)=>(
+                      <td key={ci} style={{padding:"4px 8px",border:"1px solid var(--border)",maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}
+                        title={String(row[ci]??"")}>{String(row[ci]??"")}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p style={{fontSize:11,color:"var(--muted)",marginTop:8}}>Aperçu limité aux 50 premières lignes (indices Excel affichés).</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── InfoBubble ────────────────────────────────────────────────────────────
+
+function InfoBubble({ text }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span style={{position:"relative",display:"inline-flex",alignItems:"center",marginLeft:5}}>
+      <button
+        style={{
+          width:15,height:15,borderRadius:"50%",border:"1px solid var(--muted)",
+          background:"var(--surface2)",color:"var(--muted)",fontSize:9,
+          cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",
+          fontWeight:700,lineHeight:1,padding:0,flexShrink:0,
+        }}
+        onMouseEnter={()=>setShow(true)} onMouseLeave={()=>setShow(false)}
+        onFocus={()=>setShow(true)} onBlur={()=>setShow(false)}
+      >i</button>
+      {show && (
+        <span style={{
+          position:"absolute",left:"calc(100% + 6px)",top:"50%",transform:"translateY(-50%)",
+          background:"var(--surface)",border:"1px solid var(--border)",
+          borderRadius:"var(--radius)",padding:"7px 10px",fontSize:11,color:"var(--text)",
+          lineHeight:1.5,width:230,zIndex:500,boxShadow:"var(--shadow)",
+          pointerEvents:"none",
+        }}>{text}</span>
+      )}
+    </span>
+  );
+}
+
+// ── FieldLabel ────────────────────────────────────────────────────────────
+
+function FieldLabel({ children, info }) {
+  return (
+    <label style={{display:"flex",alignItems:"center",fontSize:12,color:"var(--muted)",marginBottom:4}}>
+      {children}
+      {info && <InfoBubble text={info}/>}
+    </label>
+  );
+}
+
+function FileDropzone({ file, onChange, onPreview }) {
   const [over, setOver] = useState(false);
   return (
-    <div className={`dropzone ${over?"over":""} ${file?"has-file":""}`}
-      onDragOver={e=>{e.preventDefault();setOver(true)}}
-      onDragLeave={()=>setOver(false)}
-      onDrop={e=>{e.preventDefault();setOver(false);const f=e.dataTransfer.files[0];if(f)onChange(f)}}>
-      <input type="file" accept=".xlsx" onChange={e=>e.target.files[0]&&onChange(e.target.files[0])}/>
-      <div className="dz-icon">{file?"📊":"📂"}</div>
-      <div className="dz-label">{file?file.name:"Glissez un fichier .xlsx ou cliquez pour parcourir"}</div>
-      {!file&&<div className="dz-sub">Concordances au format Excel (left / node / right)</div>}
+    <div>
+      <div className={`dropzone ${over?"over":""} ${file?"has-file":""}`}
+        onDragOver={e=>{e.preventDefault();setOver(true)}}
+        onDragLeave={()=>setOver(false)}
+        onDrop={e=>{e.preventDefault();setOver(false);const f=e.dataTransfer.files[0];if(f)onChange(f)}}>
+        <input type="file" accept=".xlsx" onChange={e=>e.target.files[0]&&onChange(e.target.files[0])}/>
+        <div className="dz-icon">{file?"📊":"📂"}</div>
+        <div className="dz-label">{file?file.name:"Glissez un fichier .xlsx ou cliquez pour parcourir"}</div>
+        {!file&&<div className="dz-sub">Concordances au format Excel (left / node / right)</div>}
+      </div>
+      {file && (
+        <button className="btn btn-ghost" style={{marginTop:6,fontSize:11,padding:"4px 12px"}}
+          onClick={onPreview} type="button">
+          🔍 Aperçu du fichier
+        </button>
+      )}
     </div>
   );
 }
@@ -418,19 +531,28 @@ function PropsSelector({ selected, onChange }) {
 
 const DEFAULTS = {
   mode: "oral",
-  start_sent: 0,
+  start_sent: 2,        // display index (backend = display - 2)
   max_sentences: "all",
   all_sentences: true,
-  batch_size: 5,
-  n_threads: 8,
+  batch_size: 5,        // hidden from UI
+  n_threads: 8,         // hidden from UI
   use_analysis_cache: true,
   selected_props: ALL_PROPS.map(p => p.key),
 };
+
+// Detect mode from filename suffix
+function modeFromFilename(name) {
+  if (!name) return null;
+  if (name.endsWith("_Ph.xlsx")) return "écrit_ia";
+  if (name.endsWith("_Or.xlsx")) return "oral";
+  return null;
+}
 
 function AnalyseForm({ onJobStarted }) {
   const [file, setFile]         = useState(null);
   const [expression, setExpr]   = useState("");
   const [advanced, setAdvanced] = useState(false);
+  const [preview, setPreview]   = useState(false);
   const [settings, setSettings] = useState(() => {
     const saved = loadSettings();
     return {
@@ -449,6 +571,20 @@ function AnalyseForm({ onJobStarted }) {
     saveSettings(next);
   };
 
+  // When a file is picked, auto-detect mode and fill expression from filename
+  function handleFileChange(f) {
+    setFile(f);
+    const detected = modeFromFilename(f?.name);
+    if (detected) set("mode", detected);
+    if (f?.name) {
+      // Strip .xlsx extension and known mode suffixes (_Or, _Ph)
+      const base = f.name.replace(/\.xlsx$/i, "").replace(/_Ph$|_Or$/, "");
+      setExpr(base);
+    }
+  }
+
+  const displayStart = settings.start_sent ?? 2;
+
   async function submit() {
     if (!file)             { setError("Veuillez sélectionner un fichier .xlsx."); return; }
     if (!expression.trim()){ setError("Veuillez saisir une expression cible."); return; }
@@ -459,17 +595,26 @@ function AnalyseForm({ onJobStarted }) {
     const fd = new FormData();
     fd.append("file", file);
     fd.append("expression", expression.trim());
-    // Always use mistral_large
     fd.append("model", "mistral_large");
-    const s = advanced ? settings : DEFAULTS;
+    const s = advanced ? settings : { ...DEFAULTS, mode: settings.mode };
+
+    // Convert display start_sent (2-based) to backend (0-based)
+    const backendStart = Math.max(0, (parseInt(s.start_sent) || 2) - 2);
     fd.append("mode", s.mode);
-    fd.append("start_sent", String(s.start_sent));
-    fd.append("max_sentences", s.all_sentences ? "all" : String(s.max_sentences));
+    fd.append("start_sent", String(backendStart));
+
+    // max_sentences: add 2 to match the display index shift
+    let backendMax;
+    if (s.all_sentences) {
+      backendMax = "all";
+    } else {
+      const n = parseInt(s.max_sentences);
+      backendMax = isNaN(n) ? "all" : String(n + 2);
+    }
+    fd.append("max_sentences", backendMax);
     fd.append("batch_size", String(s.batch_size));
     fd.append("n_threads", String(s.n_threads));
-    // FastAPI bool Form field expects "true" or "false" (lowercase string)
     fd.append("use_analysis_cache", s.use_analysis_cache ? "true" : "false");
-    // selected_props: send JSON array; empty array → server treats as "all props"
     const props = advanced ? s.selected_props : DEFAULTS.selected_props;
     fd.append("selected_props", JSON.stringify(props));
     try {
@@ -483,6 +628,7 @@ function AnalyseForm({ onJobStarted }) {
 
   return (
     <div className="card">
+      {preview && <ExcelPreviewModal file={file} onClose={()=>setPreview(false)}/>}
       <div className="card-title">Nouvelle analyse</div>
       <div className="mode-toggle">
         <button className={`mode-btn ${!advanced?"active":""}`} onClick={()=>setAdvanced(false)}>Simple</button>
@@ -490,12 +636,21 @@ function AnalyseForm({ onJobStarted }) {
       </div>
 
       <div className="field">
-        <label>Fichier de concordances</label>
-        <FileDropzone file={file} onChange={setFile}/>
+        <FieldLabel info="Fichier Excel (.xlsx) de concordances. Le mode est détecté automatiquement selon le suffixe : _Or.xlsx → dialogues authentiques, _Ph.xlsx → dialogues romanesques.">
+          Fichier de concordances
+        </FieldLabel>
+        <FileDropzone file={file} onChange={handleFileChange} onPreview={()=>setPreview(true)}/>
+        {file && modeFromFilename(file.name) && (
+          <div style={{fontSize:11,color:"var(--accent2)",marginTop:4}}>
+            ✓ Mode détecté automatiquement : {modeFromFilename(file.name)==="oral"?"Dialogues authentiques":"Dialogues romanesques"}
+          </div>
+        )}
       </div>
 
       <div className="field">
-        <label>Expression cible</label>
+        <FieldLabel info="L'expression linguistique à analyser (ex. : « tu veux que je te dise »). Elle doit correspondre aux occurrences présentes dans le fichier de concordances.">
+          Expression cible
+        </FieldLabel>
         <input placeholder="ex. tu veux que je te dise"
           value={expression} onChange={e=>setExpr(e.target.value)}
           onKeyDown={e=>e.key==="Enter"&&submit()}/>
@@ -505,31 +660,28 @@ function AnalyseForm({ onJobStarted }) {
         <div>
           <div className="row">
             <div className="field">
-              <label>Mode</label>
+              <FieldLabel info="Type de corpus analysé. Détecté automatiquement depuis le suffixe du fichier (_Or → authentique, _Ph → romanesque). Peut être modifié manuellement.">
+                Mode
+              </FieldLabel>
               <select value={settings.mode} onChange={e=>set("mode",e.target.value)}>
                 <option value="oral">Dialogues authentiques</option>
                 <option value="écrit_ia">Dialogues romanesques</option>
               </select>
             </div>
-            <div className="field">
-              <label>Batch size</label>
-              <input type="number" min="1" max="50" value={settings.batch_size}
-                onChange={e=>set("batch_size",e.target.value)}/>
-            </div>
-            <div className="field">
-              <label>Threads</label>
-              <input type="number" min="1" max="32" value={settings.n_threads}
-                onChange={e=>set("n_threads",e.target.value)}/>
-            </div>
           </div>
 
           <div className="row" style={{alignItems:"flex-end"}}>
             <div className="field">
-              <label>Index de début</label>
-              <input type="number" min="0" value={settings.start_sent}
-                onChange={e=>set("start_sent",e.target.value)}/>
+              <FieldLabel info="Numéro de la première ligne à analyser, tel qu'affiché dans Excel (la ligne 2 est la première ligne de données, la ligne 1 étant l'en-tête). En interne, ce numéro est décalé de 2.">
+                Index de début (Excel)
+              </FieldLabel>
+              <input type="number" min="2" value={displayStart}
+                onChange={e=>set("start_sent", Math.max(2, parseInt(e.target.value)||2))}/>
             </div>
             <div className="field">
+              <FieldLabel info="Nombre de phrases à analyser à partir de l'index de début. « Toutes les phrases » traite l'intégralité du fichier depuis l'index choisi.">
+                Phrases à analyser
+              </FieldLabel>
               <div className="check-row" style={{marginBottom:8}}>
                 <input type="checkbox" id="all_sent" checked={settings.all_sentences}
                   onChange={e=>set("all_sentences",e.target.checked)}/>
@@ -542,16 +694,21 @@ function AnalyseForm({ onJobStarted }) {
               )}
             </div>
             <div className="field" style={{display:"flex",alignItems:"flex-end",paddingBottom:1}}>
-              <div className="check-row">
-                <input type="checkbox" id="cache" checked={settings.use_analysis_cache}
-                  onChange={e=>set("use_analysis_cache",e.target.checked)}/>
-                <label htmlFor="cache">Cache d'analyse</label>
+              <div style={{display:"flex",alignItems:"center",gap:4}}>
+                <div className="check-row">
+                  <input type="checkbox" id="cache" checked={settings.use_analysis_cache}
+                    onChange={e=>set("use_analysis_cache",e.target.checked)}/>
+                  <label htmlFor="cache">Cache d'analyse</label>
+                </div>
+                <InfoBubble text="Si activé, les phrases déjà analysées sont récupérées depuis le cache local plutôt que renvoyées au modèle. Accélère considérablement les relances sur les mêmes données."/>
               </div>
             </div>
           </div>
 
           <div className="field" style={{marginTop:8}}>
-            <label style={{marginBottom:8,display:"block"}}>Propriétés à analyser</label>
+            <FieldLabel info="Propriétés linguistiques que le modèle devra annoter. Décocher une propriété la retire de l'analyse et réduit le coût en tokens.">
+              Propriétés à analyser
+            </FieldLabel>
             <PropsSelector selected={settings.selected_props}
               onChange={v=>set("selected_props",v)}/>
           </div>
@@ -653,7 +810,7 @@ function JobRecap({ params }) {
   const items = [
     ["Fichier", params.original_file],
     ["Mode", modeLabels[params.mode] ?? params.mode],
-    ["Début", params.start_sent ?? 0],
+    ["Début (Excel)", (params.start_sent ?? 0) + 2],
     ["Phrases max", params.max_sentences ?? "all"],
     ["Batch size", params.batch_size],
     ["Threads", params.n_threads],
@@ -926,7 +1083,7 @@ function App() {
     // Pre-populate form via localStorage with job's params
     const settings = {
       mode: job.params.mode ?? "oral",
-      start_sent: job.params.start_sent ?? 0,
+      start_sent: (job.params.start_sent ?? 0) + 2,
       max_sentences: job.params.max_sentences ?? "all",
       all_sentences: job.params.max_sentences === "all",
       batch_size: job.params.batch_size ?? 5,
