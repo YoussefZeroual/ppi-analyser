@@ -22,7 +22,7 @@ narration tags indlcude also inserted segments like: "dit-il", "répondit Jean",
 dialogues should start with a speaker label (e.g [Jean] if it can be infered from the context, otherwise just a generic label e.g: [speaker 1], [speaker 2], etc
 
 dont add anything that isnt already in the text
-
+some texts might be just dialogue with no narration: check first if the text is just dialogue
 few shots example:
 * entrée:
 "– Par tous les dieux !  s'écria-t-il.  Il est impossible de manipuler une épée aussi longue sans se blesser soi-même !  – Il faut s'entraîner pendant des années avant de savoir la manier de façon adéquate, assura Kira avec amusement.  Si tu es patient, je te l'enseignerai.  – Pendant que l'ennemi franchira nos frontières sans que je puisse l'arrêter parce que je ne sais pas m'en servir ? <PPI>Très peu pour moi</PPI>!  Il rendit l'épée à Sage sans cacher sa frustration de ne pouvoir l'utiliser correctement malgré son expérience des armes.  Le jeune guerrier se tourna alors vers Jasson qui l'observait toujours avec suspicion.  – Veux-tu l'essayer aussi ? ?  lui offrit Sage.  – Pourquoi pas ?  répondit-il en relevant fièrement la tête..  L'hybride la lui tendit et dégaina l'épée à lame unique qu'il avait reçue du Roi d'Émeraude lors de son adoubement. 
@@ -53,6 +53,8 @@ narration tags indlcude also inserted segments like: "dit-il", "répondit Jean",
 dialogues should start with a speaker label (e.g [Jean] if it can be infered from the context, otherwise just a generic label e.g: [speaker 1], [speaker 2], etc
 
 dont add anything that isnt already in the text
+
+some texts might be just dialogue with no narration: check first if the text is just dialogue
 
 few shots example:
 * entrée:
