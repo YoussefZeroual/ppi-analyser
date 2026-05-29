@@ -236,6 +236,7 @@ async def preview_file(
     try:
         wb = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
         ws = wb.active
+        total_rows = (ws.max_row or 1) - 1  # subtract header row
         rows_iter = ws.iter_rows(values_only=True)
         header = [str(c) if c is not None else "" for c in next(rows_iter, [])]
         rows = []
@@ -246,7 +247,7 @@ async def preview_file(
         wb.close()
     except Exception as e:
         raise HTTPException(500, f"Erreur lecture fichier : {e}")
-    return {"header": header, "rows": rows, "total_preview": len(rows)}
+    return {"header": header, "rows": rows, "total_preview": len(rows), "total_rows": total_rows}
 
 
 @app.post("/analyse", status_code=202)

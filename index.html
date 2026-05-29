@@ -564,6 +564,7 @@ function AnalyseForm({ onJobStarted }) {
   });
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
+  const [totalRows, setTotalRows] = useState(null); // total data rows in the file
 
   const set = (k, v) => {
     const next = { ...settings, [k]: v };
@@ -571,16 +572,23 @@ function AnalyseForm({ onJobStarted }) {
     saveSettings(next);
   };
 
-  // When a file is picked, auto-detect mode and fill expression from filename
+  // When a file is picked, auto-detect mode, fill expression, and fetch row count
   function handleFileChange(f) {
     setFile(f);
+    setTotalRows(null);
     const detected = modeFromFilename(f?.name);
     if (detected) set("mode", detected);
     if (f?.name) {
-      // Strip .xlsx extension and known mode suffixes (_Or, _Ph)
       const base = f.name.replace(/\.xlsx$/i, "").replace(/_Ph$|_Or$/, "");
       setExpr(base);
     }
+    // Fetch total row count from backend
+    const fd = new FormData();
+    fd.append("file", f);
+    fetch(`${API}/preview`, { method: "POST", body: fd })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(d => setTotalRows(d.total_rows))
+      .catch(() => {});
   }
 
   const displayStart = settings.start_sent ?? 2;
@@ -640,11 +648,21 @@ function AnalyseForm({ onJobStarted }) {
           Fichier de concordances
         </FieldLabel>
         <FileDropzone file={file} onChange={handleFileChange} onPreview={()=>setPreview(true)}/>
-        {file && modeFromFilename(file.name) && (
-          <div style={{fontSize:11,color:"var(--accent2)",marginTop:4}}>
-            ✓ Mode détecté automatiquement : {modeFromFilename(file.name)==="oral"?"Dialogues authentiques":"Dialogues romanesques"}
-          </div>
-        )}
+        <div style={{display:"flex",gap:12,marginTop:4,flexWrap:"wrap"}}>
+          {file && modeFromFilename(file.name) && (
+            <span style={{fontSize:11,color:"var(--accent2)"}}>
+              ✓ Mode : {modeFromFilename(file.name)==="oral"?"Dialogues authentiques":"Dialogues romanesques"}
+            </span>
+          )}
+          {totalRows !== null && (
+            <span style={{fontSize:11,color:"var(--muted)",fontFamily:"var(--mono)"}}>
+              {totalRows} ligne{totalRows>1?"s":""} de données
+            </span>
+          )}
+          {file && totalRows === null && (
+            <span style={{fontSize:11,color:"var(--muted)"}}>calcul des lignes…</span>
+          )}
+        </div>
       </div>
 
       <div className="field">
@@ -674,9 +692,12 @@ function AnalyseForm({ onJobStarted }) {
             <div className="field">
               <FieldLabel info="Numéro de la première ligne à analyser, tel qu'affiché dans Excel (la ligne 2 est la première ligne de données, la ligne 1 étant l'en-tête). En interne, ce numéro est décalé de 2.">
                 Index de début (Excel)
+                {totalRows && <span style={{color:"var(--muted)",fontSize:10,marginLeft:6,fontFamily:"var(--mono)"}}>max {totalRows+1}</span>}
               </FieldLabel>
-              <input type="number" min="2" value={displayStart}
-                onChange={e=>set("start_sent", Math.max(2, parseInt(e.target.value)||2))}/>
+              <input type="number" min="2"
+                max={totalRows ? totalRows + 1 : undefined}
+                value={displayStart}
+                onChange={e=>set("start_sent", Math.max(2, Math.min(parseInt(e.target.value)||2, totalRows ? totalRows+1 : Infinity)))}/>
             </div>
             <div className="field">
               <FieldLabel info="Nombre de phrases à analyser à partir de l'index de début. « Toutes les phrases » traite l'intégralité du fichier depuis l'index choisi.">
@@ -688,8 +709,10 @@ function AnalyseForm({ onJobStarted }) {
                 <label htmlFor="all_sent">Toutes les phrases</label>
               </div>
               {!settings.all_sentences && (
-                <input type="number" min="1" value={settings.max_sentences === "all" ? "" : settings.max_sentences}
-                  placeholder="Nombre max"
+                <input type="number" min="1"
+                  max={totalRows ? Math.max(1, totalRows - (displayStart - 2)) : undefined}
+                  value={settings.max_sentences === "all" ? "" : settings.max_sentences}
+                  placeholder={totalRows ? `max ${Math.max(1, totalRows - (displayStart - 2))}` : "Nombre max"}
                   onChange={e=>set("max_sentences",e.target.value)}/>
               )}
             </div>
