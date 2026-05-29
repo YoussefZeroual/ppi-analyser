@@ -110,7 +110,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         mode_enum = AnalysisMode(mode)
     except ValueError:
         return fail(f"Mode inconnu : '{mode}'. Valeurs acceptées : {[m.value for m in AnalysisMode]}")
-    model_key = "gemma" # override for test purpose
+    model_key = "gemma" # override for test
     if model_key not in MODELS_MAPPING:
         return fail(f"Modèle inconnu : '{model_key}'. Valeurs acceptées : {list(MODELS_MAPPING)}")
 
@@ -236,14 +236,17 @@ async def preview_file(
     try:
         wb = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
         ws = wb.active
-        total_rows = (ws.max_row or 1) - 1  # subtract header row
         rows_iter = ws.iter_rows(values_only=True)
         header = [str(c) if c is not None else "" for c in next(rows_iter, [])]
         rows = []
-        for i, row in enumerate(rows_iter):
-            if i >= max_rows:
-                break
-            rows.append([str(c) if c is not None else "" for c in row])
+        total_rows = 0
+        for row in rows_iter:
+            # skip fully empty rows
+            if all(c is None or str(c).strip() == "" for c in row):
+                continue
+            total_rows += 1
+            if len(rows) < max_rows:
+                rows.append([str(c) if c is not None else "" for c in row])
         wb.close()
     except Exception as e:
         raise HTTPException(500, f"Erreur lecture fichier : {e}")

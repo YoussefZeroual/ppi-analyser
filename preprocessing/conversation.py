@@ -2,7 +2,8 @@
 
 import re
 import importlib
-
+import logging
+logger = logging.getLogger("ppi_analyser")
 def load_sentences(file: str, sent_list: list[int] | None = None) -> list[str]:
     pd = importlib.import_module("pandas")
     df = pd.read_excel(file)
@@ -58,11 +59,11 @@ def clean_conv(conv: str, mode: str) -> str:
 
 def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
     # Fix missing opening bracket e.g. VE2] -> [VE2]
-    conv = re.sub(r'(?<!\[)([A-Z]{2,3}\d+\])', r'[\1', conv)
-
+    conv = re.sub(r'(?<!\S)([A-Z]{2,3}\d+\])', r'[\1', conv)
+   
     conv = conv.replace("[", "\n[")
     conv_lines = conv.split("\n")
-
+    logger.debug(conv)
     # check if already cleaned
     already_cleaned = True
     previous = None

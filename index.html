@@ -611,13 +611,15 @@ function AnalyseForm({ onJobStarted }) {
     fd.append("mode", s.mode);
     fd.append("start_sent", String(backendStart));
 
-    // max_sentences: add 2 to match the display index shift
+    // Backend range is half-open [start_sent, max_sentences[  (0-based)
+    // display is 2-based inclusive: backend_max = display_end - 2 + 1 = display_end - 1
+    // e.g. display start=28 end=28 → backend start=26, max=27 → row 26 only
     let backendMax;
     if (s.all_sentences) {
       backendMax = "all";
     } else {
-      const n = parseInt(s.max_sentences);
-      backendMax = isNaN(n) ? "all" : String(n + 2);
+      const endIdx = parseInt(s.max_sentences);
+      backendMax = isNaN(endIdx) ? "all" : String(endIdx - 1);
     }
     fd.append("max_sentences", backendMax);
     fd.append("batch_size", String(s.batch_size));
@@ -697,24 +699,44 @@ function AnalyseForm({ onJobStarted }) {
               <input type="number" min="2"
                 max={totalRows ? totalRows + 1 : undefined}
                 value={displayStart}
-                onChange={e=>set("start_sent", Math.max(2, Math.min(parseInt(e.target.value)||2, totalRows ? totalRows+1 : Infinity)))}/>
+                onChange={e => {
+                  const v = Math.max(2, Math.min(parseInt(e.target.value)||2, totalRows ? totalRows+1 : Infinity));
+                  const next = { ...settings, start_sent: v };
+                  // bump end index if it became less than new start
+                  if (!next.all_sentences && parseInt(next.max_sentences) < v) {
+                    next.max_sentences = v;
+                  }
+                  setSettings(next);
+                  saveSettings(next);
+                }}/>
             </div>
             <div className="field">
-              <FieldLabel info="Nombre de phrases à analyser à partir de l'index de début. « Toutes les phrases » traite l'intégralité du fichier depuis l'index choisi.">
-                Phrases à analyser
+              <FieldLabel info="Index Excel de la dernière phrase à analyser (incluse). Doit être supérieur ou égal à l'index de début. « Toutes les phrases » traite jusqu'à la fin du fichier.">
+                Index de fin (Excel)
               </FieldLabel>
               <div className="check-row" style={{marginBottom:8}}>
                 <input type="checkbox" id="all_sent" checked={settings.all_sentences}
                   onChange={e=>set("all_sentences",e.target.checked)}/>
                 <label htmlFor="all_sent">Toutes les phrases</label>
               </div>
-              {!settings.all_sentences && (
-                <input type="number" min="1"
-                  max={totalRows ? Math.max(1, totalRows - (displayStart - 2)) : undefined}
-                  value={settings.max_sentences === "all" ? "" : settings.max_sentences}
-                  placeholder={totalRows ? `max ${Math.max(1, totalRows - (displayStart - 2))}` : "Nombre max"}
-                  onChange={e=>set("max_sentences",e.target.value)}/>
-              )}
+              {!settings.all_sentences && (() => {
+                const lastRow = totalRows ? totalRows + 1 : null;
+                return (
+                  <input type="number"
+                    min={displayStart}
+                    max={lastRow ?? undefined}
+                    value={settings.max_sentences === "all" ? "" : settings.max_sentences}
+                    placeholder={lastRow ? `jusqu'à ${lastRow}` : "Index de fin"}
+                    onChange={e => {
+                      const v = parseInt(e.target.value);
+                      if (isNaN(v)) { set("max_sentences", ""); return; }
+                      const clamped = lastRow
+                        ? Math.min(Math.max(displayStart, v), lastRow)
+                        : Math.max(displayStart, v);
+                      set("max_sentences", clamped);
+                    }}/>
+                );
+              })()}
             </div>
             <div className="field" style={{display:"flex",alignItems:"flex-end",paddingBottom:1}}>
               <div style={{display:"flex",alignItems:"center",gap:4}}>
