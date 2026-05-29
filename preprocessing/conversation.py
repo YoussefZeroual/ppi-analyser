@@ -63,7 +63,7 @@ def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
    
     conv = conv.replace("[", "\n[")
     conv_lines = conv.split("\n")
-    logger.debug(conv)
+
     # check if already cleaned
     already_cleaned = True
     previous = None

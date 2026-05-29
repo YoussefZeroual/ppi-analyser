@@ -1,7 +1,7 @@
 # server.py — drop next to core.py
 # Run: uvicorn server:app --reload --port 8000
 
-import uuid, shutil, threading, traceback, logging, json, io
+import uuid, shutil, threading, traceback, logging, json, io, multiprocessing
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -18,21 +18,11 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 jobs: dict[str, dict[str, Any]] = {}
 job_logs: dict[str, list[str]] = {}
-job_stop_events: dict[str, threading.Event] = {}
 _jobs_lock = threading.Lock()
 
-# ── Per-job log handler ──────────────────────────────────────────────────────
-
-class JobLogHandler(logging.Handler):
-    def __init__(self, job_id: str):
-        super().__init__()
-        self.job_id = job_id
-
-    def emit(self, record: logging.LogRecord):
-        msg = self.format(record)
-        with _jobs_lock:
-            if self.job_id in job_logs:
-                job_logs[self.job_id].append(msg)
+# Active process handle — only one at a time
+_current_process: multiprocessing.Process | None = None
+_current_job_id: str | None = None
 
 # ── Job store helpers ────────────────────────────────────────────────────────
 
@@ -44,6 +34,224 @@ def _new_job(job_id: str, params: dict) -> dict:
         "tokens_in": 0, "tokens_out": 0, "n_sentences": 0,
         "progress": 0,
     }
+
+# ── Constants ────────────────────────────────────────────────────────────────
+
+MODELS_MAPPING = {
+    "mistral_large":  "mistral_mistral-large-2411",
+    "mistral_medium": "mistral_mistral-medium-2508",
+    "deepseek":       "deepseek_deepseek",
+    "gemma":          "ollama_gemma3:27b",
+}
+
+SPEAKER_DETECTION_MODEL = "deepseek_deepseek"
+
+# ── Worker (runs in a separate Process) ─────────────────────────────────────
+
+def _run_job(job_id: str, sentence_file: str, expression: str,
+             model_key: str, mode: str, start_sent: int,
+             max_sentences: int | str, batch_size: int, n_threads: int,
+             use_analysis_cache: bool, selected_props: list[str] | None,
+             queue: multiprocessing.Queue):
+    """
+    Runs entirely in a child Process. Communicates back via queue messages:
+      {"type": "log",    "msg": str}
+      {"type": "update", "data": dict}   — partial job dict merge
+      {"type": "done",   "data": dict}   — final success payload
+      {"type": "error",  "msg": str}     — traceback string
+    """
+    import re as _re
+    from ppi_analyser.core import PPIAnalyser
+    from ppi_analyser.config import PipelineConfig, AnalysisMode
+
+    # ── Log handler that sends to queue ─────────────────────────────────────
+    class QueueLogHandler(logging.Handler):
+        def emit(self, record):
+            queue.put({"type": "log", "msg": self.format(record)})
+
+    handler = QueueLogHandler()
+    handler.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%H:%M:%S"
+    ))
+    root_logger = logging.getLogger("ppi_analyser")
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.DEBUG)
+
+    def send(type_, **kw):
+        queue.put({"type": type_, **kw})
+
+    # ── Validate inputs ──────────────────────────────────────────────────────
+    try:
+        mode_enum = AnalysisMode(mode)
+    except ValueError:
+        send("error", msg=f"Mode inconnu : '{mode}'. Valeurs acceptées : {[m.value for m in AnalysisMode]}")
+        return
+
+    model_key = "deepseek"  # override for test
+    if model_key not in MODELS_MAPPING:
+        send("error", msg=f"Modèle inconnu : '{model_key}'. Valeurs acceptées : {list(MODELS_MAPPING)}")
+        return
+
+    model_str = MODELS_MAPPING[model_key]
+
+    # ── Output directory ─────────────────────────────────────────────────────
+    ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
+    slug = expression.replace(" ", "_").replace("'", "").replace("/", "_")
+    out_dir = str(Path.home() / "ppi-analyser-output" / f"{slug}_{ts}")
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+
+    send("update", data={"output_dir": out_dir, "progress": 5})
+
+    props_for_pipeline = selected_props if selected_props else None
+
+    config = PipelineConfig(
+        models=[model_str],
+        expression=expression,
+        sentence_file=sentence_file,
+        mode=mode_enum,
+        output_dir=out_dir,
+        start_sent=start_sent,
+        max_sentences=max_sentences,
+        batch_mode=True,
+        batch_size=batch_size,
+        n_threads=n_threads,
+        use_analysis_cache=use_analysis_cache,
+        analysis_cache_path=str(Path.home() / ".ppi_analyser" / "analysis_cache.json"),
+        speaker_detection_model=SPEAKER_DETECTION_MODEL,
+        custom_properties=props_for_pipeline,
+    )
+
+    try:
+        send("update", data={"progress": 10})
+        analyser = PPIAnalyser(tokenization_mode="nlp")
+        send("update", data={"progress": 20})
+
+        df, state = analyser.process_sentences(config)
+
+        if df is None:
+            raise RuntimeError("Le pipeline n'a retourné aucun résultat.")
+
+        send("done", data={
+            "status": "done",
+            "finished_at": datetime.now().isoformat(),
+            "tokens_in": state.total_tokens_in,
+            "tokens_out": state.total_tokens_out,
+            "n_sentences": len(df),
+            "progress": 100,
+        })
+
+    except Exception:
+        send("error", msg=traceback.format_exc())
+
+
+# ── Queue reader thread (runs in main process) ───────────────────────────────
+
+def _queue_reader(job_id: str, queue: multiprocessing.Queue):
+    """
+    Reads messages from the child process queue and updates the in-memory
+    jobs / job_logs dicts. Exits when it sees a "done" or "error" message,
+    or when the queue is empty after the process has exited.
+    """
+    import queue as _q
+    global _current_process, _current_job_id
+
+    while True:
+        try:
+            msg = queue.get(timeout=1.0)
+        except _q.Empty:
+            # If the process is gone and queue is empty, we're done
+            proc = _current_process
+            if proc is not None and not proc.is_alive():
+                # Process was killed (terminate()) — mark stopped
+                with _jobs_lock:
+                    if job_id in jobs and jobs[job_id]["status"] == "running":
+                        jobs[job_id].update(
+                            status="stopped",
+                            finished_at=datetime.now().isoformat(),
+                        )
+                break
+            continue
+
+        t = msg["type"]
+
+        if t == "log":
+            with _jobs_lock:
+                if job_id in job_logs:
+                    job_logs[job_id].append(msg["msg"])
+            # Also parse progress from log lines
+            _update_progress_from_log(job_id, msg["msg"])
+
+        elif t == "update":
+            with _jobs_lock:
+                if job_id in jobs:
+                    jobs[job_id].update(msg["data"])
+
+        elif t == "done":
+            with _jobs_lock:
+                if job_id in jobs:
+                    jobs[job_id].update(msg["data"])
+            break
+
+        elif t == "error":
+            with _jobs_lock:
+                if job_id in jobs:
+                    jobs[job_id].update(
+                        status="error",
+                        error=msg["msg"],
+                        finished_at=datetime.now().isoformat(),
+                    )
+            break
+
+
+_seg_pat = None
+_ana_pat = None
+
+def _update_progress_from_log(job_id: str, line: str):
+    global _seg_pat, _ana_pat
+    import re
+    if _seg_pat is None:
+        _seg_pat = re.compile(r"Segmentation batch (\d+)/(\d+)")
+        _ana_pat = re.compile(r"Analysis batch (\d+)/(\d+)")
+
+    with _jobs_lock:
+        if job_id not in jobs:
+            return
+        mode = jobs[job_id]["params"].get("mode", "")
+
+    has_segmentation = (mode == "écrit_ia")
+
+    m_seg = _seg_pat.search(line)
+    m_ana = _ana_pat.search(line)
+
+    if not m_seg and not m_ana:
+        return
+
+    with _jobs_lock:
+        if job_id not in jobs:
+            return
+        cur = jobs[job_id].get("progress", 20)
+
+    if has_segmentation:
+        if m_seg:
+            seg_cur, seg_tot = int(m_seg.group(1)), int(m_seg.group(2))
+            pct = int(10 + (seg_cur / seg_tot) * 35)
+            with _jobs_lock:
+                if job_id in jobs:
+                    jobs[job_id]["progress"] = max(cur, pct)
+        if m_ana:
+            ana_cur, ana_tot = int(m_ana.group(1)), int(m_ana.group(2))
+            pct = int(45 + (ana_cur / ana_tot) * 50)
+            with _jobs_lock:
+                if job_id in jobs:
+                    jobs[job_id]["progress"] = max(cur, pct)
+    else:
+        if m_ana:
+            ana_cur, ana_tot = int(m_ana.group(1)), int(m_ana.group(2))
+            pct = int(20 + (ana_cur / ana_tot) * 75)
+            with _jobs_lock:
+                if job_id in jobs:
+                    jobs[job_id]["progress"] = max(cur, pct)
+
 
 # ── FastAPI ──────────────────────────────────────────────────────────────────
 
@@ -59,177 +267,12 @@ def root():
     idx = UI_DIR / "index.html"
     return FileResponse(str(idx)) if idx.exists() else {"message": "PPI Analyser API"}
 
-# ── Constants ────────────────────────────────────────────────────────────────
-
-# Maps the short UI key → full provider_model string used by the pipeline
-MODELS_MAPPING = {
-    "mistral_large":  "mistral_mistral-large-2411",
-    "mistral_medium": "mistral_mistral-medium-2508",
-    "deepseek":       "deepseek_deepseek",
-    "gemma":          "ollama_gemma3:27b",
-}
-
-# Speaker detection model — same as CLI
-SPEAKER_DETECTION_MODEL = "mistral_mistral-large-2411"
-
-# ── Background worker ────────────────────────────────────────────────────────
-
-def _run_job(job_id: str, sentence_file: str, expression: str,
-             model_key: str, mode: str, start_sent: int,
-             max_sentences: int | str, batch_size: int, n_threads: int,
-             use_analysis_cache: bool, selected_props: list[str] | None,
-             stop_event: threading.Event):
-
-    from ppi_analyser.core import PPIAnalyser
-    from ppi_analyser.config import PipelineConfig, AnalysisMode
-
-    # Attach a per-job log handler so every ppi_analyser log goes to the UI
-    handler = JobLogHandler(job_id)
-    handler.setFormatter(logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%H:%M:%S"
-    ))
-    root_logger = logging.getLogger("ppi_analyser")
-    root_logger.addHandler(handler)
-    root_logger.setLevel(logging.DEBUG)
-
-    def fail(msg: str):
-        with _jobs_lock:
-            jobs[job_id].update(status="error", error=msg,
-                                finished_at=datetime.now().isoformat())
-        root_logger.removeHandler(handler)
-
-    # Early-exit if already stopped before we even start
-    if stop_event.is_set():
-        with _jobs_lock:
-            jobs[job_id].update(status="stopped", finished_at=datetime.now().isoformat())
-        root_logger.removeHandler(handler)
-        return
-
-    # ── Validate inputs ──────────────────────────────────────────────────────
-    try:
-        mode_enum = AnalysisMode(mode)
-    except ValueError:
-        return fail(f"Mode inconnu : '{mode}'. Valeurs acceptées : {[m.value for m in AnalysisMode]}")
-    model_key = "gemma" # override for test
-    if model_key not in MODELS_MAPPING:
-        return fail(f"Modèle inconnu : '{model_key}'. Valeurs acceptées : {list(MODELS_MAPPING)}")
-
-    model_str = MODELS_MAPPING[model_key]
-
-    # ── Output directory ─────────────────────────────────────────────────────
-    ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
-    slug = expression.replace(" ", "_").replace("'", "").replace("/", "_")
-    out_dir = str(Path.home() / "ppi-analyser-output" / f"{slug}_{ts}")
-    Path(out_dir).mkdir(parents=True, exist_ok=True)
-
-    with _jobs_lock:
-        jobs[job_id]["output_dir"] = out_dir
-        jobs[job_id]["progress"]   = 5
-
-    # ── PipelineConfig — mirrors test.py exactly ─────────────────────────────
-    #   The `properties` field controls which props are analysed (None = all).
-    #   selected_props=[] (empty list from UI) means "none selected" which is
-    #   invalid; we treat it as None (= all) to be safe.
-    props_for_pipeline = selected_props if selected_props else None
-
-    config = PipelineConfig(
-        models=[model_str],
-        expression=expression,
-        sentence_file=sentence_file,
-        mode=mode_enum,
-        output_dir=out_dir,
-        start_sent=start_sent,
-        max_sentences=max_sentences,   # "all" or int, exactly as CLI
-        batch_mode=True,
-        batch_size=batch_size,
-        n_threads=n_threads,
-        use_analysis_cache=use_analysis_cache,
-        analysis_cache_path=str(Path.home() / ".ppi_analyser" / "analysis_cache.json"),
-        speaker_detection_model=SPEAKER_DETECTION_MODEL,
-        custom_properties=props_for_pipeline,  # None → all props; list → only those
-    )
-
-    try:
-        with _jobs_lock:
-            jobs[job_id]["progress"] = 10
-
-        analyser = PPIAnalyser(tokenization_mode="nlp")
-
-        with _jobs_lock:
-            jobs[job_id]["progress"] = 20
-
-        # ── Run process_sentences in a sub-thread so we can poll stop_event ──
-        result     = [None, None]
-        exc_holder = [None]
-
-        def _inner():
-            try:
-                result[0], result[1] = analyser.process_sentences(config)
-            except Exception as exc:
-                exc_holder[0] = exc
-
-        inner = threading.Thread(target=_inner, daemon=True)
-        inner.start()
-
-        # Poll every 500 ms; update progress heuristically while running
-        tick = 0
-        while inner.is_alive():
-            inner.join(timeout=0.5)
-            tick += 1
-            # Slowly advance the progress bar from 20 → 90 while running
-            # (real progress would require pipeline callbacks)
-            if inner.is_alive():
-                with _jobs_lock:
-                    cur = jobs[job_id].get("progress", 20)
-                    if cur < 90:
-                        jobs[job_id]["progress"] = min(90, cur + 1)
-            if stop_event.is_set():
-                root_logger.warning("Arrêt demandé — attente de la fin du batch en cours…")
-                inner.join()
-                break
-
-        if exc_holder[0]:
-            raise exc_holder[0]
-
-        df, state = result[0], result[1]
-        if df is None:
-            raise RuntimeError("Le pipeline n'a retourné aucun résultat.")
-
-        if stop_event.is_set():
-            with _jobs_lock:
-                jobs[job_id].update(
-                    status="stopped",
-                    finished_at=datetime.now().isoformat(),
-                    tokens_in=getattr(state, "total_tokens_in", 0),
-                    tokens_out=getattr(state, "total_tokens_out", 0),
-                    n_sentences=len(df),
-                    progress=jobs[job_id].get("progress", 0),
-                )
-        else:
-            with _jobs_lock:
-                jobs[job_id].update(
-                    status="done",
-                    finished_at=datetime.now().isoformat(),
-                    tokens_in=state.total_tokens_in,
-                    tokens_out=state.total_tokens_out,
-                    n_sentences=len(df),
-                    progress=100,
-                )
-
-    except Exception:
-        fail(traceback.format_exc())
-    finally:
-        root_logger.removeHandler(handler)
-
-
-# ── Endpoints ────────────────────────────────────────────────────────────────
 
 @app.post("/preview")
 async def preview_file(
     file: UploadFile = File(...),
-    max_rows: int = 50,
+    max_rows: int = 2000,
 ):
-    """Return the first max_rows rows of an xlsx file as JSON (header + rows)."""
     if not file.filename.endswith(".xlsx"):
         raise HTTPException(400, "Seuls les fichiers .xlsx sont acceptés.")
     data = await file.read()
@@ -241,7 +284,6 @@ async def preview_file(
         rows = []
         total_rows = 0
         for row in rows_iter:
-            # skip fully empty rows
             if all(c is None or str(c).strip() == "" for c in row):
                 continue
             total_rows += 1
@@ -263,21 +305,24 @@ async def start_analysis(
     max_sentences:      str        = Form("all"),
     batch_size:         int        = Form(5),
     n_threads:          int        = Form(8),
-    # FastAPI parses "true"/"false" strings from FormData correctly as bool
     use_analysis_cache: bool       = Form(True),
-    # JSON-encoded list of property keys, e.g. '["Position","Modalite"]'
-    # Empty string or "[]" → None (all properties)
     selected_props:     str        = Form("[]"),
 ):
+    global _current_process, _current_job_id
+
     if not file.filename.endswith(".xlsx"):
         raise HTTPException(400, "Seuls les fichiers .xlsx sont acceptés.")
 
-    # Save uploaded file
+    # Only one running job at a time
+    with _jobs_lock:
+        running = [j for j in jobs.values() if j["status"] == "running"]
+    if running:
+        raise HTTPException(409, f"Un job est déjà en cours (id: {running[0]['id']}). Attendez qu'il se termine ou arrêtez-le avant d'en lancer un nouveau.")
+
     dest = UPLOADS_DIR / f"{uuid.uuid4().hex}_{file.filename}"
     with dest.open("wb") as fh:
         shutil.copyfileobj(file.file, fh)
 
-    # Parse max_sentences
     max_s: int | str = "all"
     if max_sentences.strip().lower() != "all":
         try:
@@ -285,57 +330,65 @@ async def start_analysis(
         except ValueError:
             raise HTTPException(400, f"max_sentences invalide : '{max_sentences}'")
 
-    # Parse selected_props JSON list
     props_list: list[str] | None = None
     try:
         parsed = json.loads(selected_props) if selected_props.strip() else []
-        props_list = parsed if parsed else None  # empty list → None = all props
+        props_list = parsed if parsed else None
     except (json.JSONDecodeError, TypeError):
         props_list = None
 
-    job_id     = str(uuid.uuid4())
-    stop_event = threading.Event()
-
+    job_id = str(uuid.uuid4())
     params = dict(
-        expression=expression,
-        model=model,
-        mode=mode,
-        original_file=file.filename,
-        start_sent=start_sent,
-        max_sentences=max_s,
-        batch_size=batch_size,
-        n_threads=n_threads,
-        use_analysis_cache=use_analysis_cache,
-        # Store the human-readable list for the UI recap
-        selected_props=props_list,
+        expression=expression, model=model, mode=mode,
+        original_file=file.filename, start_sent=start_sent,
+        max_sentences=max_s, batch_size=batch_size, n_threads=n_threads,
+        use_analysis_cache=use_analysis_cache, selected_props=props_list,
     )
 
     with _jobs_lock:
-        jobs[job_id]            = _new_job(job_id, params)
-        job_logs[job_id]        = []
-        job_stop_events[job_id] = stop_event
+        jobs[job_id]     = _new_job(job_id, params)
+        job_logs[job_id] = []
 
-    threading.Thread(
+    queue = multiprocessing.Queue()
+
+    proc = multiprocessing.Process(
         target=_run_job,
         args=(job_id, str(dest), expression, model, mode,
               start_sent, max_s, batch_size, n_threads,
-              use_analysis_cache, props_list, stop_event),
+              use_analysis_cache, props_list, queue),
         daemon=True,
-    ).start()
+    )
+    proc.start()
+
+    _current_process = proc
+    _current_job_id  = job_id
+
+    # Thread that reads the queue and updates in-memory state
+    threading.Thread(target=_queue_reader, args=(job_id, queue), daemon=True).start()
 
     return {"job_id": job_id}
 
 
 @app.post("/jobs/{job_id}/stop")
 def stop_job(job_id: str):
+    global _current_process, _current_job_id
+
     with _jobs_lock:
         if job_id not in jobs:
             raise HTTPException(404, "Job introuvable.")
         if jobs[job_id]["status"] != "running":
             raise HTTPException(400, f"Le job n'est pas en cours (statut : {jobs[job_id]['status']}).")
-        event = job_stop_events.get(job_id)
-    if event:
-        event.set()
+
+    if _current_job_id == job_id and _current_process is not None:
+        _current_process.terminate()
+        _current_process = None
+        _current_job_id  = None
+        with _jobs_lock:
+            jobs[job_id].update(
+                status="stopped",
+                finished_at=datetime.now().isoformat(),
+            )
+
     return {"stopped": job_id}
 
 
@@ -357,12 +410,10 @@ def delete_job(job_id: str):
     with _jobs_lock:
         if job_id not in jobs:
             raise HTTPException(404, "Job introuvable.")
-        event = job_stop_events.get(job_id)
-        if event:
-            event.set()   # signal stop if still running
+        if jobs[job_id]["status"] == "running":
+            raise HTTPException(400, "Impossible de supprimer un job en cours. Arrêtez-le d'abord.")
         del jobs[job_id]
         job_logs.pop(job_id, None)
-        job_stop_events.pop(job_id, None)
     return {"deleted": job_id}
 
 @app.get("/jobs/{job_id}/logs")

@@ -336,12 +336,19 @@ function duration(a, b) {
 
 // ── StatusPill ────────────────────────────────────────────────────────────
 
-function StatusPill({ status }) {
-  const label = status === "running" ? "en cours" : status === "done" ? "terminé" : status === "error" ? "erreur" : status;
+function StatusPill({ status, stopping }) {
+  const label = stopping ? "arrêt…"
+    : status === "running" ? "en cours"
+    : status === "done" ? "terminé"
+    : status === "error" ? "erreur"
+    : status === "stopped" ? "arrêté"
+    : status;
+  const cls = stopping ? "running" : status;
   return (
-    <span className={`status-pill ${status}`}>
-      {status === "running" && <span className="pulse">●</span>}
-      {status === "done" && "✓"}{status === "error" && "✗"}
+    <span className={`status-pill ${cls}`}>
+      {(status === "running" || stopping) && <span className="pulse">●</span>}
+      {status === "done" && !stopping && "✓"}
+      {status === "error" && !stopping && "✗"}
       {label}
     </span>
   );
@@ -429,7 +436,7 @@ function ExcelPreviewModal({ file, onClose }) {
                 ))}
               </tbody>
             </table>
-            <p style={{fontSize:11,color:"var(--muted)",marginTop:8}}>Aperçu limité aux 50 premières lignes (indices Excel affichés).</p>
+            <p style={{fontSize:11,color:"var(--muted)",marginTop:8}}>Contenu du fichier excel (indices Excel affichés).</p>
           </div>
         )}
       </div>
@@ -548,7 +555,7 @@ function modeFromFilename(name) {
   return null;
 }
 
-function AnalyseForm({ onJobStarted }) {
+function AnalyseForm({ onJobStarted, hasRunningJob }) {
   const [file, setFile]         = useState(null);
   const [expression, setExpr]   = useState("");
   const [advanced, setAdvanced] = useState(false);
@@ -761,7 +768,17 @@ function AnalyseForm({ onJobStarted }) {
       )}
 
       {error && <div className="err-inline">{error}</div>}
-      <button className="btn btn-primary" onClick={submit} disabled={loading} style={{marginTop:12}}>
+      {hasRunningJob && (
+        <div style={{
+          background:"color-mix(in srgb,var(--warn) 12%,transparent)",
+          border:"1px solid color-mix(in srgb,var(--warn) 35%,transparent)",
+          borderRadius:"var(--radius)",padding:"8px 12px",fontSize:12,
+          color:"var(--warn)",marginTop:10,
+        }}>
+          ⚠️ Un job est déjà en cours. Attendez qu'il se termine ou arrêtez-le depuis l'onglet Jobs avant d'en lancer un nouveau.
+        </div>
+      )}
+      <button className="btn btn-primary" onClick={submit} disabled={loading || hasRunningJob} style={{marginTop:12}}>
         {loading ? "Envoi en cours…" : "Lancer l'analyse →"}
       </button>
     </div>
@@ -887,7 +904,7 @@ function JobRecap({ params }) {
 
 // ── JobRow ────────────────────────────────────────────────────────────────
 
-function JobRow({ job, onView, onDelete, onStop, onRelaunch, serverOk }) {
+function JobRow({ job, onView, onDelete, onStop, onRelaunch, serverOk, stopping }) {
   const dur = duration(job.created_at, job.finished_at);
   const pct = job.progress ?? 0;
   const isRunning = job.status === "running";
@@ -895,7 +912,7 @@ function JobRow({ job, onView, onDelete, onStop, onRelaunch, serverOk }) {
 
   return (
     <div className="job-row">
-      <StatusPill status={job.status}/>
+      <StatusPill status={job.status} stopping={stopping}/>
 
       <div className="job-body">
         <div className="job-expr">{job.params.expression}</div>
@@ -932,14 +949,18 @@ function JobRow({ job, onView, onDelete, onStop, onRelaunch, serverOk }) {
         )}
         {isRunning && serverOk && (
           <button className="btn btn-warn" style={{fontSize:11,padding:"4px 10px"}}
-            onClick={()=>onStop(job.id)}>⏹ Arrêter</button>
+            onClick={()=>onStop(job.id)} disabled={stopping}>
+            {stopping ? "Arrêt…" : "⏹ Arrêter"}
+          </button>
         )}
         {(job.status==="error" || job.status==="done" || isHistoryOnly) && serverOk && (
           <button className="btn btn-ghost" style={{fontSize:11,padding:"4px 10px",color:"var(--accent)"}}
             onClick={()=>onRelaunch(job)}>↺ Relancer</button>
         )}
-        <button className="btn btn-ghost" style={{fontSize:12,padding:"5px 10px",color:"var(--muted)"}}
-          onClick={()=>onDelete(job.id)}>✕</button>
+        {!isRunning && (
+          <button className="btn btn-ghost" style={{fontSize:12,padding:"5px 10px",color:"var(--muted)"}}
+            onClick={()=>onDelete(job.id)} title="Supprimer ce job">✕</button>
+        )}
       </div>
     </div>
   );
@@ -1050,6 +1071,7 @@ function App() {
   const [toast, setToast]         = useState(null);
   const [serverOk, setOk]         = useState(null);
   const [relaunchJob, setRelaunch]= useState(null);
+  const [stoppingIds, setStoppingIds] = useState(new Set());
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -1065,12 +1087,17 @@ function App() {
   const fetchJobs = useCallback(() => {
     fetch(`${API}/jobs`).then(r=>r.json()).then(data => {
       setLiveJobs(data);
-      // Merge into history: update existing, add new
+      // Merge into history: update existing entries, add new finished ones
+      // Only persist non-running jobs so restarts don't show ghost running jobs
       setHistJobs(prev => {
         const map = new Map(prev.map(j=>[j.id,j]));
         data.forEach(j => map.set(j.id, j));
-        const merged = Array.from(map.values()).sort((a,b)=>b.created_at.localeCompare(a.created_at));
-        saveJobHistory(merged);
+        const merged = Array.from(map.values())
+          .sort((a,b)=>b.created_at.localeCompare(a.created_at))
+          .slice(0, 100); // cap history
+        // Only persist finished jobs to localStorage
+        const toSave = merged.filter(j => j.status !== "running");
+        saveJobHistory(toSave);
         return merged;
       });
     }).catch(()=>{});
@@ -1089,6 +1116,16 @@ function App() {
     if (up) setSel(up);
   }, [liveJobs]);
 
+  // Clear stopping flag when job leaves running state
+  useEffect(() => {
+    if (stoppingIds.size === 0) return;
+    const stillRunning = new Set(liveJobs.filter(j=>j.status==="running").map(j=>j.id));
+    setStoppingIds(prev => {
+      const next = new Set([...prev].filter(id => stillRunning.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [liveJobs]);
+
   // Merged jobs for display: live jobs take precedence, history fills the rest
   const liveIds = new Set(liveJobs.map(j=>j.id));
   const jobs = [
@@ -1103,20 +1140,32 @@ function App() {
   }
 
   async function handleStop(id) {
-    await fetch(`${API}/jobs/${id}/stop`,{method:"POST"}).catch(()=>{});
-    setToast("Signal d'arrêt envoyé au job.");
+    const res = await fetch(`${API}/jobs/${id}/stop`, { method: "POST" }).catch(() => null);
+    if (res?.ok) {
+      setStoppingIds(prev => new Set([...prev, id]));
+      setToast("Signal d'arrêt envoyé — attente de la fin du batch en cours…");
+    } else {
+      setToast("Impossible d'arrêter le job.");
+    }
     fetchJobs();
   }
 
   async function handleDelete(id) {
-    await fetch(`${API}/jobs/${id}`,{method:"DELETE"}).catch(()=>{});
+    try {
+      const res = await fetch(`${API}/jobs/${id}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 404) {
+        const e = await res.json().catch(() => ({ detail: "Erreur inconnue" }));
+        setToast("❌ " + e.detail);
+        return;
+      }
+    } catch {}
     setHistJobs(prev => {
-      const next = prev.filter(j=>j.id!==id);
+      const next = prev.filter(j => j.id !== id);
       saveJobHistory(next);
       return next;
     });
     fetchJobs();
-    if (selected?.id===id) setSel(null);
+    if (selected?.id === id) setSel(null);
   }
 
   function handleRelaunch(job) {
@@ -1204,7 +1253,7 @@ function App() {
       </div>
 
       <div className="content">
-        {tab==="launch" && <AnalyseForm onJobStarted={handleJobStarted}/>}
+        {tab==="launch" && <AnalyseForm onJobStarted={handleJobStarted} hasRunningJob={running > 0}/>}
 
         {tab==="jobs" && !selected && (
           jobs.length===0
@@ -1213,7 +1262,8 @@ function App() {
                 {jobs.map(j=>(
                   <JobRow key={j.id} job={j} onView={setSel}
                     onDelete={handleDelete} onStop={handleStop}
-                    onRelaunch={handleRelaunch} serverOk={serverOk}/>
+                    onRelaunch={handleRelaunch} serverOk={serverOk}
+                    stopping={stoppingIds.has(j.id)}/>
                 ))}
               </div>
         )}
