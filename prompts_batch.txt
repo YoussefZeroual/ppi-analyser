@@ -82,7 +82,11 @@ Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les i
 - **L'expression PPI** à analyser apparaît dans son contexte naturel
 
 ### Mission
-
+* ta tâche est de déterminer si l'expression cible est autonome (clausative) ou facultative (parenthétique)
+les parenthétiques fonctionnent généralement comme des commentaires insérés dans le discours et qui peut être effacé, e.g: 
+	la vie tu vois est dure --> tu vois (parenthétique)
+	la vie, comment dirais-je, est dure --> comment dirai-je est parenthétique
+	le foot, c'est pas mon truc --> "c'est pas mon truc" causative car ce n'est pas seulement un commentaire facultatif.
 Pour chaque conversation du corpus, tu dois déterminer si l'expression PPI est de type **Clausative** ou **Parenthétique**, en te basant sur son fonctionnement syntaxique dans le tour de parole où elle apparaît.
 
 ### Définitions
@@ -313,38 +317,41 @@ Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les i
 - **La conversation complète** (tours de parole)
 - **L'expression PPI** à analyser apparaît dans son contexte naturel
 
-### Mission
 
-Pour chaque conversation du corpus, identifie si l'expression PPI est **étendue par un complément régi syntaxiquement**.
+# Prompt_Expansions — version enrichie avec exemples annotés
 
-### Types d'expansion possibles
+* ta tâche: repérer les expansons de l'expression cible:
 
-- **Structure infinitive** :
-  - Exemple : *Comment oses-tu **dire cela** ?*, *c’est pas possible **de penser un truc pareil !***
+* l'expansion est un élément qui vient toujours après et c'est un complément régi syntaxiquement par l'expression cible, e.g: comment ça se fait que tu sois ici--> que tu sois ici est une expansion
+* Un élément linguistique n'est considéré comme expansion que si et seulement si il fait partie de ces trois types:
 
-- **Proposition en *que*** :
-  - Exemple : *C’est clair **que Léa vient demain**.*
+    • De structures infinitives : comment oses-tu dire cela ?
+    • De phrases en que : c’est clair que Léa vient demain.
+    • De complément nominaux ou prépositionnels : tu parles d’un spectacle.
+si tu trouve tout élément en dehors de ces trois types, il faut indiquer "Aucune expansion" 
 
-- **Complément nominal ou prépositionnel** :
-  - Exemple : *Tu parles **d’un spectacle**.*, *Bonne nuit à vous. Bonne chance **pour ton spectacle**.*
+Exemples d'éléments qui ne sont pas des expansions:
+* les éléments disloqués: les fleurs, je les aime beaucoup --> 'je les aime beaucoup' n'est pas une expansion, c'est un élément disloqué
+ 
+ 
+* le lien syntaxique doit être évident
+* dans les dialogues authentiques, il n y a pas de ponctuation, il faut inférer le lien syntaxique du contexte 
+* si l'élément immédiatement après l'expression cible est juste juxtaposé sans lien syntaxique, indiquer 'Aucune expansion'
+* à ne pas confondre avec les éléments disloqués, e.g: c'est beau la vie--> la vie = élément disloqué: il n'est pas régi synatiquement par c'est beau
 
-### À ne pas confondre avec
-
-- Les **modifieurs** (adverbes optionnels comme *un peu*, *bien*)
-- Les **cooccurrents** (éléments externes comme *j’espère*, *là*, ou des connecteurs comme *mais*, *et*, *parce que*)
-
-### Format de sortie attendu
-
+    
+* format de réponse attendu:
 Pour chaque conversation analysée, produis une entrée structurée avec :
-
-- **Expansion** : description du complément trouvé, ou "Aucune expansion"
-- **Justification** : [brève, si expansion, précise sa nature]
+{
+  "Propriété": "[élément linguistique trouvé] ou [Aucune expansion]",
+  "Justification": "justification de la réponse, et tour de parole complet avec l'expansion entourée de balises <EXP> e.g: tour de parole complet: <PPI>comment peux-tu</PPI><EXP>faire ceci</EXP>"
+}
 
 **Exemple :**
 ```json
 [
   {
-    "Propriété": "Proposition en 'que' : 'que Léa vient demain'",
+    "Propriété": "Proposition en 'que' : <EXP>'que Léa vient demain'</EXP>",
     "Justification": "L'expression est suivie d'une subordonnée complétive introduite par 'que'."
   },
   {
@@ -379,27 +386,21 @@ Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les i
 - **La conversation complète** (tours de parole)
 - **L'expression PPI** à analyser apparaît dans son contexte naturel
 
-### Mission
 
-Pour chaque conversation du corpus, identifie les **modifieurs optionnels** qui intensifient ou modulent l'expression PPI.
+* ta tâche: repérer les modifieurs de l'expression cible (e.g très, trop, extrêmement, baucoup --> c'est pas grave --> c'est pas très grave)
 
-### Définition
+ATTENTION: - le modifieur est un élément supplémentaire qui s'ajoute à l'expression, il ne fait pas partie d'elle d'origine: par exemple: le mot 'pas' dans 'c'est pas grave' N'EST PAS UN MODIFIEUR!, car il fait partie intégrante de l'expression elle meme,
+ 	   -'très' dans 'c'est pas très grave' est un modifieur car c'est un élément ajouter pour intensifier l'expression
 
-- Élément **facultatif**, **dépendant syntaxiquement** de la PPI.
-- Modifie l’**intensité** ou la **modalité** sans changer le sens de base.
-- Exemple : *Ça va **pas un peu** la tête ?* → *un peu* est un modifieur. *Très bonne soirée. Ça commence **vraiment** à bien faire !* → *très* et *vraiment* sont des modifieurs.
 
-### Formes courantes
+un modifieur est un élément qui modifie l'expression, il peut être inséré ou bien à la fin de l'expression, comme les adverbes.
+* on considère un élément comme un modifieur si et seulement si il est ajouté à l'expression d'origine et il l'intensifie ou la modalise, e.g: c'est très bien--> 'très' est un modifieur 
+* le modifieur est soit inséré dans l'expression, soit immédiatement postposé, il n'est jamais séparé de l'expression cible.
 
-- **Adverbes** : *bien*, *vraiment*, *un peu*, *tout à fait*
-- **Locutions adverbiales ou modales**
-
-### Format de sortie attendu
-
-Pour chaque conversation analysée, produis une entrée structurée avec :
-
-- **Modifieurs** : liste des modifieurs avec leur position (antéposé/postposé), ou "Aucun modifieur"
-- **Justification** : [brève, mentionnant les modifieurs et leur position]
+{
+  "Propriété": "[élément linguistique trouvé] ou [Aucun modifieur]",
+  "Justification": "justification de la réponse, et tour de parole complet avec le modifieur entourée de balises <MOD> e.g: tour de parole complet: <PPI>comment peux-tu</PPI><EXP>faire ceci</EXP>"
+}
 
 **Exemple :**
 ```json
@@ -436,131 +437,61 @@ Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les i
 - **La conversation complète** (tours de parole)
 - **L'expression PPI** à analyser apparaît dans son contexte naturel
 
-### Mission
+### role général:
+* ta tâche c'est de trouver des éléments qu'on appelle des cooccurrents qui fonctionnent avec l'expression à analyser
 
-Pour chaque conversation du corpus, identifie les **cooccurrents** : éléments **externes à la PPI** qui apparaissent fréquemment à gauche ou à droite dans le même tour de parole.
+* par exemple: bon ben, à bientôt, donc euh
 
-### Types de cooccurrents
+--> le marqueur du discours 'bon ben' est un cooccurrent de l'expression 'à bientôt'
+--> le marqueur du discours 'donc eu' est un cooccurrent de l'expression 'à bientôt'
 
-- **Marqueurs de discours** : *mais*, *donc*, *en fait*
-- **Interjections** : *ah*, *oh*, *hein*
-- **Appellatifs** : *mon fils*, *madame*
-- **Vérificatifs/renforceurs** : *j’espère*, *là*
+* un élément linguistique est considéré comme un cooccurrent si et seulement si il a un lien direct avec l'expression cible, e.g: eh bien, c'est pas grave--> eh bien est étroitement lié à 'c'est pas grave'
+* Exemple de réponse erronnée: entrée: "c'est pas grave eh bien comment ça va" --> sortie: "marqueur de discours:eh bien' --> la réponse est erronnée car "eh bien" n'est pas lié à "c'est pas grave"  mais il est lié à l'expression qui la suit 'comment ça va' --> donc il n'est pas un cooccurrent de 'c'est pas grave'.
+* le sens du cooccurrent doit vraiment porter sur l'expression cible.
+* Il faut indiquer le cooccurrent si et seulement si il porte sémantiquement et pragmatiquement directement sur l'expression cible comme dans les deux exemples indiqués, autrement, indiquer "Aucun cooccurrent"
+* par fois il y a des combinaisons de marqueurs de discours, e.g: eh ben, bah alors, etc.
+* il ne faut retenir que les cooccurrents les plus proches de l'expression cible et qui ne sont pas séparés syntaxiquement de celle-ci
+* à l'oral spontanné, il ne faut pas retenir les cooccurrents qui font partie d'une phrase tronquée et incomplète qui précède ou suit l'expression cible.
+* parfois les dialogues sont authentiques et contiennent des hésitations, donc prendre ça en considération, e.g: "mais c'est pas c'est pas grave"--> "mais" est cooccurrent de 'c'est pas grave" car "c'est pas" est juste une hésitation de l'expression cible.
 
-#### Pour les marqueurs de discours :
-- Les marqueurs de discours portent sur la PPI et apparaissent immédiatement à côté, à gauche ou à droite de la PPI.
-- Ils sont souvent séparés de la PPI par une virgule.
-- Les marqueurs de discours les plus courants sont des connecteurs comme *mais*, *donc*, *alors*, *parce que*, *et* … ou des particules énonciatives exprimant l’attitude du locuteur : *oh*, *merde*, ou la gestion de l’interaction : *quoi*, *ben*, *euh* …
+IMPORTANT: tout élément qui n'est pas immédiatement antéposé ou postposé à l'expression cible N'EST PAS UN COOCCURRENT!
 
-**Liste indicative de marqueurs de discours (adaptée de Dargnat 2024) :**
-- **adjectif** : bon, chic, chiche, tout beau, tout doux, etc.
-- **adverbe** : alors, assez, ben, bien, comment, donc, effectivement, enfin, hélas, jamais de la vie, là, quand même, tant mieux, tant pis, etc.
-- **conjonction** : mais
-- **autres** : amen, allô, aïe, ah, aha, ahou, bah, beh, ben, bernique, beuh, beurk, bof, bravo, chut, crac, eh, euh, eurêka, fi, ha, haha, hé, hein, hem, hep, heu, hip hip hip hourra, ho, holà, hop, hourra, hum, na, oh, ohé, ouah, mouais, ouf, ouh, ouille, oups, ouste, paf, patatras, peuh, pouh, pouah, pouët, pst, snif, ta ta, taratata, tchin, waouh, youp là, yes, youpi, zou, zut
-- **nom** : adieu, attention, banco, bingo, bonjour, bonsoir, bonté, bordel, bougre, camembert, catastrophe, ciel, chapeau, chiotte, Christ, con, courage, crotte, dame, diable, dommage, genre, grâce, flûte, halte, malheur, merci, merde, misère, nom de Dieu, Jésus, pardon, pétard, pitié, prout, punaise, purée, putain, respect, salut, santé, seigneur, stop, tintin, tralala, tonnerre, etc.
-- **pronom** : quoi, ça alors, ça par exemple, etc.
-- **construction nominale** : bon Dieu, bonne journée, bonne soirée, bonté divine, bon sang, chapeau bas, de l’air, Dieu du ciel, doux Jésus, du balai, du calme, grands dieux, juste ciel, la vache, la vérité, ma foi, ma parole, mon Dieu, mon salaud, point barre, ta bouche, ta/vos gueules, etc.
-- **construction prépositionnelle** : à bientôt, à la bonne heure, à la fin, à la revoyure, à la tienne/nôtre/vôtre, à plus, à tantôt, au revoir, au plaisir, d’accord, du coup, en fait, par exemple, etc.
-- **verbe, construction verbale** (Tous les éléments en gras peuvent être considérés comme des PPI dans certains contextes) :
-  - **impératif** : admettons, allons, allez, dis, dites, disons, écoute, écoutez, ferme-la, fermez-la, la ferme, figure-toi, figurez-vous, mettons, regarde, regardez, remarque, remarquez, tiens, tenez, va, voilà, voyez, voyons. La plupart peuvent être combinés avec *donc* ou *voir* : dis donc, dis voir, tiens donc, tiens voir, etc.
-  - **indicatif** : tu comprends/comprends-tu, vous comprenez/comprenez-vous, tu penses bien/ penses-tu, vous pensez bien/pensez-vous, tu parles, tu m’étonnes, tu rigoles, tu sais/sais-tu, vous savez/savez-vous, tu vois/vois-tu, vous voyez/voyez-vous, je veux dire, etc.
+* workflow à suivre:
 
-#### Pour les Appellatifs
-- Les appellatifs sont souvent séparés de la PPI à l’écrit par une virgule.
-- Ils apparaissent dans la même phrase.
-- Il s’agit souvent d’un **nom propre**.
-- Ils apparaissent aussi souvent sous des formes comme **Mon + NOM** (*mon petit*, *mon chou*).
-- Ils peuvent aussi être des **qualificatifs insultants** (*imbécile*, *abruti*).
+	1. identifier l'expression cible
+	2. chercher 3 mots immédiatement avant et 3 mots immédiatement après
+	3 pour chacun de ces 3 mots : 
+		s'il introduit l'expression cible --> c'est un cooccurrent
+		s'il est juste proche parce que c'est un dialogue oral et il n y a pas de ponctuation pour le séparer de l'expression --> c'est pas un cooccurren
+		s'il introduit le mot qui le suit et non pas l'expression cible --> c'est pas un cooccurrent (e.g bon ben c'est bien c'est pas grave)
+		s'il fonctionne avec le/les mots qui le suivent comme un seul bloc et le bloc introduit l'expression cible --> c'est des cooccurrents (e.g bon ben c'est pas grave)
+		si l'appellatif fonctionne avec un autre segment que l'expression cible --> c'est pas un cooccurrent (e.g ben écoute Jean c'est pas grave)
+je t'indique quelques exemples de cooccurrents posibles, mais tu dois trouver aussi ceux qui ne figurent pas dans cette liste:
 
-### À noter
+| Catégorie | Exemples |
+|-----------|----------|
+| **Appellatifs** | Monsieur, Jean, Jeanne, Chéri, Maman, etc. |
+| **Adjectifs** | bon, chic, chiche, tout beau, tout doux |
+| **Adverbes** | alors, assez, ben, bien, comment, donc, effectivement, enfin, hélas, jamais de la vie, là, quand même, tant mieux, tant pis |
+| **Conjonctions** | mais |et
+| **Interjections** | amen, allô, aïe, ah, ah bon, aha, ahou, bah, beh, ben, bernique, beuh, beurk, bof, bravo, chut, crac, eh, euh, eurêka, fi, ha, haha, hé, hein, hem, hep, heu, hip hip hip hourra, ho, holà, hop, hourra, hum, na, oh, ohé, ouah, mouais, ouf, ouh, ouille, oups, ouste, paf, patatras, peuh, pouh, pouah, pouët, pst, snif, ta ta, taratata, tchin, waouh, youp là, yes, youpi, zou, zut |
+| **Noms** | adieu, attention, banco, bingo, bonjour, bonsoir, bonté, bordel, bougre, camembert, catastrophe, ciel, chapeau, chiotte, Christ, con, courage, crotte, dame, diable, dommage, genre, grâce, flûte, halte, malheur, merci, merde, misère, nom de Dieu, Jésus, pardon, pétard, pitié, prout, punaise, purée, putain, respect, salut, santé, seigneur, stop, tintin, tralala, tonnerre |
+| **Pronoms** | quoi, ça alors, ça par exemple |
+| **Constructions nominales** | bon Dieu, bonne journée, bonne soirée, bonté divine, bon sang, chapeau bas, de l'air, Dieu du ciel, doux Jésus, du balai, du calme, grands dieux, juste ciel, la vache, la vérité, ma foi, ma parole, mon Dieu, mon salaud, point barre, ta bouche, ta/vos gueules |
+| **Constructions prépositionnelles** | à bientôt, à la bonne heure, à la fin, à la revoyure, à la tienne/nôtre/vôtre, à plus, à tantôt, au revoir, au plaisir, d'accord, du coup, en fait, par exemple |
+| **Verbes/constructions verbales (impératif)** | admettons, allons, allez, dis, dites, disons, écoute, écoutez, ferme-la, fermez-la, la ferme, figure-toi, figurez-vous, mettons, regarde, regardez, remarque, remarquez, tiens, tenez, va, voilà, voyez, voyons (peuvent être combinés avec *donc* ou *voir* : dis donc, dis voir, tiens donc, tiens voir) |
+| **Verbes/constructions verbales (indicatif)** | tu comprends/comprends-tu, vous comprenez/comprenez-vous, tu penses bien/penses-tu, vous pensez bien/pensez-vous, tu parles, tu m'étonnes, tu rigoles, tu sais/sais-tu, vous savez/savez-vous, tu vois/vois-tu, vous voyez/voyez-vous, je veux dire |
 
-- Un cooccurrent est **externe syntaxiquement** à la PPI. Il apparaît dans la même phrase graphique ou juste à proximité.
-- Indique s’il est **antéposé (a)** ou **postposé (p)**.
+* format de réponse attendu:
+ - le cooccurrent trouvé doit être mentionné avec (a) si il est antéposé ou (p) si il est postposé
+ - S'il s'agit d'un appellatif, dire seulement appellatif(a)/(p) 
+ - S'il s'agit d'un marqueur de discours, mentionner: marqueur de discours (a)/(p): [mentionner le marqueur trouvé ici]
+ - une même expression peut avoir plusieurs cooccurrents à la fois
 
-### Format de sortie attendu
-
-Pour chaque conversation analysée, produis une entrée structurée avec :
-
-- **Cooccurrents** : liste des cooccurrents avec leur type et position, ou "Aucun cooccurrent"
-- **Justification** : [brève, mentionnant les cooccurrents et leur position]
-
-## EXEMPLES DE RÉPONSES
-
-### Exemple 1 (avec cooccurrents) :
-**Entrée** : Locuteur 1, tour de parole = "mais <PPI>c'est pas vrai</PPI> Jean!"
-
-**Sortie** :
-
-{{
-"Propriété": "Marqueurs de discours : mais(a), Appellatifs : (p)",
-"Justification": "Le marqueur de discours *mais* se trouve immédiatement avant la PPI. L'appellatif *Jean* se trouve immédiatement après la PPI. Tour de parole complet : [locuteur 1] <MD>mais</MD> <PPI>c'est pas vrai</PPI> <APP>Jean!</APP>"
-}}
-
-### Exemple 2 (avec cooccurrents) :
-**Entrée** : Locuteur 1, tour de parole = "Monsieur Bernard <PPI>c'est pas vrai</PPI>!"
-
-**Sortie** :
-
-{{
-"Propriété": "Appellatifs : (a)",
-"Justification": "L'appellatif *Monsieur Bernard* se trouve immédiatement avant la PPI. Tour de parole complet : [locuteur 1] <APP>Monsieur Bernard</APP> <PPI>c'est pas vrai</PPI>!"
-}}
-
-### Exemple 3 (sans cooccurrent) :
-**Entrée** : Locuteur 2, tour de parole = "je pense que c'est pas vrai", PPI = "c'est pas vrai"
-
-**Sortie** :
-
-{{
-"Propriété": "Aucun cooccurrent",
-"Justification": "Aucun marqueur de discours ou appellatif n'a été détecté à proximité de la PPI dans le tour de parole de [locuteur 2]"
-}}
-
-### Exemple 4 (pour illustrer la règle CRITIQUE) :
-**Entrée** : Locuteur 3, tour de parole = "<PPI>mais comment ça se fait</PPI>", PPI = "mais comment ça se fait"
-
-**Sortie** :
-
-{{
-"Propriété": "Aucun cooccurrent",
-"Justification": "Bien que 'mais' soit un marqueur de discours typique, il se trouve À L'INTÉRIEUR des balises <PPI></PPI> et fait donc partie intégrante de la PPI. Aucun cooccurrent n'est détecté à l'extérieur de la PPI dans le tour de parole de [locuteur 3]"
-}}
-
-### Exemple 5 (marqueur éloigné — NON cooccurrent) :
-**Entrée** : Tour de parole = "Vous avez vu... commença-t-elle, mais ils dormaient tous. <PPI>Comment cela se fait-il</PPI>, selon vous ?"
-**Sortie** :
 {
-"Propriété": "Aucun cooccurrent",
-"Justification": "Le mot 'mais' apparaît bien dans le même tour de parole mais il est séparé de la PPI par plusieurs propositions complètes et ne porte pas sur la PPI. Seul 'selon vous' est adjacent à la PPI mais c'est une incise et non un marqueur de discours de la liste. Aucun cooccurrent détecté."
+  "Propriété": "[élément(s) linguistique(s) trouvé(s)](a)/(p) ou [Aucun cooccurrent]",
+  "Justification": "justification de la réponse, et tour de parole complet avec le cooccurrent entourée de balises <MD> pour les marqueurs de discours et <APP> pour les appellatifs e.g: tour de parole complet: <MD>Mais</MD><PPI>comment peux-tu</PPI> faire ceci <APP>chéri</APP>"
 }
-
-### Exemple 6 (marqueur du discours construction) :
-**Entrée** : Tour de parole = "[Léna] ben écoute <PPI>à bientôt</PPI>, au revoir"
-**Sortie** :
-{
-"Propriété": "Marqueur du discours:ben écoute(a), au revoir(p) ",
-"Justification": "Le marqueur du discours 'ben écoute' est immédiatement antéposé à la PPI, la construction prépositionnelle 'au revoir' est immédiatement postposée à la PPI"
-}
-### exemples d'erreurs fréquentes:
-
-1) Détection d'un cooccurrent qui ne porte pas sur la PPI cible et qui porte sur un segment différent du tour de parole
-* Entrée: tour de parole: « Bon, ça suffit. Les funérailles, <PPI>c est pas mon truc</PPI> » 
-* problème: Bon est détecté comme un cooccurrent de la PPI "c est pas mon truc" alors que ce marqueur discursif ne porte pas sur la PPI elle même.Le cooccurrent doit porter sur la PPI elle-même: e.g: Tu sais, c'est pas mon truc --> le marqueur discursif "tu sais" est donc un cooccurrent antéposé de la PPI
-* Solution: considérer ce cas comme "Aucun cooccurrent" au lieu de "marqueur de discours(a)"
-
-
-### Critères d'analyse
-
-- Examine le **tour de parole complet** du locuteur.
-- **Liste** les cooccurrents identifiés, avec leur position (a/p). **Attention** : Il faut bien indiquer les éléments lexicaux et leur position sauf dans le cas des appellatifs où seul le type est indiqué dans la propriété.
-- Si aucun, indique **"Aucun cooccurrent"**.
-- **N'utilise pas les symboles du formatage JSON à l'intérieur de la propriété**.
-- **Ne fais aucune analyse sur la signification ou l'usage**.
-- Dans la justification, **mets les marqueurs du discours entre des balises `<MD></MD>`**, les appellatifs entre balises `<APP></APP>` et la PPI entre des balises `<PPI></PPI>`.
-  - **Exemple** : [locuteur 1] mais `<PPI>c'est pas vrai</PPI>` Jean!
-  - **Sortie** : `{"Propriété": "Marqueur du discours: mais(a), Appellatifs(p)", "Justification": "Le marqueur du discours *mais* se trouve immédiatement avant la PPI. L'appellatif *Jean* se trouve immédiatement après la PPI: [locuteur 1] <MD>mais</MD> <PPI>c'est pas vrai</PPI> <APP>Jean!</APP>"}`
-
-
 
 ---
 end_prompt
@@ -577,6 +508,8 @@ Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les i
 - **L'expression PPI** à analyser apparaît dans son contexte naturel
 
 ### Mission
+ta tâche est d'indiquer le segment du discours auquel renvoie l'expression cible, c'est-à-dire celui qu'elle commente
+ATTENTION: l'élement en question est un élément linguistique, il n'est pas purement un lien logique ou sémantique avec le discours, e.g: comment peux-tu dire ça--> l'expression comment peux-tu renvoie au segment 'ça' et non pas à l'idée du diaogue à laquelle renvoie 'ça'
 
 Pour chaque conversation du corpus, détermine la **portée** de l'expression PPI, c'est-à-dire le segment textuel sur lequel elle porte ou qu'elle commente.
 
@@ -609,6 +542,11 @@ Pour chaque conversation analysée, produis une entrée structurée avec :
 - **Portee** : "Hétéroportée", "Autoportée antérieure", "Autoportée postérieure", ou "Pas de portée"
 - **Justification** : [brève, précisant le segment commenté et sa position]
 
+### **Ta tâche** :
+
+Analyse la PPI donnée et indique la catégorie choisie. Dans ta justification :
+1. Identifie le segment <POR> (ce sur quoi porte la PPI).
+4. Inclus le tour de parole complet avec les balises.
 **Exemple :**
 ```json
 [
@@ -617,19 +555,7 @@ Pour chaque conversation analysée, produis une entrée structurée avec :
     "Justification": "L'expression réagit à l'affirmation de l'interlocuteur 'C'est pénible' dans le tour précédent."
   }
 ]
-```
 
-### Critères d'analyse
-
-- Examine la conversation (tours précédents et suivants, ainsi que le tour du locuteur).
-- Si l'expression est **rituelle** (salutation, etc.) → **Pas de portée**.
-- Sinon, identifie le **segment textuel commenté** :
-  - S'il provient du **tour de l'interlocuteur** → **Hétéroportée**.
-  - S'il se trouve dans le **même tour, avant l'expression** → **Autoportée antérieure**.
-  - S'il se trouve dans le **même tour, après l'expression** → **Autoportée postérieure**.
-- Justifie en citant le segment concerné, en utilisant les balises `<PPI>` et `<portée>`.
-
----
 end_prompt
 
 start_prompt
@@ -644,8 +570,8 @@ Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les i
 - **L'expression PPI** à analyser apparaît dans son contexte naturel
 
 ### Mission
-
-Pour chaque conversation du corpus, identifie la **catégorie de déclenchement** de l'expression PPI, selon la grille PREFAB.
+ta tâche: déterminer l'élément linguistique ou extralinguistique qui a provoqué la production de l'expression cible
+Pour chaque conversation du corpus, identifie la **catégorie de déclenchement** de l'expression PPI
 
 ### Catégories possibles
 
