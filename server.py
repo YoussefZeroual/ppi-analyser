@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
+from contextlib import asynccontextmanager
 UPLOADS_DIR = Path.home() / ".ppi_analyser" / "uploads"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -24,7 +24,44 @@ _jobs_lock = threading.Lock()
 _current_process: multiprocessing.Process | None = None
 _current_job_id: str | None = None
 
+# stanza server: required for position detection 
+
+import subprocess
+import sys
+from pathlib import Path
+
+_stanza_process = None
+
+def start_stanza_server():
+    global _stanza_process
+    script_path = Path(__file__).parent / "stanza" / "stanza_api.py"
+    if not script_path.exists():
+        print(f"Warning: {script_path} not found, stanza server not started")
+        return
+    _stanza_process = subprocess.Popen(
+        [sys.executable, str(script_path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True  # so we can kill process group
+    )
+    print(f"Started stanza server (PID: {_stanza_process.pid})")
+
+def shutdown_stanza_server():
+    global _stanza_process
+    if _stanza_process and _stanza_process.poll() is None:
+        _stanza_process.terminate()
+        try:
+            _stanza_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            _stanza_process.kill()
+        print("Stopped stanza server")
+
+
+
+
 # ── Job store helpers ────────────────────────────────────────────────────────
+
+
 
 def _new_job(job_id: str, params: dict) -> dict:
     return {
@@ -42,9 +79,11 @@ MODELS_MAPPING = {
     "mistral_medium": "mistral_mistral-medium-2508",
     "deepseek":       "deepseek_deepseek",
     "gemma":          "ollama_gemma3:27b",
+    "mistral_local":"ollama_mistral:latest",
+    "deepseek_local":"ollama_deepseek-r1:32b"
 }
 
-SPEAKER_DETECTION_MODEL = "deepseek_deepseek"
+SPEAKER_DETECTION_MODEL = MODELS_MAPPING["deepseek_local"]
 
 # ── Worker (runs in a separate Process) ─────────────────────────────────────
 
@@ -87,7 +126,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         send("error", msg=f"Mode inconnu : '{mode}'. Valeurs acceptées : {[m.value for m in AnalysisMode]}")
         return
 
-    model_key = "deepseek"  # override for test
+    model_key = "deepseek_local"  # override for test
     if model_key not in MODELS_MAPPING:
         send("error", msg=f"Modèle inconnu : '{model_key}'. Valeurs acceptées : {list(MODELS_MAPPING)}")
         return
@@ -255,7 +294,13 @@ def _update_progress_from_log(job_id: str, line: str):
 
 # ── FastAPI ──────────────────────────────────────────────────────────────────
 
-app = FastAPI(title="PPI Analyser API", version="1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_stanza_server()
+    yield
+    shutdown_stanza_server()
+
+app = FastAPI(title="PPI Analyser API", version="1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 UI_DIR = Path(__file__).parent / "ui"

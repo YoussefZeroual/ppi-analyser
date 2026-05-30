@@ -318,8 +318,6 @@ Tu disposes d'un corpus de conversations. Pour chaque conversation, toutes les i
 - **L'expression PPI** à analyser apparaît dans son contexte naturel
 
 
-# Prompt_Expansions — version enrichie avec exemples annotés
-
 * ta tâche: repérer les expansons de l'expression cible:
 
 * l'expansion est un élément qui vient toujours après et c'est un complément régi syntaxiquement par l'expression cible, e.g: comment ça se fait que tu sois ici--> que tu sois ici est une expansion
