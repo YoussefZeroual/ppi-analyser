@@ -19,7 +19,7 @@ def detect_segments_ia(text: str, model: str) -> str:
 Put narration parts inside <narration> tags and dialogal parts inside <dialogue> tags
 narration tags indlcude also inserted segments like: "dit-il", "répondit Jean", etc.
 <PPI> tagged segments should always be inside <dialogue> tags
-dialogues should start with a speaker label (e.g [Jean] if it can be infered from the context, otherwise just a generic label e.g: [speaker 1], [speaker 2], etc
+dialogues should start with a speaker label (e.g [Jean] if it can be infered from the context (e.g: "tu es heureux, lui dit Jean" --> [jean] tu es heureux), otherwise just a generic label e.g: [locuteur 1], [locuteur 2], etc
 
 dont add anything that isnt already in the text
 some texts might be just dialogue with no narration: check first if the text is just dialogue
@@ -50,7 +50,7 @@ _BATCH_SYSTEM_PROMPT = """\
 for each text, Put narration parts inside <narration> tags and dialogal parts inside <dialogue> tags
 narration tags indlcude also inserted segments like: "dit-il", "répondit Jean", etc.
 <PPI> tagged segments should always be inside <dialogue> tags
-dialogues should start with a speaker label (e.g [Jean] if it can be infered from the context, otherwise just a generic label e.g: [speaker 1], [speaker 2], etc
+dialogues should start with a speaker label (e.g [Jean] if it can be infered from the context, otherwise just a generic label e.g: [locuteur 1], [locuteur 2], etc
 
 dont add anything that isnt already in the text
 

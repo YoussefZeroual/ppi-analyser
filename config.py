@@ -18,7 +18,7 @@ STANZA_API_URL   = "http://localhost:5000"
 
 DEFAULT_SUBMODELS = {
     "ollama":   "mistral:7b",
-    "mistral":  "mistral-medium-latest",
+    "mistral":  "mistral-large-latest",
     "groq":     "moonshotai/kimi-k2-instruct",
     "gemini":   "gemini-3-flash-preview",
     "no_model": "no_model",

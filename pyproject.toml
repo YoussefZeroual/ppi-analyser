@@ -14,7 +14,9 @@ dependencies = [
     "weasyprint",
     "ollama"
 ]
-
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["stanza*"]
 [project.optional-dependencies]
 dev = ["pytest", "mypy", "ruff"]
 

@@ -80,10 +80,11 @@ MODELS_MAPPING = {
     "deepseek":       "deepseek_deepseek",
     "gemma":          "ollama_gemma3:27b",
     "mistral_local":"ollama_mistral:latest",
-    "deepseek_local":"ollama_deepseek-r1:32b"
+    "deepseek_local":"ollama_deepseek-r1:32b",
+    "mistral_batch":"mistral_batch_mistral-large-latest"
 }
 
-SPEAKER_DETECTION_MODEL = MODELS_MAPPING["deepseek_local"]
+SPEAKER_DETECTION_MODEL = MODELS_MAPPING["deepseek"]
 
 # ── Worker (runs in a separate Process) ─────────────────────────────────────
 
@@ -126,7 +127,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         send("error", msg=f"Mode inconnu : '{mode}'. Valeurs acceptées : {[m.value for m in AnalysisMode]}")
         return
 
-    model_key = "deepseek_local"  # override for test
+    model_key = "mistral_large"  # override for test
     if model_key not in MODELS_MAPPING:
         send("error", msg=f"Modèle inconnu : '{model_key}'. Valeurs acceptées : {list(MODELS_MAPPING)}")
         return

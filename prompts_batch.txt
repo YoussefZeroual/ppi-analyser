@@ -457,7 +457,7 @@ IMPORTANT: tout élément qui n'est pas immédiatement antéposé ou postposé �
 * workflow à suivre:
 
 	1. identifier l'expression cible
-	2. chercher 3 mots immédiatement avant et 3 mots immédiatement après
+	2. chercher 3 mots immédiatement avant et 3 mots immédiatement après: e.g: [VE2]eh bien ciao <PPI>à bientôt</PPI> au revoir ah c' est quoi alors des belles oh des beaux fromages pour les fêtes  --> 'ciao' est un cooccurrent antéposé de PPI>à bientôt</PPI> et 'au revoir' est un cooccurrent postposé. Par contre 'eh bien' et 'alors' ne sont pas des cooccurrents de cette expression car ils sont liés sémantiquement à d'autres éléments dans l'énoncé.
 	3 pour chacun de ces 3 mots : 
 		s'il introduit l'expression cible --> c'est un cooccurrent
 		s'il est juste proche parce que c'est un dialogue oral et il n y a pas de ponctuation pour le séparer de l'expression --> c'est pas un cooccurren
@@ -479,6 +479,14 @@ je t'indique quelques exemples de cooccurrents posibles, mais tu dois trouver au
 | **Constructions prépositionnelles** | à bientôt, à la bonne heure, à la fin, à la revoyure, à la tienne/nôtre/vôtre, à plus, à tantôt, au revoir, au plaisir, d'accord, du coup, en fait, par exemple |
 | **Verbes/constructions verbales (impératif)** | admettons, allons, allez, dis, dites, disons, écoute, écoutez, ferme-la, fermez-la, la ferme, figure-toi, figurez-vous, mettons, regarde, regardez, remarque, remarquez, tiens, tenez, va, voilà, voyez, voyons (peuvent être combinés avec *donc* ou *voir* : dis donc, dis voir, tiens donc, tiens voir) |
 | **Verbes/constructions verbales (indicatif)** | tu comprends/comprends-tu, vous comprenez/comprenez-vous, tu penses bien/penses-tu, vous pensez bien/pensez-vous, tu parles, tu m'étonnes, tu rigoles, tu sais/sais-tu, vous savez/savez-vous, tu vois/vois-tu, vous voyez/voyez-vous, je veux dire |
+
+
+* position par défaut où chercher les cooccurrents:
+	* ces cooccurrents sont toujours antéposés et ne sont jamais postposés aux PPI:
+	et,et bien,et d'ailleurs,et euh,et maintenant,et moi,et puis,et toi,et vas-y,et vous,mais,mais alors,mais enfin,mais je rêve,mais je vous en prie,mais non,mais ouais,mais oui,,mais voyons,même si,oui mais,sur ce
+	
+	* ces cooccurrents peuvent être antéposés ou postposés:
+	ta bouche,ta gueule,ta ta ta,tais-toi,tant mieux,tant pis,taratata,tchin,tenez,tiens,tiens donc,tiens voir,tintin,tonnerre,tout beau,tout de suite,tout doux,tralala,très bien,très bonne idée,tu comprends,tu m’étonnes,tu m'entends,tu parles,tu penses bien,tu rigoles,tu sais,tu vois,va,vas-y,voilà,vois-tu,vos gueules,vous aussi,vous comprenez,vous pensez bien,vous savez,vous voyez,voyez,voyez-vous,vraiment,waouh,wesh,yes,yo,youp là,youpi,zou,zut,
 
 * format de réponse attendu:
  - le cooccurrent trouvé doit être mentionné avec (a) si il est antéposé ou (p) si il est postposé

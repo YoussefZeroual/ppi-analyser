@@ -261,9 +261,9 @@ end_prompt
 
 start_prompt
 Prompt_Coocurrents
+
 ### role général:
 * ta tâche c'est de trouver des éléments qu'on appelle des cooccurrents qui fonctionnent avec l'expression à analyser
-
 * par exemple: bon ben, à bientôt, donc euh
 
 --> le marqueur du discours 'bon ben' est un cooccurrent de l'expression 'à bientôt'
@@ -279,8 +279,8 @@ Prompt_Coocurrents
 IMPORTANT: tout élément qui n'est pas immédiatement antéposé ou postposé à l'expression cible N'EST PAS UN COOCCURRENT!
 * workflow à suivre:
 
-	1. identifier l'expression cible
-	2. chercher 3 mots immédiatement avant et 3 mots immédiatement après
+	1. identifier l'expression cible (à l'intérieur des balises <PPI>)
+	2. chercher 3 mots immédiatement avant et 3 mots immédiatement après: e.g: [VE2]eh bien ciao <PPI>à bientôt</PPI> au revoir ah c' est quoi alors des belles oh des beaux fromages pour les fêtes  --> 'ciao' est un cooccurrent antéposé de PPI>à bientôt</PPI> et 'au revoir' est un cooccurrent postposé. Par contre 'eh bien' et 'alors' ne sont pas des cooccurrents de cette expression car ils sont liés sémantiquement à d'autres éléments dans l'énoncé.
 	3 pour chacun de ces 3 mots : 
 		s'il introduit l'expression cible --> c'est un cooccurrent
 		s'il est juste proche parce que c'est un dialogue oral et il n y a pas de ponctuation pour le séparer de l'expression --> c'est pas un cooccurren
@@ -302,6 +302,7 @@ je t'indique quelques exemples de cooccurrents posibles, mais tu dois trouver au
 | **Constructions prépositionnelles** | à bientôt, à la bonne heure, à la fin, à la revoyure, à la tienne/nôtre/vôtre, à plus, à tantôt, au revoir, au plaisir, d'accord, du coup, en fait, par exemple |
 | **Verbes/constructions verbales (impératif)** | admettons, allons, allez, dis, dites, disons, écoute, écoutez, ferme-la, fermez-la, la ferme, figure-toi, figurez-vous, mettons, regarde, regardez, remarque, remarquez, tiens, tenez, va, voilà, voyez, voyons (peuvent être combinés avec *donc* ou *voir* : dis donc, dis voir, tiens donc, tiens voir) |
 | **Verbes/constructions verbales (indicatif)** | tu comprends/comprends-tu, vous comprenez/comprenez-vous, tu penses bien/penses-tu, vous pensez bien/pensez-vous, tu parles, tu m'étonnes, tu rigoles, tu sais/sais-tu, vous savez/savez-vous, tu vois/vois-tu, vous voyez/voyez-vous, je veux dire |
+
 
 * format de réponse attendu:
  - le cooccurrent trouvé doit être mentionné avec (a) si il est antéposé ou (p) si il est postposé
