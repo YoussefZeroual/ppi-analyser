@@ -1,4 +1,5 @@
 # analysis/sentence.py
+import re
 import time
 import logging
 import concurrent.futures
@@ -25,7 +26,7 @@ def process_sentences_batch(
     start = time.time()
     n_sents = len(conversations)
 
-    NON_IA = [0, 1, 5]
+    NON_IA = [0, 1, 5, 7]
     n = len(models)
     models_resolved = []
     submodels_resolved = []
@@ -181,10 +182,39 @@ def _handle_no_model_batch(
                 nlp=state.nlp,
             )
             if result:
-                
                 val = json.dumps({"Propriété": result[0], "Justification": result[1]}, ensure_ascii=False)
             else:
                 val = json.dumps({"Propriété": "Indéterminé", "Justification": "Position non calculée"}, ensure_ascii=False)
+
+        elif prompt_type == "Expansions":
+            from ppi_analyser.analysis.position import (
+                _extract_ppi_text,
+                _get_ppi_ids_stanza,
+                _get_expansion_tokens_stanza,
+            )
+            conv = conversations[i]
+            ppi_text = _extract_ppi_text(conv)
+            expansion_text = ""
+            if ppi_text and state.nlp is not None:
+                doc = state.nlp(re.sub(r'</?PPI>', '', conv, flags=re.IGNORECASE).lower())
+                for sentence in doc.sentences:
+                    ppi_ids = _get_ppi_ids_stanza(sentence, ppi_text)
+                    if ppi_ids:
+                        exp_tokens = _get_expansion_tokens_stanza(sentence, ppi_ids)
+                        expansion_text = " ".join(
+                            w.text for w in exp_tokens if w.upos != "PUNCT"
+                        )
+                        break
+            if expansion_text:
+                val = json.dumps({
+                    "Propriété": expansion_text,
+                    "Justification": f"Expansion syntaxique de '{ppi_text}' détectée par analyse des dépendances"
+                }, ensure_ascii=False)
+            else:
+                val = json.dumps({
+                    "Propriété": "Aucune expansion détectée",
+                    "Justification": "Aucune expansion syntaxique détectée par analyse des dépendances"
+                }, ensure_ascii=False)
         else:
             val = json.dumps({"Propriété": "no_model", "Justification": "no_model"}, ensure_ascii=False)
         results.append(val)
@@ -286,7 +316,7 @@ def _run_parallel(
     properties: list[str] | None = None,
 ) -> list[str]:
 
-    NON_IA = [0, 1, 5]
+    NON_IA = [0, 1, 5, 7]
     n = len(models)
 
     resolved_models = []

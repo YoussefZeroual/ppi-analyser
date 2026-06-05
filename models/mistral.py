@@ -20,6 +20,7 @@ class MistralProvider(LLMProvider):
         with Mistral(api_key=self.api_key) as client:
             response = client.chat.complete(
                 model=self.submodel,
+                temperature=0,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user",   "content": user_prompt},
@@ -69,6 +70,7 @@ class MistralBatchProvider:
             {
                 "custom_id": req["custom_id"],
                 "body": {
+                "temperature": 0,
                     "messages": [
                         {"role": "system", "content": req["system"]},
                         {"role": "user",   "content": req["user"]},

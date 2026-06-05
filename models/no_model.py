@@ -1,5 +1,7 @@
 # models/no_model.py
 
+import re
+import json
 import logging
 from ppi_analyser.models.base import LLMProvider
 from ppi_analyser.analysis.prompts import get_prompt_type
@@ -31,10 +33,38 @@ class NoModelProvider(LLMProvider):
 
         if prompt_type == "Position":
             from ppi_analyser.analysis.position import get_pos
-            result = get_pos(conversation, mode,nlp=self.nlp)
+            result = get_pos(conversation, mode, nlp=self.nlp)
             if result:
                 return f'{{"Propriété": "{result[0]}", "Justification": "{result[1]}"}}'
             return '{"Propriété": "Indéterminé", "Justification": "Position non calculée"}'
+
+        if prompt_type == "Expansions":
+            from ppi_analyser.analysis.position import (
+                _extract_ppi_text,
+                _get_ppi_ids_stanza,
+                _get_expansion_tokens_stanza,
+            )
+            ppi_text = _extract_ppi_text(conversation)
+            expansion_text = ""
+            if ppi_text and self.nlp is not None:
+                doc = self.nlp(re.sub(r'</?PPI>', '', conversation, flags=re.IGNORECASE).lower())
+                for sentence in doc.sentences:
+                    ppi_ids = _get_ppi_ids_stanza(sentence, ppi_text)
+                    if ppi_ids:
+                        exp_tokens = _get_expansion_tokens_stanza(sentence, ppi_ids)
+                        expansion_text = " ".join(
+                            w.text for w in exp_tokens if w.upos != "PUNCT"
+                        )
+                        break
+            if expansion_text:
+                return json.dumps({
+                    "Propriété": expansion_text,
+                    "Justification": f"Expansion syntaxique de '{ppi_text}' détectée par analyse des dépendances"
+                }, ensure_ascii=False)
+            return json.dumps({
+                "Propriété": "Aucune expansion détectée",
+                "Justification": "Aucune expansion syntaxique détectée par analyse des dépendances"
+            }, ensure_ascii=False)
 
         return '{"Propriété": "no_model", "Justification": "no_model"}'
 

@@ -265,10 +265,20 @@ Prompt_Coocurrents
 ### role général:
 * ta tâche c'est de trouver des éléments qu'on appelle des cooccurrents qui fonctionnent avec l'expression à analyser
 * par exemple: bon ben, à bientôt, donc euh
+	--> le marqueur du discours 'bon ben' est un cooccurrent de l'expression 'à bientôt'
+	--> le marqueur du discours 'donc eu' est un cooccurrent de l'expression 'à bientôt'
 
---> le marqueur du discours 'bon ben' est un cooccurrent de l'expression 'à bientôt'
---> le marqueur du discours 'donc eu' est un cooccurrent de l'expression 'à bientôt'
 
+## Liste stricte des cooccurrents à trouver:
+
+Position	Items
+Aucune contrainte spécifiée (position libre a priori)	à bientôt, à la bonne heure, à la fin, à la revoyure, à la tienne/nôtre/vôtre, à plus, à tantôt, adieu, admettons, ah, ah bon, aha, ahou, aïe, allô, allons, allez, amen, alors, assez, au plaisir, au revoir, bah, banco, beh, bernique, beuh, beurk, bien, bingo, bof, bon, bon Dieu, bon sang, bonjour, bonne journée, bonne soirée, bonsoir, bonté, bonté divine, bordel, bougre, bravo, ça alors, ça par exemple, camembert, catastrophe, chapeau, chapeau bas, chéri, chic, chiche, chiotte, Christ, chut, ciel, comment, con, courage, crac, crotte, d'accord, dame, de l'air, diable, Dieu du ciel, dis, dis donc, dis voir, dites, dommage, donc, doux Jésus, du balai, du calme, du coup, eh, effectivement, enfin, en fait, euh, eurêka, ferme-la, fermez-la, fi, figure-toi, figurez-vous, flûte, grâce, grands dieux, ha, haha, halte, hé, hein, hélas, hem, hep, heu, hip hip hip hourra, ho, holà, hop, hourra, hum, je veux dire, Jésus, juste ciel, la ferme, la vache, la vérité, là, ma foi, ma parole, mais, malheur, maman, merci, merde, mettons, misère, mon Dieu, mon salaud, monsieur, mouais, na, nom de Dieu, oh, ohé, ouah, ouais, ouf, ouh, ouille, oups, ouste, paf, par exemple, pardon, patatras, pétard, peuh, pitié, point barre, pouah, pouët, pouh, prout, pst, punaise, purée, putain, quand même, quoi, regarde, regardez, remarque, remarquez, respect, salut, santé, seigneur, snif, stop, sur ce
+Antéposé ou postposé	ta bouche, ta gueule, ta ta ta, tais-toi, tant mieux, tant pis, taratata, tchin, tenez, tiens, tiens donc, tiens voir, tintin, tonnerre, tout beau, tout de suite, tout doux, tralala, très bien, très bonne idée, tu comprends, tu m'étonnes, tu m'entends, tu parles, tu penses bien, tu rigoles, tu sais, tu vois, va, vas-y, voilà, vois-tu, vos gueules, vous aussi, vous comprenez, vous pensez bien, vous savez, vous voyez, voyez, voyez-vous, vraiment, waouh, wesh, yes, yo, youp là, youpi, zou, zut
+Antéposé uniquement	et, et bien, et d'ailleurs, et euh, et maintenant, et moi, et puis, et toi, et vas-y, et vous, mais alors, mais enfin, mais je rêve, mais je vous en prie, mais non, mais ouais, mais oui, mais voyons, même si, oui mais
+
+
+## RÈGLES STRICTES À SUIVRE:
+SUIS STRICTEMENT CES RÈGLES POUR LA DÉTECTION DES COOCCURRENTS:
 * un élément linguistique est considéré comme un cooccurrent si et seulement si il a un lien direct avec l'expression cible, e.g: eh bien, c'est pas grave--> eh bien est étroitement lié à 'c'est pas grave'
 * Exemple de réponse erronnée: entrée: "c'est pas grave eh bien comment ça va" --> sortie: "marqueur de discours:eh bien' --> la réponse est erronnée car "eh bien" n'est pas lié à "c'est pas grave"  mais il est lié à l'expression qui la suit 'comment ça va' --> donc il n'est pas un cooccurrent de 'c'est pas grave'.
 * le sens du cooccurrent doit vraiment porter sur l'expression cible.
@@ -287,21 +297,8 @@ IMPORTANT: tout élément qui n'est pas immédiatement antéposé ou postposé �
 		s'il introduit le mot qui le suit et non pas l'expression cible --> c'est pas un cooccurrent (e.g bon ben c'est bien c'est pas grave)
 		s'il fonctionne avec le/les mots qui le suivent comme un seul bloc et le bloc introduit l'expression cible --> c'est des cooccurrents (e.g bon ben c'est pas grave)
 		si l'appellatif fonctionne avec un autre segment que l'expression cible --> c'est pas un cooccurrent (e.g ben écoute Jean c'est pas grave)
-je t'indique quelques exemples de cooccurrents posibles, mais tu dois trouver aussi ceux qui ne figurent pas dans cette liste:
 
-| Catégorie | Exemples |
-|-----------|----------|
-| **Appellatifs** | Monsieur, Jean, Jeanne, Chéri, Maman, etc. |
-| **Adjectifs** | bon, chic, chiche, tout beau, tout doux |
-| **Adverbes** | alors, assez, ben, bien, comment, donc, effectivement, enfin, hélas, jamais de la vie, là, quand même, tant mieux, tant pis |
-| **Conjonctions** | mais |et
-| **Interjections** | amen, allô, aïe, ah, ah bon, aha, ahou, bah, beh, ben, bernique, beuh, beurk, bof, bravo, chut, crac, eh, euh, eurêka, fi, ha, haha, hé, hein, hem, hep, heu, hip hip hip hourra, ho, holà, hop, hourra, hum, na, oh, ohé, ouah, mouais, ouf, ouh, ouille, oups, ouste, paf, patatras, peuh, pouh, pouah, pouët, pst, snif, ta ta, taratata, tchin, waouh, youp là, yes, youpi, zou, zut |
-| **Noms** | adieu, attention, banco, bingo, bonjour, bonsoir, bonté, bordel, bougre, camembert, catastrophe, ciel, chapeau, chiotte, Christ, con, courage, crotte, dame, diable, dommage, genre, grâce, flûte, halte, malheur, merci, merde, misère, nom de Dieu, Jésus, pardon, pétard, pitié, prout, punaise, purée, putain, respect, salut, santé, seigneur, stop, tintin, tralala, tonnerre |
-| **Pronoms** | quoi, ça alors, ça par exemple |
-| **Constructions nominales** | bon Dieu, bonne journée, bonne soirée, bonté divine, bon sang, chapeau bas, de l'air, Dieu du ciel, doux Jésus, du balai, du calme, grands dieux, juste ciel, la vache, la vérité, ma foi, ma parole, mon Dieu, mon salaud, point barre, ta bouche, ta/vos gueules |
-| **Constructions prépositionnelles** | à bientôt, à la bonne heure, à la fin, à la revoyure, à la tienne/nôtre/vôtre, à plus, à tantôt, au revoir, au plaisir, d'accord, du coup, en fait, par exemple |
-| **Verbes/constructions verbales (impératif)** | admettons, allons, allez, dis, dites, disons, écoute, écoutez, ferme-la, fermez-la, la ferme, figure-toi, figurez-vous, mettons, regarde, regardez, remarque, remarquez, tiens, tenez, va, voilà, voyez, voyons (peuvent être combinés avec *donc* ou *voir* : dis donc, dis voir, tiens donc, tiens voir) |
-| **Verbes/constructions verbales (indicatif)** | tu comprends/comprends-tu, vous comprenez/comprenez-vous, tu penses bien/penses-tu, vous pensez bien/pensez-vous, tu parles, tu m'étonnes, tu rigoles, tu sais/sais-tu, vous savez/savez-vous, tu vois/vois-tu, vous voyez/voyez-vous, je veux dire |
+
 
 
 * format de réponse attendu:
@@ -319,7 +316,7 @@ exemple 2
   "Propriété": "Aucun cooccurrent",
   "Justification": "La PPI n'a aucun cooccurrent"
 }
-
+----
 
 end_prompt
 

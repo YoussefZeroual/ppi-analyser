@@ -9,11 +9,11 @@ class DeepseekProvider(LLMProvider):
         from openai import OpenAI
         client = OpenAI(api_key=self.api_key, base_url="https://api.deepseek.com")
         response = client.chat.completions.create(
-            model="deepseek-chat",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user",   "content": user_prompt},
             ],
+            model="deepseek-v4-flash",
             stream=False,
         )
         return response.choices[0].message.content
