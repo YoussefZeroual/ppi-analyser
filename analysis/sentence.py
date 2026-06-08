@@ -26,7 +26,7 @@ def process_sentences_batch(
     start = time.time()
     n_sents = len(conversations)
 
-    NON_IA = [0, 1, 5, 7]
+    NON_IA = [0, 1, 5]
     n = len(models)
     models_resolved = []
     submodels_resolved = []
@@ -316,7 +316,7 @@ def _run_parallel(
     properties: list[str] | None = None,
 ) -> list[str]:
 
-    NON_IA = [0, 1, 5, 7]
+    NON_IA = [0, 1, 5]
     n = len(models)
 
     resolved_models = []

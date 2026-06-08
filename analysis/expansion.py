@@ -13,13 +13,13 @@ def extract_ppi_sentence(tagged_line):
         return None, None
     ppi_text = match.group(1).strip()
     # Trouve la limite gauche : dernier séparateur avant la balise
-    pre = tagged_line[:match.start()]
+    #pre = tagged_line[:match.start()]
     post = tagged_line[match.end():]
     # Coupe à gauche sur / ou début de ligne
-    left = re.split(r'/', pre)[-1]
+    #left = re.split(r'/', pre)[-1]
     # Coupe à droite sur / 
     right = re.split(r'/', post)[0]
-    clean_seg = re.sub(r'</?PPI>', '', left + match.group(0) + right, flags=re.IGNORECASE).strip()
+    clean_seg = re.sub(r'</?PPI>', '', right, flags=re.IGNORECASE).strip() # <-- removed left be cause exp is always in the right
     return ppi_text, clean_seg
 
 def get_ppi_ids(sentence, ppi_text):
