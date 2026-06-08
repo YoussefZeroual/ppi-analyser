@@ -27,7 +27,7 @@ def is_clausative(conv: str, mode: str) -> bool:
 
 def get_loc_full_turn(conv: str, mode: str) -> tuple[str, str]:
     if mode == "écrit_ia":
-        conv = conv.replace("[", "\n[")
+        conv = re.sub(r'(?<!\n)\[', '\n[', conv)
         for line in conv.split("\n"):
             if re.findall(r'<PPI>(.*?)</PPI>', line):
                 sent = re.findall(r'<PPI>(.*?)</PPI>', line)[0]

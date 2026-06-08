@@ -41,8 +41,14 @@ few shots example:
     provider = get_provider(model.split('_')[0], model.split('_')[1])
     result = provider.complete(system_prompt, prompt)
     result = result.replace("—", "")
-
+    result = re.sub(r'</dialogue>\s*<dialogue>(\[[^\]]*\])\s*', lambda m: f'</dialogue><dialogue>{m.group(1)} ', result)
+    result = re.sub(r'</dialogue>\s*<dialogue>(?!\[)', ' ', result)
+# reparing some formatting issues [speaker]\n -
+    result = provider.complete(system_prompt, prompt)
+    result = result.replace("—", "")
+    result = re.sub(r'\n+', ' ', result)  # add this
     cache_set(text, model, result)
+
     return result
 
 
@@ -97,7 +103,11 @@ def _parse_batch_result(raw: str, expected: int) -> list[str]:
     for chunk in chunks:
         m = re.search(r'<TEXTE>(.*?)</TEXTE>', chunk.strip(), re.DOTALL)
         if m:
-            results.append(m.group(1).strip())
+            content = re.sub(r'\n+', ' ', m.group(1).strip())
+            content = re.sub(r'</dialogue>\s*<dialogue>(\[[^\]]*\])\s*', lambda m: f'</dialogue><dialogue>{m.group(1)} ', content)
+            content = re.sub(r'</dialogue>\s*<dialogue>(?!\[)', ' ', content)
+            results.append(content) 
+            logger.debug("result of dialogue tags filtering %s",results)
     if len(results) != expected:
         logger.warning(
             "_parse_batch_result: expected %d results, got %d", expected, len(results)

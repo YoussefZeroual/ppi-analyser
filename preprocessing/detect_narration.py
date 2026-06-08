@@ -146,7 +146,7 @@ def get_dialogue_ecrit(text):
 # it captured only the ppi instead of the whole dialogue
 def get_dialogue(text):
 
-    all_tags = re.findall(r'<dialogue>(.*?)</dialogue>', text)
+    all_tags = re.findall(r'<dialogue>(.*?)</dialogue>', text,re.DOTALL)
     
     return " ".join(all_tags)
 

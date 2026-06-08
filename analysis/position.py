@@ -91,8 +91,10 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
         return ("Totale", f"La PPI {sent} occupe la totalité du tour de parole de **{loc}**: *{full_turn}*")
     full_turn_clean = (
         "".join(full_turn).replace("\n", " ").replace("  ", " ")
-        .replace(f"[{loc}]", "").replace("<PPI>", "").replace("</PPI>", "").strip().lower().replace(".", " ")
+        .replace("<PPI>", "").replace("</PPI>", "").strip().lower().replace(".", " ")
     )
+    full_turn_clean = re.sub(r'\[.*?\]', '', full_turn_clean).strip()
+
     # Extract sent_clean: PPI + post-PPI context up to end of turn
     sent_clean = sent  # fallback
     for line in full_turn.split("\n"):
@@ -151,7 +153,15 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
                 result = get_expansion_from_sentence(sentence_dict, ppi_text)
                 if result[0]["tokens"]:
                     expansion_words = [w["text"] for w in result[0]["tokens"] if w["upos"] != "PUNCT"]
-                    nlp_sent = nlp_turn[ppi_start:ppi_end] + expansion_words
+                    exp_start = None
+                    for k in range(ppi_end, len(nlp_turn) - len(expansion_words) + 1):
+                        if nlp_turn[k:k + len(expansion_words)] == expansion_words:
+                            exp_start = k
+                            break
+                    if exp_start is not None:
+                        nlp_sent = nlp_turn[ppi_start:exp_start + len(expansion_words)]
+                    else:
+                        nlp_sent = nlp_turn[ppi_start:ppi_end]
                     expansion_found = True
                     logger.debug("Expansion détectée pour '%s' : %s", ppi_text, " ".join(expansion_words))
                 else:
@@ -212,30 +222,6 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
         return ("Finale", f"La PPI {sent_clean} apparaît dans les 5 derniers tokens du tour de parole de <strong>{loc}</strong>: *{full_turn_display}*")
     else:
         return ("Indéterminé", "Impossible de déterminer la position de la PPI")
-
-    logger.debug("detecting position using PPI+expansion: %s", nlp_sent)
-    full_turn_display, sent_display = get_loc_full_turn(conv, mode)
-    full_turn_display = (
-        full_turn_display
-        .replace("<PPI>", "<strong>")
-        .replace("</PPI>", "</strong>")
-    )
-    full_turn_display = re.sub(r'\[(.*?)\]', '', full_turn_display).strip()
-
-    start = indices[0]
-    end = turn_l - indices[-1] - 1
-
-    if start < 5 and end < 5:
-        return ("Totale", f"La PPI {sent_clean} occupe quasiment la totalité du tour de parole de <strong>{loc}</strong>: *{full_turn_display}*")
-    elif start < 5 and end >= 5:
-        return ("Initiale", f"La PPI {sent_clean} démarre dans les 5 premiers tokens du tour de parole de <strong>{loc}</strong>: *{full_turn_display}*")
-    elif start >= 5 and end >= 5:
-        return ("Médiane", f"La PPI {sent_clean} apparaît après les 5 premiers tokens du tour de parole de <strong>{loc}</strong>: *{full_turn_display}*")
-    elif start >= 5 and end < 5:
-        return ("Finale", f"La PPI {sent_clean} apparaît dans les 5 derniers tokens du tour de parole de <strong>{loc}</strong>: *{full_turn_display}*")
-    else:
-        return ("Indéterminé", "Impossible de déterminer la position de la PPI")
-
 
 def is_clausative(conv: str, mode: str) -> bool:
     from ppi_analyser.preprocessing.speakers import get_loc_full_turn

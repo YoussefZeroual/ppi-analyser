@@ -29,6 +29,7 @@ def load_sentences(file: str, sent_list: list[int] | None = None) -> list[str]:
 
 def clean_conv(conv: str, mode: str) -> str:
     if mode == "écrit":
+        logger.debug("conv is being cleaned in écrit mode")
         try:
             conv = re.sub(r' -(\w+)', r' – \1', conv)
             conv = re.sub(r'- (\w+)', r' – \1', conv)
@@ -42,7 +43,10 @@ def clean_conv(conv: str, mode: str) -> str:
 
         speaker = 1
         new_text = []
-        conv = conv.replace("–", "\n–").replace("«", "\n«").replace("»", "»\n")
+        conv = re.sub(r'(?<!\n)–', '\n–', conv)
+        conv = re.sub(r'(?<!\n)«', '\n«', conv)
+        conv = re.sub(r'»(?!\n)', '»\n', conv)
+        conv = conv.replace("\n«","")
         for line in conv.split("\n"):
             if line.startswith("-") or line.startswith("–") or line.startswith("«"):
                 line = f"[Locuteur_{speaker}] {line[1:]}"
@@ -60,9 +64,17 @@ def clean_conv(conv: str, mode: str) -> str:
 def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
     # Fix missing opening bracket e.g. VE2] -> [VE2]
     conv = re.sub(r'(?<!\S)([A-Z]{2,3}\d+\])', r'[\1', conv)
-   
-    conv = conv.replace("[", "\n[")
+    # Fix formatting: collapse newlines after ] and before – or «
+    conv = re.sub(r'\]\s*\n+', '] ', conv)
+    conv = re.sub(r'\]\s*–', '] ', conv)
+    conv = re.sub(r'\n\s*–', ' ', conv)
+    conv = re.sub(r'\n\s*«', ' «', conv)
+    # Split turns onto separate lines
+    conv = re.sub(r'(?<!\n)\[', '\n[', conv)
     conv_lines = conv.split("\n")
+
+    logger.debug("fix speaker turn is called in mode:%s", mode)
+    logger.debug("conv lines %s", conv_lines)
 
     # check if already cleaned
     already_cleaned = True
@@ -87,21 +99,30 @@ def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
                 if mode == "oral":
                     conv_lines[i] = line.replace(current_speaker.strip(), '/').strip()
                 else:
-                    conv_lines[i] = line.replace(current_speaker.strip(), '').strip()
+                    # mark for merging onto previous line
+                    conv_lines[i] = '\x00' + line.replace(current_speaker.strip(), '').strip()
             if current_speaker:
                 previous_speaker = current_speaker
 
-    # Join continuation lines (starting with /) back onto their speaker line
+    # Join continuation lines back onto their speaker line
+    # oral: lines starting with / are continuations
+    # non-oral: lines marked with \x00 are same-speaker continuations to merge
     result_lines = []
     for line in conv_lines:
+        if not line:
+            continue
         if line.startswith('/'):
             if result_lines:
                 result_lines[-1] += ' ' + line
             else:
                 result_lines.append(line)
-        elif line:
+        elif line.startswith('\x00'):
+            if result_lines:
+                result_lines[-1] += ' ' + line[1:]
+            else:
+                result_lines.append(line[1:])
+        else:
             result_lines.append(line)
 
-    result = "\n".join(result_lines)
-
+    result = "\n".join(line for line in result_lines if line.strip())
     return result
