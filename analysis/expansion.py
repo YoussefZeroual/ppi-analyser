@@ -53,31 +53,39 @@ def get_subtree(head_word, words, exclude_ids=set()):
     return sorted([w for w in words if w["id"] in subtree_ids], key=lambda w: w["id"])
 
 
+def get_expansion_from_sentence(sentence, ppi_text):
+    """Works on an already-parsed Stanza sentence dict."""
+    ppi_ids = get_ppi_ids(sentence, ppi_text)
+    if not ppi_ids:
+        return [{"type": None, "tokens": []}]
+    ppi_head = get_ppi_head(sentence, ppi_ids)
+    if not ppi_head:
+        return [{"type": None, "tokens": []}]
+    words = sentence["words"]
+    dependants = [w for w in words if w["head"] == ppi_head["id"] and w["id"] not in ppi_ids]
+    expansions = []
+    for dep in dependants:
+        deprel = dep["deprel"]
+        upos = dep["upos"]
+        if deprel == "xcomp" and upos == "VERB":
+            subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
+            expansions.append({"type": "infinitive", "tokens": subtree})
+        elif deprel in ("ccomp", "csubj"):
+            subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
+            expansions.append({"type": "completive_que", "tokens": subtree})
+        elif deprel in ("nmod", "obl", "obl:arg", "obj") and upos in ("NOUN", "PRON", "ADP"):
+            subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
+            expansions.append({"type": "nominal_prep", "tokens": subtree})
+    return expansions[:1] if expansions else [{"type": None, "tokens": []}]
+
+
 def detect_expansion(text, ppi_text):
+    """Original entry point — parses text then delegates."""
     text_nlp = client.process(text)
     for sentence in text_nlp["sentences"]:
-        ppi_ids = get_ppi_ids(sentence, ppi_text)
-        if not ppi_ids:
-            continue
-        ppi_head = get_ppi_head(sentence, ppi_ids)
-        if not ppi_head:
-            continue
-        words = sentence["words"]
-        dependants = [w for w in words if w["head"] == ppi_head["id"] and w["id"] not in ppi_ids]
-        expansions = []
-        for dep in dependants:
-            deprel = dep["deprel"]
-            upos = dep["upos"]
-            if deprel == "xcomp" and upos == "VERB":
-                subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
-                expansions.append({"type": "infinitive", "tokens": subtree})
-            elif deprel in ("ccomp", "csubj"):
-                subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
-                expansions.append({"type": "completive_que", "tokens": subtree})
-            elif deprel in ("nmod", "obl", "obl:arg", "obj") and upos in ("NOUN", "PRON", "ADP"):
-                subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
-                expansions.append({"type": "nominal_prep", "tokens": subtree})
-        return expansions[:1] if expansions else [{"type": None, "tokens": []}]
+        result = get_expansion_from_sentence(sentence, ppi_text)
+        if result[0]["type"] is not None or result[0]["tokens"]:
+            return result
     return [{"type": None, "tokens": []}]
 
 
