@@ -65,7 +65,28 @@ class NoModelProvider(LLMProvider):
                 "Propriété": "Aucune expansion détectée",
                 "Justification": "Aucune expansion syntaxique détectée par analyse des dépendances"
             }, ensure_ascii=False)
-
+        if prompt_type == "Modifieurs":
+            from ppi_analyser.analysis.position import _extract_ppi_text
+            from ppi_analyser.analysis.modifiers import find_modifier, format_modifiers
+            ppi_text = _extract_ppi_text(conversation)
+            text_clean = re.sub(r'</?PPI>', '', conversation, flags=re.IGNORECASE)
+            text_clean = re.sub(r'\[.*?\]', '', text_clean).strip()
+            ppi_line = next((l for l in text_clean.split('\n') if ppi_text and ppi_text.lower() in l.lower()), text_clean)
+            text_clean = re.split(r'[;,.!?…/]', ppi_line)[0].strip()
+            if ppi_text and self.nlp is not None:
+                labels, subtrees = find_modifier(ppi_text, expression, text_clean, self.nlp)
+                result_str = format_modifiers(labels, subtrees)
+                return json.dumps({
+            "Propriété": result_str,
+            "Justification": f"Modifieurs de '{ppi_text}' détectés par analyse des dépendances"
+                }, ensure_ascii=False)
+        else:
+                if self.nlp is None:
+                logger.debug("NoModelProvider: no nlp object, skipping modifier detection")
+                return json.dumps({
+                "Propriété": "Aucun modifieur",
+                "Justification": "Aucun modifieur détecté"
+                }, ensure_ascii=False)
         return '{"Propriété": "no_model", "Justification": "no_model"}'
 
 
