@@ -84,7 +84,7 @@ MODELS_MAPPING = {
     "mistral_batch":"mistral_batch_mistral-large-latest"
 }
 
-SPEAKER_DETECTION_MODEL = MODELS_MAPPING["deepseek"]
+SPEAKER_DETECTION_MODEL = MODELS_MAPPING["mistral_large"]
 
 # ── Worker (runs in a separate Process) ─────────────────────────────────────
 
@@ -127,7 +127,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         send("error", msg=f"Mode inconnu : '{mode}'. Valeurs acceptées : {[m.value for m in AnalysisMode]}")
         return
 
-    model_key = "deepseek"  # override for test
+    model_key = "mistral_batch"  # override for test
     if model_key not in MODELS_MAPPING:
         send("error", msg=f"Modèle inconnu : '{model_key}'. Valeurs acceptées : {list(MODELS_MAPPING)}")
         return
@@ -154,7 +154,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         max_sentences=max_sentences,
         batch_mode=True,
         batch_size=batch_size,
-        n_threads=n_threads,
+        n_threads=6, # 8 override for mistral
         use_analysis_cache=use_analysis_cache,
         analysis_cache_path=str(Path.home() / ".ppi_analyser" / "analysis_cache.json"),
         speaker_detection_model=SPEAKER_DETECTION_MODEL,

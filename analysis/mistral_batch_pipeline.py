@@ -13,7 +13,7 @@ from ppi_analyser.state import SessionState
 
 logger = logging.getLogger(__name__)
 
-NON_IA = {0, 1, 5}  # Forme, Lemme, Position — handled locally, not submitted to Mistral
+NON_IA = {0, 1, 5, 7,8}  # Forme, Lemme, Position, expansion — handled locally, not submitted to Mistral
 
 
 def _custom_id(chunk_idx: int, prop_idx: int) -> str:
@@ -77,6 +77,8 @@ def analyse_batch_mistral_async(
                 continue
             prompt_type = get_prompt_type(system_prompt)
             if config.properties and prompt_type not in config.properties:
+                continue
+            if state.custom_properties_list is not None and prompt_type not in state.custom_properties_list: # fixed added custom props
                 continue
 
             cid = _custom_id(chunk_idx, prop_idx)
@@ -213,6 +215,8 @@ def _assemble(
                 prompt_type = get_prompt_type(system_prompt)
                 if config.properties and prompt_type not in config.properties:
                     prop_results = [None] * n_sents
+                elif state.custom_properties_list is not None and prompt_type not in state.custom_properties_list:
+                        prop_results = [None] * n_sents        
                 else:
                     raw_response = raw_results.get(cid, "")
                     if not raw_response:

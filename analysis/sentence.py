@@ -26,7 +26,7 @@ def process_sentences_batch(
     start = time.time()
     n_sents = len(conversations)
 
-    NON_IA = [0, 1, 5]
+    NON_IA = [0, 1, 5, 7,8]
     n = len(models)
     models_resolved = []
     submodels_resolved = []
@@ -159,7 +159,7 @@ def _handle_no_model_batch(
 ) -> list[str]:
 
     import json
-    from ppi_analyser.analysis.position import get_pos
+    from ppi_analyser.analysis.position import get_pos, _extract_ppi_text, _get_ppi_ids_stanza, _get_expansion_tokens_stanza
 
     prompt_type = get_prompt_type(system_prompt)
     results = []
@@ -170,11 +170,13 @@ def _handle_no_model_batch(
                 "Propriété": forme_relevee_list[i] if i < len(forme_relevee_list) else expression,
                 "Justification": "Forme relevée dans l'échange analysé"
             }, ensure_ascii=False)
+
         elif prompt_type == "Lemme":
             val = json.dumps({
                 "Propriété": expression,
                 "Justification": "Forme choisie par défaut pour représenter la PPI analysée"
             }, ensure_ascii=False)
+
         elif prompt_type == "Position":
             result = get_pos(
                 conversations[i], mode,
@@ -187,11 +189,6 @@ def _handle_no_model_batch(
                 val = json.dumps({"Propriété": "Indéterminé", "Justification": "Position non calculée"}, ensure_ascii=False)
 
         elif prompt_type == "Expansions":
-            from ppi_analyser.analysis.position import (
-                _extract_ppi_text,
-                _get_ppi_ids_stanza,
-                _get_expansion_tokens_stanza,
-            )
             conv = conversations[i]
             ppi_text = _extract_ppi_text(conv)
             expansion_text = ""
@@ -205,6 +202,9 @@ def _handle_no_model_batch(
                             w.text for w in exp_tokens if w.upos != "PUNCT"
                         )
                         break
+            else:
+                if state.nlp is None:
+                    logger.debug("_handle_no_model_batch: no nlp object, skipping expansion detection")
             if expansion_text:
                 val = json.dumps({
                     "Propriété": expansion_text,
@@ -215,11 +215,35 @@ def _handle_no_model_batch(
                     "Propriété": "Aucune expansion détectée",
                     "Justification": "Aucune expansion syntaxique détectée par analyse des dépendances"
                 }, ensure_ascii=False)
+
+        elif prompt_type == "Modifieurs":
+            from ppi_analyser.analysis.modifiers import find_modifier, format_modifiers
+            conv = conversations[i]
+            ppi_text = _extract_ppi_text(conv)
+            text_clean = re.sub(r'</?PPI>', '', conv, flags=re.IGNORECASE)
+            text_clean = re.sub(r'\[.*?\]', '', text_clean).strip()
+            ppi_line = next((l for l in text_clean.split('\n') if ppi_text and ppi_text.lower() in l.lower()), text_clean)
+            text_clean = re.split(r'[;,.!?…/]', ppi_line)[0].strip()
+            if ppi_text and state.nlp is not None:
+                labels, subtrees = find_modifier(ppi_text, expression, text_clean, state.nlp)
+                result_str = format_modifiers(labels, subtrees)
+                val = json.dumps({
+                    "Propriété": result_str,
+                    "Justification": f"Modifieurs de '{ppi_text}' détectés par analyse des dépendances"
+                }, ensure_ascii=False)
+            else:
+                if state.nlp is None:
+                    logger.debug("_handle_no_model_batch: no nlp object, skipping modifier detection")
+                val = json.dumps({
+                    "Propriété": "Aucun modifieur",
+                    "Justification": "Aucun modifieur détecté"
+                }, ensure_ascii=False)
+
         else:
             val = json.dumps({"Propriété": "no_model", "Justification": "no_model"}, ensure_ascii=False)
+
         results.append(val)
-        
-        
+
     return results
 
 
@@ -316,7 +340,7 @@ def _run_parallel(
     properties: list[str] | None = None,
 ) -> list[str]:
 
-    NON_IA = [0, 1, 5]
+    NON_IA = [0, 1, 5, 7,8]
     n = len(models)
 
     resolved_models = []

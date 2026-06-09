@@ -94,7 +94,6 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
         .replace("<PPI>", "").replace("</PPI>", "").strip().lower().replace(".", " ")
     )
     full_turn_clean = re.sub(r'\[.*?\]', '', full_turn_clean).strip()
-
     # Extract sent_clean: PPI + post-PPI context up to end of turn
     sent_clean = sent  # fallback
     for line in full_turn.split("\n"):
@@ -111,20 +110,17 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
         .strip().lower()
     )
     logger.debug("sent_clean (PPI + expansion context): '%s'", sent_clean)
-
     ppi_text = _extract_ppi_text(conv)
 
     if tokenization_mode == "nlp":
         doc_turn = nlp(full_turn_clean.replace("\'", " "))
-
         nlp_turn = [
             w.text
             for sentence in doc_turn.sentences
             for w in sentence.words
             if w.upos != "PUNCT"
         ]
-
-        # Localiser la PPI dans nlp_turn via matching de surface (inspiré de get_ppi_ids)
+        # Locate the PPI in nlp_turn via surface matching
         ppi_start = None
         ppi_end = None
         if ppi_text:
@@ -140,9 +136,9 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
 
         if ppi_start is not None:
             from ppi_analyser.analysis.expansion import get_expansion_from_sentence
-            # TODO: re-évaluer si l'expansion doit être exclue en mode ORAL
-            # if mode != AnalysisMode.ORAL:
             expansion_found = False
+            # Iterate all sentences to find the one containing the PPI
+            # (stanza may split the full turn into multiple sentences on ? or !)
             for sentence in doc_turn.sentences:
                 sentence_dict = {
                     "words": [
@@ -150,9 +146,14 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
                         for w in sentence.words
                     ]
                 }
+                logger.debug("checking sentence for expansion: %s", [w.text for w in sentence.words])
+                logger.debug("looking for ppi_text: '%s'", ppi_text)
                 result = get_expansion_from_sentence(sentence_dict, ppi_text)
+                logger.debug("expansion result: %s", result)
                 if result[0]["tokens"]:
                     expansion_words = [w["text"] for w in result[0]["tokens"] if w["upos"] != "PUNCT"]
+                    # Find expansion tokens in nlp_turn starting from ppi_end
+                    # to naturally include any tokens between PPI and expansion (e.g. adverbs)
                     exp_start = None
                     for k in range(ppi_end, len(nlp_turn) - len(expansion_words) + 1):
                         if nlp_turn[k:k + len(expansion_words)] == expansion_words:
@@ -164,12 +165,10 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
                         nlp_sent = nlp_turn[ppi_start:ppi_end]
                     expansion_found = True
                     logger.debug("Expansion détectée pour '%s' : %s", ppi_text, " ".join(expansion_words))
-                else:
-                    nlp_sent = nlp_turn[ppi_start:ppi_end]
-                    logger.debug("No expansion tokens detected")
-                break
+                    break  # found expansion in this sentence, stop looking
             if not expansion_found:
                 nlp_sent = nlp_turn[ppi_start:ppi_end]
+                logger.debug("No expansion tokens detected")
         else:
             # Fallback: utiliser sent_clean tokenisé
             logger.debug("PPI non localisée dans nlp_turn, fallback sur sent_clean")
