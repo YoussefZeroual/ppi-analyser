@@ -38,7 +38,43 @@ class PreprocessedSentence:
 # ---------------------------------------------------------------------------
 # Small helpers
 # ---------------------------------------------------------------------------
+from ppi_analyser.preprocessing.speakers import detect_speakers, get_loc_full_turn
+def _fill_nlp_preprocessed(
+    raw: str,
+    mode: AnalysisMode,
+    state: SessionState,
+) -> None:
+    """Compute NLP objects for a single sentence and append to state.nlp_preprocessed_turn."""
+    from ppi_analyser.analysis.modifiers import get_ppi_sent
 
+    fixed = fix_speaker_turns(raw, mode)
+    fixed = re.sub(r'(\[.*?\])', '', fixed)
+
+    full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
+    full_turn = full_turn.replace("/", "")
+    full_turn = re.sub(r'(<.*?>)', '', full_turn)
+    surface_sent = re.sub(r'(<.*?>)', '', surface_sent)
+
+    surface_sent_nlp = state.nlp(surface_sent)
+    full_turn_nlp_doc = state.nlp(full_turn)
+
+    segments = re.split(r'[,;]', full_turn)
+    full_turn_stripped = next(
+        (seg for seg in segments if surface_sent.lower() in seg.lower()),
+        full_turn,
+    )
+    full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
+
+    sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
+    expression_nlp_doc = state.nlp(state.expression)
+
+    state.nlp_preprocessed_turn.append({
+        "full_turn_nlp_doc": full_turn_nlp_doc,
+        "full_turn_stripped_nlp_doc": full_turn_stripped_nlp_doc,
+        "expression_nlp_doc": expression_nlp_doc,
+        "forme_nlp_doc": sent,
+        "surface_sent_nlp": surface_sent_nlp,
+    })
 def _build_output_paths(config: PipelineConfig) -> OutputPaths:
     from pathlib import Path
     base = config.output_dir
@@ -79,50 +115,21 @@ def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState,sentid
             cleaned = clean_conv(cleaned, config.mode)
             cleaned = cleaned.replace('\\n', ' ')
             cleaned = cleaned.replace('[', '\n[')[1:]
-            # filling a reusable preprocessed nlp object for non_ia variables
-
-            logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ",sentid,raw[:100])
-            fixed = fix_speaker_turns(raw, AnalysisMode.ORAL)
-            fixed = re.sub(r'(\[.*?\])','',fixed)
-            full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
-            full_turn = full_turn.replace("/","")
-            full_turn = re.sub(r'(<.*?>)','',full_turn)
-            from ppi_analyser.analysis.modifiers import get_ppi_sent,find_modifier 
-            surface_sent = re.sub(r'(<.*?>)','',surface_sent)
-            surface_sent_nlp = state.nlp(surface_sent)
-            
-            full_turn_nlp_doc = state.nlp(full_turn)
-            
-            segments = re.split(r'[,;]', full_turn)
-            full_turn_stripped  = next((seg for seg in segments if surface_sent.lower() in seg.lower()), full_turn)
-            
-            full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
-            
-            sent,_ = get_ppi_sent(surface_sent_nlp,full_turn_stripped_nlp_doc, state.nlp)
-            #logger.debug("full turn from pipeline %s",[w.lemma for s in state.nlp_preprocessed_turn["full_turn_nlp_doc"].sentences for w in s.words])
-           
-            expression_nlp_doc = state.nlp(state.expression)
-
-            #modif = find_modifier(surface_sent_nlp,  state.nlp_preprocessed_turn["expression_nlp_doc"], state.nlp_preprocessed_turn["full_turn_nlp_doc"],  state.nlp)
-            
-            state.nlp_preprocessed_turn.append  ( {
-    	"full_turn_nlp_doc": full_turn_nlp_doc,
-    	"full_turn_stripped_nlp_doc": full_turn_stripped_nlp_doc,
-    	"expression_nlp_doc": expression_nlp_doc,
-    	"forme_nlp_doc":sent,
-    	"surface_sent_nlp":surface_sent_nlp
-            })
-            
-            
-         
+            logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sentid, raw[:100])
+            _fill_nlp_preprocessed(raw, config.mode, state)
             state.conversation.append(cleaned)
+
         case AnalysisMode.ECRIT_IA:
             if not config.speaker_detection_model:
-                raise ValueError("speaker_detection_model must be set for ECRIT_IA mode")
+            	raise ValueError("speaker_detection_model must be set for ECRIT_IA mode")
             segmented = detect_segments_ia(raw, config.speaker_detection_model)
             state.full_ecrit_sentence.append(fix_speaker_turns(segmented, config.mode))
             dialogue = get_dialogue(segmented)
             cleaned = fix_speaker_turns(clean_dialogue(dialogue), config.mode)
+            logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sentid, raw[:100])
+            _fill_nlp_preprocessed(raw, config.mode, state)
+            
+            
         case AnalysisMode.ECRIT:
             segmented = detect_segments(raw, nlp=None)
             state.full_ecrit_sentence.append(fix_speaker_turns(segmented))
@@ -149,7 +156,7 @@ def _preprocess_chunk_batch(
         raise ValueError("speaker_detection_model must be set for ECRIT_IA mode")
 
     segmented_list = detect_segments_ia_batch(chunk, config.speaker_detection_model)
-
+    sent_index = 0
     results = []
     for raw, segmented in zip(chunk, segmented_list):
         fixed = fix_speaker_turns(segmented, config.mode)
@@ -159,10 +166,13 @@ def _preprocess_chunk_batch(
         cleaned = cleaned.replace('\\n', ' ')
         locuteur, interlocuteurs = detect_speakers(cleaned, config.mode)
         forme_relevee = _extract_forme(cleaned, config.expression)
+        logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sent_index, raw[:100])
+        _fill_nlp_preprocessed(raw, config.mode, state) 
         results.append(PreprocessedSentence(
             raw=raw, cleaned=cleaned, locuteur=locuteur,
             interlocuteurs=interlocuteurs, forme_relevee=forme_relevee,
         ))
+        sent_index +=1
     return results
 
 

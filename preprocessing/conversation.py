@@ -14,11 +14,11 @@ def load_sentences(file: str, sent_list: list[int] | None = None) -> list[str]:
         left = row["left"].strip().replace("<span class='selectedSent'>", "")
         node = row["node"].strip().replace("<span class='selectedSent'>", "")
         right = row["right"].strip().replace("<span class='selectedSent'>", "")
-        node = ''.join(c for c in node if c.isalnum() or c.isspace())
+        node = ''.join(c for c in node )#if c.isalnum() or c.isspace())
         if re.match(r'^\[', right):
             right_1 = right[:2]
         else:
-            right_1 = ''.join(c for c in right[:2] if c.isalnum() or c.isspace())
+            right_1 = ''.join(c for c in right[:2]) #if c.isalnum() or c.isspace())
         right = right_1 + right[2:]
         sentence = " ".join([left, "<PPI>", node, "</PPI>", right])
         sentences.append(sentence)

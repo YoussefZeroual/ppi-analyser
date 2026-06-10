@@ -4,7 +4,7 @@ from pathlib import Path
 import logging
 from ppi_analyser.logger import setup_logging
 from ppi_analyser.state import SessionState
-from ppi_analyser.config import PipelineConfig
+from ppi_analyser.config import PipelineConfig,AnalysisMode
 from ppi_analyser.analysis.pipeline import (
     _load_sentences,
     _validate_range,
@@ -54,7 +54,13 @@ class PPIAnalyser:
         self.state.n_threads             = config.n_threads
         self.state.ollama_host           = config.ollama_host
         self.state.start_time            = time.perf_counter()
-        self.state.no_ia 		 = config.non_ia
+        if config.non_ia is not None:
+        	self.state.no_ia 		 = config.non_ia
+        else:
+        	if config.mode == AnalysisMode.ORAL:
+        		self.state.no_ia = [0,1,5]
+        	else :
+        		self.state.no_ia = [0,1,5,7,8]
         self.state.use_analysis_cache = config.use_analysis_cache
         self.state.analysis_mode 	= config.mode
         if config.use_analysis_cache:

@@ -22,12 +22,14 @@ def process_sentences_batch(
 ) -> list[list[str]]:
 
     from ppi_analyser.analysis.prompts import get_prompts_batch
-
+    from ppi_analyser.config import AnalysisMode
     start = time.time()
     n_sents = len(conversations)
+
     if mode == AnalysisMode.ORAL:
     	NON_IA = [0,1,5]
     else:
+    	logger.warning("analysis zebbi = %s",mode)
     	NON_IA = [0, 1, 5, 7,8]
     n = len(models)
     models_resolved = []
@@ -177,7 +179,7 @@ def _handle_no_model_batch(
                 "Justification": "Forme choisie par défaut pour représenter la PPI analysée"
             }, ensure_ascii=False)
         elif prompt_type == "Position":
-            logger.info("traitement de la propriété %s par le modèle %s",prompt_type,"TAL (Stanza)")                    
+            logger.info("traitement de la propriété %s par le modèle %s (conv %s/%s)",prompt_type,"TAL (Stanza)",i,n_sentences)                    
             result = get_pos(
                 conversations[i], mode,
                 tokenization_mode=state.tokenization_mode,

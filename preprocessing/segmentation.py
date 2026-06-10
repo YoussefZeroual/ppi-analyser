@@ -107,7 +107,7 @@ def _parse_batch_result(raw: str, expected: int) -> list[str]:
             content = re.sub(r'</dialogue>\s*<dialogue>(\[[^\]]*\])\s*', lambda m: f'</dialogue><dialogue>{m.group(1)} ', content)
             content = re.sub(r'</dialogue>\s*<dialogue>(?!\[)', ' ', content)
             results.append(content) 
-            logger.debug("result of dialogue tags filtering %s",results)
+            #logger.debug("result of dialogue tags filtering %s",results)
     if len(results) != expected:
         logger.warning(
             "_parse_batch_result: expected %d results, got %d", expected, len(results)

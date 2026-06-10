@@ -77,4 +77,4 @@ class PipelineConfig:
     properties: list[str] | None = None  # if set, only these properties are executed
     use_analysis_cache: bool = False
     analysis_cache_path: str | None = None  # e.g. "/home/joe/.ppi_analyser/analysis_cache.json"
-    non_ia:list[int]  =  field(default_factory=lambda:[0, 1, 5])
+    non_ia:list[int]  =  None

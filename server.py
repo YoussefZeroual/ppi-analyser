@@ -84,7 +84,7 @@ MODELS_MAPPING = {
     "mistral_batch":"mistral_batch_mistral-large-latest"
 }
 
-SPEAKER_DETECTION_MODEL = MODELS_MAPPING["mistral_large"]
+SPEAKER_DETECTION_MODEL = MODELS_MAPPING["deepseek"]
 
 # ── Worker (runs in a separate Process) ─────────────────────────────────────
 
