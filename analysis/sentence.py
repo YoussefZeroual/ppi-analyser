@@ -136,6 +136,7 @@ def _call_model_batch(
             return _parse_batch_response(cached, n_sentences)
 
     provider = get_provider(model, submodel, state)
+    logger.info("traitement de la propriété %s par le modèle %s",prompt_type,submodel)
     raw_response = provider.complete(system_prompt, prompt)
 
     with state._token_lock:
@@ -174,6 +175,7 @@ def _handle_no_model_batch(
                 "Justification": "Forme choisie par défaut pour représenter la PPI analysée"
             }, ensure_ascii=False)
         elif prompt_type == "Position":
+            logger.info("traitement de la propriété %s par le modèle %s",prompt_type,"TAL (Stanza)")                    
             result = get_pos(
                 conversations[i], mode,
                 tokenization_mode=state.tokenization_mode,
@@ -186,6 +188,7 @@ def _handle_no_model_batch(
             else:
                 val = json.dumps({"Propriété": "Indéterminé", "Justification": "Position non calculée"}, ensure_ascii=False)
         elif prompt_type == "Expansions":
+            logger.info("traitement de la propriété %s par le modèle %s",prompt_type,"TAL (Stanza)")
             from ppi_analyser.analysis.expansion import detect_expansion
             conv = conversations[i]
             ppi_text, _ = extract_ppi_sentence(conv)
@@ -207,6 +210,7 @@ def _handle_no_model_batch(
                     "Justification": "Aucune expansion syntaxique détectée par analyse des dépendances"
                 }, ensure_ascii=False)
         elif prompt_type == "Modifieurs":
+            logger.info("traitement de la propriété %s par le modèle %s",prompt_type,"TAL (Stanza)")
             from ppi_analyser.analysis.modifiers import find_modifier, format_modifiers
             if state.nlp is not None:
                 labels, subtrees = find_modifier(
@@ -402,6 +406,7 @@ def _call_model(
             conversation=conversation,
         )
     prompt_type = get_prompt_type(system_prompt)
+    logger.info("Traitement de la propriété %s par le modèle %s",prompt_type,model)
     if (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
     	return ignore_response
     # Check analysis cache
