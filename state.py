@@ -30,6 +30,7 @@ class SessionState:
     custom_properties_list: Optional[list[str]] = None
     use_analysis_cache: bool = False
     sent_ids : list[str] = None
-    
+    nlp_preprocessed_turn = []
+    no_ia = [0, 1, 5, 7,8]
     def __post_init__(self):
         self._token_lock = threading.Lock()

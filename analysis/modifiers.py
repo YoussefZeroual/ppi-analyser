@@ -33,25 +33,26 @@ def get_tree(target_lemma, doc, nlp):
     return " ".join(tree)
 
 
-def get_ppi_sent(tagged_part, text_nlp, nlp):
-    tagged_ppi_nlp = nlp(tagged_part)
+def get_ppi_sent(tagged_ppi_nlp, text_nlp, nlp):
+    #tagged_ppi_nlp = nlp(tagged_part)
     tagged_ppi_lemmas = [w.lemma for s in tagged_ppi_nlp.sentences for w in s.words if w.upos != "PUNCT"]
     for s in text_nlp.sentences:
         s_lemmas = [w.lemma.strip() for w in s.words]
+        #logger.debug(" slemma %s  tagged ppi lemmas %s",s_lemmas,tagged_ppi_lemmas)
         if set(tagged_ppi_lemmas).issubset(set(s_lemmas)):
             return s, s_lemmas
     return None, None
 
 
-def find_modifier(tagged_part, ppi_standard_form, text, nlp):
+def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp):
     if nlp is None:
         logger.debug("find_modifier: no nlp object was passed, skipping modifier detection")
         return [], []
 
-    lemme_doc = nlp(ppi_standard_form)
-    text_nlp  = nlp(text)
+    #lemme_doc = nlp(ppi_standard_form)
+    #text_nlp  = nlp(text)
 
-    ppi_sent, _ = get_ppi_sent(tagged_part, text_nlp, nlp)
+    ppi_sent = tagged_ppi_nlp#, _ = get_ppi_sent(tagged_ppi_nlp, text_nlp, nlp)
     if ppi_sent is None:
         logger.debug("find_modifier: PPI sentence not found in text")
         return [], []
@@ -67,7 +68,7 @@ def find_modifier(tagged_part, ppi_standard_form, text, nlp):
         and w.lemma not in ppi_standard_form_lemmas
     ]
 
-    subtrees = [get_tree(w.lemma, text_nlp, nlp) for w in ppi_modifs]
+    subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp)}</MOD>" for w in ppi_modifs]
     labels   = [_upos_fr(w.upos) for w in ppi_modifs]
 
     return labels, subtrees

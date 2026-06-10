@@ -9,27 +9,27 @@ def load_sentences(file: str, sent_list: list[int] | None = None) -> list[str]:
     df = pd.read_excel(file)
     if sent_list is not None:
         df = df.iloc[sent_list, :]
-
     sentences = []
     for i, row in df.iterrows():
         left = row["left"].strip().replace("<span class='selectedSent'>", "")
         node = row["node"].strip().replace("<span class='selectedSent'>", "")
         right = row["right"].strip().replace("<span class='selectedSent'>", "")
-
         node = ''.join(c for c in node if c.isalnum() or c.isspace())
-        right_1 = ''.join(c for c in right[:2] if c.isalnum() or c.isspace())
+        if re.match(r'^\[', right):
+            right_1 = right[:2]
+        else:
+            right_1 = ''.join(c for c in right[:2] if c.isalnum() or c.isspace())
         right = right_1 + right[2:]
-
         sentence = " ".join([left, "<PPI>", node, "</PPI>", right])
         sentences.append(sentence)
-
+    return sentences
     return sentences
 # preprocessing/conversation.py
 
 
 def clean_conv(conv: str, mode: str) -> str:
     if mode == "écrit":
-        logger.debug("conv is being cleaned in écrit mode")
+        #logger.debug("conv is being cleaned in écrit mode")
         try:
             conv = re.sub(r' -(\w+)', r' – \1', conv)
             conv = re.sub(r'- (\w+)', r' – \1', conv)
@@ -62,6 +62,7 @@ def clean_conv(conv: str, mode: str) -> str:
 
 
 def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
+    #logger.debug("fix xpeaker turn processing this raw shit%s",conv)
     # Fix missing opening bracket e.g. VE2] -> [VE2]
     conv = re.sub(r'(?<!\S)([A-Z]{2,3}\d+\])', r'[\1', conv)
     # Fix formatting: collapse newlines after ] and before – or «
@@ -73,8 +74,8 @@ def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
     conv = re.sub(r'(?<!\n)\[', '\n[', conv)
     conv_lines = conv.split("\n")
 
-    logger.debug("fix speaker turn is called in mode:%s", mode)
-    logger.debug("conv lines %s", conv_lines)
+    #logger.debug("fix speaker turn is called in mode:%s", mode)
+    #logger.debug("conv lines %s", conv_lines)
 
     # check if already cleaned
     already_cleaned = True
@@ -118,7 +119,7 @@ def fix_speaker_turns(conv: str, mode: str = "oral") -> str:
                 result_lines.append(line)
         elif line.startswith('\x00'):
             if result_lines:
-                result_lines[-1] += ' ' + line[1:]
+                result_lines[-1] += ' ' + line[:]
             else:
                 result_lines.append(line[1:])
         else:

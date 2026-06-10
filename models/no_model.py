@@ -82,11 +82,11 @@ class NoModelProvider(LLMProvider):
                 }, ensure_ascii=False)
         else:
                 if self.nlp is None:
-                logger.debug("NoModelProvider: no nlp object, skipping modifier detection")
-                return json.dumps({
+                    logger.debug("NoModelProvider: no nlp object, skipping modifier detection")
+                    return json.dumps({
                 "Propriété": "Aucun modifieur",
                 "Justification": "Aucun modifieur détecté"
-                }, ensure_ascii=False)
+                    }, ensure_ascii=False)
         return '{"Propriété": "no_model", "Justification": "no_model"}'
 
 

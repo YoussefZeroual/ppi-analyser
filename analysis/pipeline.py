@@ -71,13 +71,50 @@ def _chunk(lst: list, size: int) -> list[list]:
 # Preprocessing
 # ---------------------------------------------------------------------------
 
-def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState) -> PreprocessedSentence:
+def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState,sentid:int) -> PreprocessedSentence:
+    from ppi_analyser.preprocessing.speakers import get_loc_full_turn, detect_speakers
     match config.mode:
         case AnalysisMode.ORAL:
             cleaned = fix_speaker_turns(raw)
             cleaned = clean_conv(cleaned, config.mode)
             cleaned = cleaned.replace('\\n', ' ')
             cleaned = cleaned.replace('[', '\n[')[1:]
+            # filling a reusable preprocessed nlp object for non_ia variables
+
+            logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ",sentid,raw[:100])
+            fixed = fix_speaker_turns(raw, AnalysisMode.ORAL)
+            fixed = re.sub(r'(\[.*?\])','',fixed)
+            full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
+            full_turn = full_turn.replace("/","")
+            full_turn = re.sub(r'(<.*?>)','',full_turn)
+            from ppi_analyser.analysis.modifiers import get_ppi_sent,find_modifier 
+            surface_sent = re.sub(r'(<.*?>)','',surface_sent)
+            surface_sent_nlp = state.nlp(surface_sent)
+            
+            full_turn_nlp_doc = state.nlp(full_turn)
+            
+            segments = re.split(r'[,;]', full_turn)
+            full_turn_stripped  = next((seg for seg in segments if surface_sent.lower() in seg.lower()), full_turn)
+            
+            full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
+            
+            sent,_ = get_ppi_sent(surface_sent_nlp,full_turn_stripped_nlp_doc, state.nlp)
+            #logger.debug("full turn from pipeline %s",[w.lemma for s in state.nlp_preprocessed_turn["full_turn_nlp_doc"].sentences for w in s.words])
+           
+            expression_nlp_doc = state.nlp(state.expression)
+
+            #modif = find_modifier(surface_sent_nlp,  state.nlp_preprocessed_turn["expression_nlp_doc"], state.nlp_preprocessed_turn["full_turn_nlp_doc"],  state.nlp)
+            
+            state.nlp_preprocessed_turn.append  ( {
+    	"full_turn_nlp_doc": full_turn_nlp_doc,
+    	"full_turn_stripped_nlp_doc": full_turn_stripped_nlp_doc,
+    	"expression_nlp_doc": expression_nlp_doc,
+    	"forme_nlp_doc":sent,
+    	"surface_sent_nlp":surface_sent_nlp
+            })
+            
+            
+         
             state.conversation.append(cleaned)
         case AnalysisMode.ECRIT_IA:
             if not config.speaker_detection_model:
@@ -136,7 +173,7 @@ def _preprocess_all_batch(
 ) -> list[PreprocessedSentence]:
     """Preprocess all sentences in chunks of config.batch_size."""
     if config.mode != AnalysisMode.ECRIT_IA:
-        return [_preprocess_one(raw, config, state) for raw in sentences]
+        return [_preprocess_one(raw, config, state,sent_id) for sent_id,raw in enumerate(sentences)]
 
     chunks = _chunk(sentences, config.batch_size)
     preprocessed = []
@@ -164,7 +201,7 @@ def _preprocess_and_analyse(
     all_results = []
 
     for i, raw in enumerate(sentences):
-        sent = _preprocess_one(raw, config, state)
+        sent = _preprocess_one(raw, config, state,i)
         preprocessed.append(sent)
 
         expression = lemmes[i] if lemmes else config.expression

@@ -23,50 +23,49 @@ def extract_ppi_sentence(tagged_line):
     return ppi_text, clean_seg
 
 def get_ppi_ids(sentence, ppi_text):
-    words = sentence["words"]
+    words = sentence.words
     ppi_clean = re.sub(r'\s*-\s*', '-', ppi_text.lower()).strip()
     for i in range(len(words)):
         for j in range(i+1, len(words)+1):
             window = words[i:j]
-            surface = re.sub(r'\s*-\s*', '-', " ".join(w["text"] for w in window).lower())
+            surface = re.sub(r'\s*-\s*', '-', " ".join(w.text for w in window).lower())
             if surface == ppi_clean:
-                return set(w["id"] for w in window)
+                return set(w.id for w in window)
     return set()
 
 
 def get_ppi_head(sentence, ppi_ids):
-    for w in sentence["words"]:
-        if w["id"] in ppi_ids and w["head"] not in ppi_ids:
+    for w in sentence.words:
+        if w.id in ppi_ids and w.head not in ppi_ids:
             return w
     return None
 
 
 def get_subtree(head_word, words, exclude_ids=set()):
-    subtree_ids = {head_word["id"]}
+    subtree_ids = {head_word.id}
     changed = True
     while changed:
         changed = False
         for w in words:
-            if w["head"] in subtree_ids and w["id"] not in subtree_ids and w["id"] not in exclude_ids:
-                subtree_ids.add(w["id"])
+            if w.head in subtree_ids and w.id not in subtree_ids and w.id not in exclude_ids:
+                subtree_ids.add(w.id)
                 changed = True
-    return sorted([w for w in words if w["id"] in subtree_ids], key=lambda w: w["id"])
+    return sorted([w for w in words if w.id in subtree_ids], key=lambda w: w.id)
 
 
 def get_expansion_from_sentence(sentence, ppi_text):
-    """Works on an already-parsed Stanza sentence dict."""
     ppi_ids = get_ppi_ids(sentence, ppi_text)
     if not ppi_ids:
         return [{"type": None, "tokens": []}]
     ppi_head = get_ppi_head(sentence, ppi_ids)
     if not ppi_head:
         return [{"type": None, "tokens": []}]
-    words = sentence["words"]
-    dependants = [w for w in words if w["head"] == ppi_head["id"] and w["id"] not in ppi_ids]
+    words = sentence.words
+    dependants = [w for w in words if w.head == ppi_head.id and w.id not in ppi_ids]
     expansions = []
     for dep in dependants:
-        deprel = dep["deprel"]
-        upos = dep["upos"]
+        deprel = dep.deprel
+        upos = dep.upos
         if deprel == "xcomp" and upos == "VERB":
             subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
             expansions.append({"type": "infinitive", "tokens": subtree})
@@ -79,10 +78,8 @@ def get_expansion_from_sentence(sentence, ppi_text):
     return expansions[:1] if expansions else [{"type": None, "tokens": []}]
 
 
-def detect_expansion(text, ppi_text):
-    """Original entry point — parses text then delegates."""
-    text_nlp = client.process(text)
-    for sentence in text_nlp["sentences"]:
+def detect_expansion(doc, ppi_text):
+    for sentence in doc.sentences:
         result = get_expansion_from_sentence(sentence, ppi_text)
         if result[0]["type"] is not None or result[0]["tokens"]:
             return result

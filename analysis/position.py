@@ -3,6 +3,7 @@
 import re
 import logging
 from ppi_analyser.config import AnalysisMode
+from ppi_analyser.analysis.expansion import detect_expansion
 logger = logging.getLogger(__name__)
 
 
@@ -11,183 +12,48 @@ logger = logging.getLogger(__name__)
 # (logique portée depuis expansion.py, sans appel réseau supplémentaire)
 # ---------------------------------------------------------------------------
 
-def _extract_ppi_text(conv: str) -> str | None:
-    match = re.search(r'<PPI>(.*?)</PPI>', conv, re.IGNORECASE)
-    return match.group(1).strip() if match else None
-
-
-def _get_ppi_ids_stanza(sentence, ppi_text: str) -> set:
-    """
-    Identifie les ids des tokens correspondant à ppi_text dans une phrase
-    Stanza native (attributs .id, .text sur les Word objects).
-    """
-    words = sentence.words
-    ppi_clean = re.sub(r'\s*-\s*', '-', ppi_text.lower()).strip()
-    for i in range(len(words)):
-        for j in range(i + 1, len(words) + 1):
-            window = words[i:j]
-            surface = re.sub(r'\s*-\s*', '-', " ".join(w.text for w in window).lower())
-            if surface == ppi_clean:
-                return {w.id for w in window}
-    return set()
-
-
-def _get_expansion_tokens_stanza(sentence, ppi_ids: set) -> list:
-    """
-    Retourne les tokens de la première expansion syntaxique détectée
-    (infinitive, complétive, groupe nominal/prépositionnel) à partir de la
-    tête de la PPI, en travaillant sur un objet sentence Stanza natif.
-    Renvoie une liste vide si aucune expansion n'est trouvée.
-    """
-    words = sentence.words
-
-    # Tête de la PPI : le token de la PPI dont le gouverneur est hors de la PPI
-    ppi_head = None
-    for w in words:
-        if w.id in ppi_ids and w.head not in ppi_ids:
-            ppi_head = w
-            break
-    if not ppi_head:
-        return []
-
-    # Dépendants directs de la tête, hors PPI
-    dependants = [w for w in words if w.head == ppi_head.id and w.id not in ppi_ids]
-
-    for dep in dependants:
-        deprel = dep.deprel
-        upos = dep.upos
-        if (
-            (deprel == "xcomp" and upos == "VERB")
-            or deprel in ("ccomp", "csubj")
-            or (deprel in ("nmod", "obl", "obl:arg", "obj") and upos in ("NOUN", "PRON", "ADP"))
-        ):
-            # Sous-arbre complet du dépendant, en excluant les tokens de la PPI
-            subtree_ids = {dep.id}
-            changed = True
-            while changed:
-                changed = False
-                for w in words:
-                    if w.head in subtree_ids and w.id not in subtree_ids and w.id not in ppi_ids:
-                        subtree_ids.add(w.id)
-                        changed = True
-            return sorted(
-                [w for w in words if w.id in subtree_ids],
-                key=lambda w: w.id,
-            )
-    return []
 
 
 # ---------------------------------------------------------------------------
 # Fonction principale
 # ---------------------------------------------------------------------------
 
-def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> tuple | None:
+def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, state=None,sent_id:int =None) -> tuple | None:
     from ppi_analyser.preprocessing.speakers import get_loc_full_turn, detect_speakers
+    from ppi_analyser.analysis.expansion import detect_expansion
+    full_turn_lemmas = [w.lemma for s in state.nlp_preprocessed_turn[sent_id]["full_turn_stripped_nlp_doc"].sentences for w in s.words  ] 
+    form_lemmas =  [w.lemma for w in state.nlp_preprocessed_turn[sent_id]["forme_nlp_doc"].words  ] 
+    from ppi_analyser.analysis.expansion import extract_ppi_sentence,detect_expansion
+    ppi_text, _ = extract_ppi_sentence(conv)
+    expansion = detect_expansion(state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"], ppi_text)
+    
+    
+    
+    expansion_tokens = [w.text for w in expansion[0]["tokens"] if w.upos != "PUNCT"] 
+    expression_tokens = [w.text for s in state.nlp_preprocessed_turn[sent_id]["surface_sent_nlp"].sentences for w in s.words if w.upos != "PUNCT"]
+    extended_expression = expression_tokens+expansion_tokens
+    
+    
     full_turn, sent = get_loc_full_turn(conv, mode)
     loc, interloc = detect_speakers(conv, mode)
+
     if nlp is None:
         logger.info("Warning: no nlp object was passed for position detection!")
-    if is_clausative(conv, mode):
-        return ("Totale", f"La PPI {sent} occupe la totalité du tour de parole de **{loc}**: *{full_turn}*")
-    full_turn_clean = (
-        "".join(full_turn).replace("\n", " ").replace("  ", " ")
-        .replace("<PPI>", "").replace("</PPI>", "").strip().lower().replace(".", " ")
-    )
-    full_turn_clean = re.sub(r'\[.*?\]', '', full_turn_clean).strip()
-    # Extract sent_clean: PPI + post-PPI context up to end of turn
-    sent_clean = sent  # fallback
-    for line in full_turn.split("\n"):
-        if re.search(r'<PPI>', line, re.IGNORECASE):
-            post = line[re.search(r'</PPI>', line, re.IGNORECASE).end():]
-            expansion_context = re.sub(r'</?PPI>', '', post, flags=re.IGNORECASE).strip()
-            sent_clean = sent + (" " + expansion_context if expansion_context else "")
-            break
-    sent_clean = (
-        sent_clean
-        .replace(f"[{loc}]", "")
-        .replace("<ppi>", "").replace("</ppi>", "")
-        .replace("<PPI>", "").replace("</PPI>", "")
-        .strip().lower()
-    )
-    logger.debug("sent_clean (PPI + expansion context): '%s'", sent_clean)
-    ppi_text = _extract_ppi_text(conv)
 
-    if tokenization_mode == "nlp":
-        doc_turn = nlp(full_turn_clean.replace("\'", " "))
-        nlp_turn = [
-            w.text
-            for sentence in doc_turn.sentences
-            for w in sentence.words
-            if w.upos != "PUNCT"
-        ]
-        # Locate the PPI in nlp_turn via surface matching
-        ppi_start = None
-        ppi_end = None
-        if ppi_text:
-            ppi_clean = re.sub(r'\s*-\s*', '-', ppi_text.lower()).strip()
-            for i in range(len(nlp_turn)):
-                for j in range(i + 1, len(nlp_turn) + 1):
-                    surface = re.sub(r'\s*-\s*', '-', " ".join(nlp_turn[i:j]).lower())
-                    if surface == ppi_clean:
-                        ppi_start, ppi_end = i, j
-                        break
-                if ppi_start is not None:
-                    break
+    # Récupérer les docs précalculés
+    full_turn_doc = state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"]
+    forme_doc = state.nlp_preprocessed_turn[sent_id]["forme_nlp_doc"]
 
-        if ppi_start is not None:
-            from ppi_analyser.analysis.expansion import get_expansion_from_sentence
-            expansion_found = False
-            # Iterate all sentences to find the one containing the PPI
-            # (stanza may split the full turn into multiple sentences on ? or !)
-            for sentence in doc_turn.sentences:
-                sentence_dict = {
-                    "words": [
-                        {"id": w.id, "text": w.text, "head": w.head, "deprel": w.deprel, "upos": w.upos}
-                        for w in sentence.words
-                    ]
-                }
-                logger.debug("checking sentence for expansion: %s", [w.text for w in sentence.words])
-                logger.debug("looking for ppi_text: '%s'", ppi_text)
-                result = get_expansion_from_sentence(sentence_dict, ppi_text)
-                logger.debug("expansion result: %s", result)
-                if result[0]["tokens"]:
-                    expansion_words = [w["text"] for w in result[0]["tokens"] if w["upos"] != "PUNCT"]
-                    # Find expansion tokens in nlp_turn starting from ppi_end
-                    # to naturally include any tokens between PPI and expansion (e.g. adverbs)
-                    exp_start = None
-                    for k in range(ppi_end, len(nlp_turn) - len(expansion_words) + 1):
-                        if nlp_turn[k:k + len(expansion_words)] == expansion_words:
-                            exp_start = k
-                            break
-                    if exp_start is not None:
-                        nlp_sent = nlp_turn[ppi_start:exp_start + len(expansion_words)]
-                    else:
-                        nlp_sent = nlp_turn[ppi_start:ppi_end]
-                    expansion_found = True
-                    logger.debug("Expansion détectée pour '%s' : %s", ppi_text, " ".join(expansion_words))
-                    break  # found expansion in this sentence, stop looking
-            if not expansion_found:
-                nlp_sent = nlp_turn[ppi_start:ppi_end]
-                logger.debug("No expansion tokens detected")
-        else:
-            # Fallback: utiliser sent_clean tokenisé
-            logger.debug("PPI non localisée dans nlp_turn, fallback sur sent_clean")
-            doc_sent = nlp(sent_clean.replace("\'", " "))
-            nlp_sent = [
-                w.text
-                for sentence in doc_sent.sentences
-                for w in sentence.words
-                if w.upos != "PUNCT"
-            ]
+    # Tokens du tour complet
+    nlp_turn = [w.text for s in full_turn_doc.sentences for w in s.words if w.upos != "PUNCT"]
+    #logger.debug("traitement de la position sentid= %s:full turn %s , expression + expansion %s , %s",sent_id,nlp_turn,extended_expression)
+    # Tokens de la forme PPI
+    forme_lemmas = [w.lemma for w in forme_doc.words if w.upos != "PUNCT"]
 
-    else:
-        # Tokenisation simple par espace
-        nlp_turn = full_turn_clean.replace("\'", " ").split()
-        nlp_sent = sent_clean.replace("\'", " ").split()
+   
+    nlp_sent = extended_expression
 
-    logger.debug("full turn %s", nlp_turn)
-    logger.debug("sent %s", nlp_sent)
-
+    # Calculer la position
     turn_l = len(nlp_turn)
     sent_l = len(nlp_sent)
     indices = []
@@ -195,11 +61,10 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
         if nlp_turn[i:i + sent_l] == nlp_sent:
             indices = list(range(i, i + sent_l))
             break
+
     if not indices:
-        logger.debug("warning no position indices detected!")
         return None
 
-    logger.debug("detecting position using PPI+expansion: %s", nlp_sent)
     full_turn_display, sent_display = get_loc_full_turn(conv, mode)
     full_turn_display = (
         full_turn_display
@@ -207,6 +72,7 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
         .replace("</PPI>", "</strong>")
     )
     full_turn_display = re.sub(r'\[(.*?)\]', '', full_turn_display).strip()
+    sent_clean = re.sub(r'</?PPI>', '', sent).strip()
 
     start = indices[0]
     end = turn_l - indices[-1] - 1
@@ -222,13 +88,4 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None) -> t
     else:
         return ("Indéterminé", "Impossible de déterminer la position de la PPI")
 
-def is_clausative(conv: str, mode: str) -> bool:
-    from ppi_analyser.preprocessing.speakers import get_loc_full_turn
-    turn = get_loc_full_turn(conv, mode)[0].replace("\n", "")
-    for line in turn.split("\n"):
-        if "<PPI>" in line and "</PPI>" in line:
-            target = re.sub(r'[\[({].*?[\]})]', '', line).strip()
-            before = target[:target.find("<PPI>")]
-            after = target[target.find("</PPI>") + 7:]
-            return len(before) + len(after) == 0
-    return False
+

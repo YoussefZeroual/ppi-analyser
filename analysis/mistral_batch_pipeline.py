@@ -13,7 +13,7 @@ from ppi_analyser.state import SessionState
 
 logger = logging.getLogger(__name__)
 
-NON_IA = {0, 1, 5, 7,8}  # Forme, Lemme, Position, expansion — handled locally, not submitted to Mistral
+#NON_IA = dict(state.no_ia)#{0, 1, 5, 7,8}  # Forme, Lemme, Position, expansion — handled locally, not submitted to Mistral
 
 
 def _custom_id(chunk_idx: int, prop_idx: int) -> str:
@@ -30,7 +30,8 @@ def analyse_batch_mistral_async(
     config: PipelineConfig,
     state: SessionState,
 ) -> tuple[list[PreprocessedSentence], list[list[str]]]:
-
+    NON_IA = dict(state.no_ia)
+  
     submodel = _resolve_submodel(config.models)
     provider = get_mistral_batch_provider(submodel, config.output_dir)
 
@@ -182,7 +183,7 @@ def _assemble(
     chunks       = _chunk(preprocessed, config.batch_size)
     lemme_chunks = _chunk(lemmes, config.batch_size) if lemmes else [None] * len(chunks)
     all_results  = []
-
+    NON_IA = dict(state.no_ia)
     for chunk_idx, (chunk, lemme_chunk) in enumerate(zip(chunks, lemme_chunks)):
         n_sents    = len(chunk)
         expression = lemme_chunk[0] if lemme_chunk else config.expression
