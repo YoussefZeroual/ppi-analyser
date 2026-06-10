@@ -32,5 +32,6 @@ class SessionState:
     sent_ids : list[str] = None
     nlp_preprocessed_turn = []
     no_ia = [0, 1, 5, 7,8]
+    analysis_mode:str = None
     def __post_init__(self):
         self._token_lock = threading.Lock()

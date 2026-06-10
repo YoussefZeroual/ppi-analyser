@@ -25,8 +25,10 @@ def process_sentences_batch(
 
     start = time.time()
     n_sents = len(conversations)
-
-    NON_IA = state.no_ia#[0, 1, 5, 7,8]
+    if mode == AnalysisMode.ORAL:
+    	NON_IA = [0,1,5]
+    else:
+    	NON_IA = [0, 1, 5, 7,8]
     n = len(models)
     models_resolved = []
     submodels_resolved = []

@@ -56,6 +56,7 @@ class PPIAnalyser:
         self.state.start_time            = time.perf_counter()
         self.state.no_ia 		 = config.non_ia
         self.state.use_analysis_cache = config.use_analysis_cache
+        self.state.analysis_mode 	= config.mode
         if config.use_analysis_cache:
             from ppi_analyser.analysis.analysis_cache import init as cache_init
             cache_path = config.analysis_cache_path or str(

@@ -30,7 +30,7 @@ def analyse_batch_mistral_async(
     config: PipelineConfig,
     state: SessionState,
 ) -> tuple[list[PreprocessedSentence], list[list[str]]]:
-    NON_IA = dict(state.no_ia)
+    NON_IA = set(state.no_ia)
   
     submodel = _resolve_submodel(config.models)
     provider = get_mistral_batch_provider(submodel, config.output_dir)
@@ -183,7 +183,11 @@ def _assemble(
     chunks       = _chunk(preprocessed, config.batch_size)
     lemme_chunks = _chunk(lemmes, config.batch_size) if lemmes else [None] * len(chunks)
     all_results  = []
-    NON_IA = dict(state.no_ia)
+    from ppi_analyser.config import AnalysisMode
+    if state.analysis_mode ==AnalysisMode.ORAL:
+    	NON_IA = [0,1,5]
+    else:
+    	NON_IA = set(state.no_ia)
     for chunk_idx, (chunk, lemme_chunk) in enumerate(zip(chunks, lemme_chunks)):
         n_sents    = len(chunk)
         expression = lemme_chunk[0] if lemme_chunk else config.expression
