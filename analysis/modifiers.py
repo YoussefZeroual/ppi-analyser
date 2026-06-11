@@ -16,15 +16,18 @@ def _upos_fr(upos: str) -> str:
     return UPOS_FR.get(upos, upos)
 
 
-def get_tree(target_lemma, doc, nlp):
+def get_tree(target_lemma, doc, nlp, occurrence=0):
     w_id = None
     target_sent = None
+    count = 0
     for s in doc.sentences:
         for w in s.words:
             if w.lemma == target_lemma:
-                w_id = w.id
-                target_sent = s
-                break
+                if count == occurrence:
+                    w_id = w.id
+                    target_sent = s
+                    break
+                count += 1
         if w_id:
             break
     if not target_sent or not w_id:
@@ -32,27 +35,20 @@ def get_tree(target_lemma, doc, nlp):
     tree = [w.text for w in target_sent.words if (w.head == w_id) or (w.lemma == target_lemma)]
     return " ".join(tree)
 
-
 def get_ppi_sent(tagged_ppi_nlp, text_nlp, nlp):
-    #tagged_ppi_nlp = nlp(tagged_part)
     tagged_ppi_lemmas = [w.lemma for s in tagged_ppi_nlp.sentences for w in s.words if w.upos != "PUNCT"]
     for s in text_nlp.sentences:
         s_lemmas = [w.lemma.strip() for w in s.words]
-        #logger.debug(" slemma %s  tagged ppi lemmas %s",s_lemmas,tagged_ppi_lemmas)
         if set(tagged_ppi_lemmas).issubset(set(s_lemmas)):
             return s, s_lemmas
     return None, None
 
-
-def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp):
+def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
     if nlp is None:
         logger.debug("find_modifier: no nlp object was passed, skipping modifier detection")
         return [], []
 
-    #lemme_doc = nlp(ppi_standard_form)
-    #text_nlp  = nlp(text)
-
-    ppi_sent = tagged_ppi_nlp#, _ = get_ppi_sent(tagged_ppi_nlp, text_nlp, nlp)
+    ppi_sent = tagged_ppi_nlp
     if ppi_sent is None:
         logger.debug("find_modifier: PPI sentence not found in text")
         return [], []
@@ -68,12 +64,13 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp):
         and w.lemma not in ppi_standard_form_lemmas
     ]
 
-    subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp)}</MOD>" for w in ppi_modifs]
+    subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp, occurrence)}</MOD>" for w in ppi_modifs]
     labels   = [_upos_fr(w.upos) for w in ppi_modifs]
 
     return labels, subtrees
 
-
 def format_modifiers(labels: list[str], subtrees: list[str]) -> str:
     parts = [f"{label}: {subtree}" for label, subtree in zip(labels, subtrees) if subtree]
     return ", ".join(parts) if parts else "Aucun modifieur"
+
+

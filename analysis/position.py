@@ -25,7 +25,7 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, stat
     form_lemmas =  [w.lemma for w in state.nlp_preprocessed_turn[sent_id]["forme_nlp_doc"].words  ] 
     from ppi_analyser.analysis.expansion import extract_ppi_sentence,detect_expansion
     ppi_text, _ = extract_ppi_sentence(conv)
-    expansion = detect_expansion(state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"], ppi_text)
+    expansion = detect_expansion(state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"], ppi_text,state.nlp_preprocessed_turn[sent_id]["ppi_occurrence"])
     
     
     

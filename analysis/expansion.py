@@ -78,11 +78,14 @@ def get_expansion_from_sentence(sentence, ppi_text):
     return expansions[:1] if expansions else [{"type": None, "tokens": []}]
 
 
-def detect_expansion(doc, ppi_text):
+def detect_expansion(doc, ppi_text, occurrence=0):
+    count = 0
     for sentence in doc.sentences:
         result = get_expansion_from_sentence(sentence, ppi_text)
         if result[0]["type"] is not None or result[0]["tokens"]:
-            return result
+            if count == occurrence:
+                return result
+            count += 1
     return [{"type": None, "tokens": []}]
 
 

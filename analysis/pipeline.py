@@ -39,6 +39,7 @@ class PreprocessedSentence:
 # Small helpers
 # ---------------------------------------------------------------------------
 from ppi_analyser.preprocessing.speakers import detect_speakers, get_loc_full_turn
+
 def _fill_nlp_preprocessed(
     fixed: str,
     mode: AnalysisMode,
@@ -47,7 +48,14 @@ def _fill_nlp_preprocessed(
 ) -> None:
     """Compute NLP objects for a single sentence and append to state.nlp_preprocessed_turn."""
     from ppi_analyser.analysis.modifiers import get_ppi_sent
-
+    # fix: double occurrence of same ppi in the same conv, we take the first one as the relevant one for the sentence
+    
+    ppi_matches = re.findall(r'<PPI>(.*?)</PPI>', fixed, re.IGNORECASE)
+    ppi_text = ppi_matches[0] if ppi_matches else ""
+    total_occurrences = len(re.findall(re.escape(ppi_text), fixed.replace('<PPI>','').replace('</PPI>',''), re.IGNORECASE)) if ppi_text else 1
+    pre_ppi = fixed[:re.search(r'<PPI>', fixed, re.IGNORECASE).start()] if ppi_text else ""
+    occurrence_index = len(re.findall(re.escape(ppi_text), pre_ppi, re.IGNORECASE))
+    
     full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
     full_turn = full_turn.replace("/", "")
     full_turn = re.sub(r'(<.*?>)', '', full_turn)
@@ -65,15 +73,24 @@ def _fill_nlp_preprocessed(
 
     sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
     expression_nlp_doc = state.nlp(state.expression)
-
+    logger.warning("ppi index is %s", occurrence_index)
     state.nlp_preprocessed_turn.append({
         "full_turn_nlp_doc": full_turn_nlp_doc,
         "full_turn_stripped_nlp_doc": full_turn_stripped_nlp_doc,
         "expression_nlp_doc": expression_nlp_doc,
         "forme_nlp_doc": sent,
         "surface_sent_nlp": surface_sent_nlp,
-        "index":index
+        "index":index,
+        "ppi_occurrence": occurrence_index #stores the occurrence index of the PPI in the conversation, to help disambiguate cases with multiple occurrences of the same PPI
     })
+    logger.debug(
+    "nlp_preprocessed_turn[%s]: full_turn=%s | full_turn_stripped=%s | surface_sent=%s | forme=%s",
+    index,
+    [w.text for s in full_turn_nlp_doc.sentences for w in s.words],
+    [w.text for s in full_turn_stripped_nlp_doc.sentences for w in s.words],
+    [w.text for s in surface_sent_nlp.sentences for w in s.words],
+    [w.text for w in sent.words] if sent else None,
+)
 def _build_output_paths(config: PipelineConfig) -> OutputPaths:
     from pathlib import Path
     base = config.output_dir
