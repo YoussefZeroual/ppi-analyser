@@ -59,16 +59,19 @@ def _fill_nlp_preprocessed(
     full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
     full_turn = full_turn.replace("/", "")
     full_turn = re.sub(r'(<.*?>)', '', full_turn)
-    surface_sent = re.sub(r'(<.*?>)', '', surface_sent)
+    full_turn = re.sub(r'(\[.*?\])', '', full_turn).strip()
+    surface_sent = re.sub(r'(<.*?>)', '', surface_sent).strip()
 
     surface_sent_nlp = state.nlp(surface_sent)
     full_turn_nlp_doc = state.nlp(full_turn)
 
-    segments = re.split(r'[,;]', full_turn)
+    segments = segments = re.split(r'[,;.?!…:]|\bque\b|\.\.\.', full_turn) # <--- added 'que' as a delimiter to exclude completives
+    logger.warning("segments %s",segments)
     full_turn_stripped = next(
         (seg for seg in segments if surface_sent.lower() in seg.lower()),
         full_turn,
     )
+    logger.warning("full turn stripped %s",full_turn_stripped)
     full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
 
     sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
@@ -83,14 +86,7 @@ def _fill_nlp_preprocessed(
         "index":index,
         "ppi_occurrence": occurrence_index #stores the occurrence index of the PPI in the conversation, to help disambiguate cases with multiple occurrences of the same PPI
     })
-    logger.debug(
-    "nlp_preprocessed_turn[%s]: full_turn=%s | full_turn_stripped=%s | surface_sent=%s | forme=%s",
-    index,
-    [w.text for s in full_turn_nlp_doc.sentences for w in s.words],
-    [w.text for s in full_turn_stripped_nlp_doc.sentences for w in s.words],
-    [w.text for s in surface_sent_nlp.sentences for w in s.words],
-    [w.text for w in sent.words] if sent else None,
-)
+
 def _build_output_paths(config: PipelineConfig) -> OutputPaths:
     from pathlib import Path
     base = config.output_dir

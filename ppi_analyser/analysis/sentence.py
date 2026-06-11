@@ -228,7 +228,7 @@ def _handle_no_model_batch(
                 labels, subtrees = find_modifier(
                     state.nlp_preprocessed_turn[i+start_offset]["forme_nlp_doc"],
                     state.nlp_preprocessed_turn[i+start_offset]["expression_nlp_doc"],
-                    state.nlp_preprocessed_turn[i+start_offset]["full_turn_nlp_doc"],
+                    state.nlp_preprocessed_turn[i+start_offset]["full_turn_stripped_nlp_doc"],
                     state.nlp,
                     state.nlp_preprocessed_turn[i+start_offset]["ppi_occurrence"]
                 )

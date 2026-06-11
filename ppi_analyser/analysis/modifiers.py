@@ -1,6 +1,22 @@
 import re
 import logging
+import yaml
+from pathlib import Path
+from nltk.stem.snowball import FrenchStemmer
+import nltk
+nltk.download('punkt')
+_stemmer = FrenchStemmer()
 
+def load_modifier_rules(path: str | Path = "modifier_rules.yaml") -> dict:
+    with open(path, encoding="utf-8") as f:
+        rules = yaml.safe_load(f)
+    return {
+        "upos": set(rules.get("upos", [])),
+        "deprel": set(rules.get("deprel", [])),
+        "lemma": set(rules.get("lemma", []))
+    }
+
+MODIFIER_RULES = load_modifier_rules()
 logger = logging.getLogger(__name__)
 
 UPOS_FR = {
@@ -44,6 +60,8 @@ def get_ppi_sent(tagged_ppi_nlp, text_nlp, nlp):
     return None, None
 
 def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
+
+    rules = MODIFIER_RULES
     if nlp is None:
         logger.debug("find_modifier: no nlp object was passed, skipping modifier detection")
         return [], []
@@ -52,21 +70,29 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
     if ppi_sent is None:
         logger.debug("find_modifier: PPI sentence not found in text")
         return [], []
-
     ppi_standard_form_lemmas = [w.lemma for s in lemme_doc.sentences for w in s.words]
-
+    ppi_standard_stems = {_stemmer.stem(w.lemma) for s in lemme_doc.sentences for w in s.words} #<-- utilisation des radicaux car le lemme est différent pour désolé et désolée (probleme stanza)
+    ppi_sent_stems =  {_stemmer.stem(w.lemma) for w in ppi_sent.words}
+    logger.warning("lemme stemms %s| forme stemms %s", ppi_standard_stems,ppi_sent_stems)
     ppi_modifs = [
         w for w in ppi_sent.words
         if (
-            w.upos in ("ADV", "PROPN", "ADJ", "INTJ")
-            or w.deprel in ("obl:mod", "nmod", "acl:relcl", "dislocated", "amod")
+            w.upos in rules["upos"]
+            or w.deprel in rules["deprel"]
+            or w.lemma in rules["lemma"]
         )
         and w.lemma not in ppi_standard_form_lemmas
+        and _stemmer.stem(w.lemma) not in ppi_standard_stems
     ]
 
     subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp, occurrence)}</MOD>" for w in ppi_modifs]
     labels   = [_upos_fr(w.upos) for w in ppi_modifs]
-
+    logger.debug(
+    "find_modifier | standard_form_lemmas: %s | ppi_sent lemmas: %s | detected modifs: %s",
+    ppi_standard_form_lemmas,
+    [w.lemma for w in ppi_sent.words],
+    [(w.lemma, w.upos, w.deprel) for w in ppi_modifs],
+)
     return labels, subtrees
 
 def format_modifiers(labels: list[str], subtrees: list[str]) -> str:

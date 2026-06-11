@@ -1,0 +1,15 @@
+upos:
+  - ADV
+  - ADJ
+  - INTJ
+
+deprel:
+  - obl:mod
+  - nmod
+  - acl:relcl
+  - dislocated
+  - amod
+ 
+lemma:
+  - dieu
+  - diable
