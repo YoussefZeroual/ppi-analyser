@@ -214,6 +214,7 @@ def _assemble(
                     state=state,
                     mode=config.mode,
                     n_sentences=n_sents,
+                    start_offset=chunk_idx * config.batch_size
                 )
             else:
                 cid = _custom_id(chunk_idx, prop_idx)
