@@ -73,7 +73,7 @@ def _fill_nlp_preprocessed(
 
     sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
     expression_nlp_doc = state.nlp(state.expression)
-    logger.warning("ppi index is %s", occurrence_index)
+
     state.nlp_preprocessed_turn.append({
         "full_turn_nlp_doc": full_turn_nlp_doc,
         "full_turn_stripped_nlp_doc": full_turn_stripped_nlp_doc,

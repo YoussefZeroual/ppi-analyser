@@ -1,8 +1,8 @@
 import sys
 import re
 import pandas as pd
-from stanza_client import StanzaClient
-from format_excel import format_ppi_bold
+from ppi_analyser.stanza.stanza_client import StanzaClient
+from ppi_analyser.exporters.excel import format_ppi_bold
 
 client = StanzaClient()
 

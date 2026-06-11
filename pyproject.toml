@@ -16,7 +16,7 @@ dependencies = [
 ]
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["stanza*"]
+#exclude = ["stanza*"]
 [project.optional-dependencies]
 dev = ["pytest", "mypy", "ruff"]
 
