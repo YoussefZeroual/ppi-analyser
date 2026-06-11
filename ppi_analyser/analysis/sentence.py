@@ -172,7 +172,8 @@ def _handle_no_model_batch(
     results = []
 
     #len_nlp_object = len(state.nlp_preprocessed_turn)
-        
+    if (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
+        return [ignore_response] * n_sentences
 
     for i in range(n_sentences):
         if prompt_type == "Forme":
@@ -228,7 +229,7 @@ def _handle_no_model_batch(
                 labels, subtrees = find_modifier(
                     state.nlp_preprocessed_turn[i+start_offset]["forme_nlp_doc"],
                     state.nlp_preprocessed_turn[i+start_offset]["expression_nlp_doc"],
-                    state.nlp_preprocessed_turn[i+start_offset]["full_turn_stripped_nlp_doc"],
+                    state.nlp_preprocessed_turn[i+start_offset]["surface_sent_nlp"], #<--- limitting to the forme because full turn contains noise
                     state.nlp,
                     state.nlp_preprocessed_turn[i+start_offset]["ppi_occurrence"]
                 )

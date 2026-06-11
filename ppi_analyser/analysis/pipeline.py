@@ -66,12 +66,10 @@ def _fill_nlp_preprocessed(
     full_turn_nlp_doc = state.nlp(full_turn)
 
     segments = segments = re.split(r'[,;.?!…:]|\bque\b|\.\.\.', full_turn) # <--- added 'que' as a delimiter to exclude completives
-    logger.warning("segments %s",segments)
     full_turn_stripped = next(
         (seg for seg in segments if surface_sent.lower() in seg.lower()),
         full_turn,
     )
-    logger.warning("full turn stripped %s",full_turn_stripped)
     full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
 
     sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
@@ -183,7 +181,7 @@ def _preprocess_chunk_batch(
         locuteur, interlocuteurs = detect_speakers(cleaned, config.mode)
         forme_relevee = _extract_forme(cleaned, config.expression)
         sent_offset = len(state.nlp_preprocessed_turn)
-        logger.info("Prétraitement des tours de parole avec Stanza:(%s/%s): %s ... ", sent_offset,chunk_size, raw[:20])
+        logger.info("Prétraitement des tours de parole avec Stanza:(%s/%s): %s ... ", i+1,chunk_size, raw[:20])
         
         _fill_nlp_preprocessed(cleaned, config.mode, state,i+sent_offset) 
         results.append(PreprocessedSentence(
