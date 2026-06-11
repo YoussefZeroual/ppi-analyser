@@ -171,7 +171,7 @@ def _handle_no_model_batch(
     prompt_type = get_prompt_type(system_prompt)
     results = []
 
-    len_nlp_object = len(state.nlp_preprocessed_turn)
+    #len_nlp_object = len(state.nlp_preprocessed_turn)
         
 
     for i in range(n_sentences):
@@ -192,7 +192,7 @@ def _handle_no_model_batch(
                 tokenization_mode=state.tokenization_mode,
                 nlp=state.nlp,
                 state=state,
-                sent_id = i+start_offset
+                sent_id = start_offset#i+start_offset
             )
             if result:
                 val = json.dumps({"Propriété": result[0], "Justification": result[1]}, ensure_ascii=False)

@@ -177,6 +177,7 @@ def _preprocess_chunk_batch(
 
     i = 0
     results = []
+    chunk_size = len(chunk)
     for raw, segmented in zip(chunk, segmented_list):
         fixed = fix_speaker_turns(segmented, config.mode)
         state.full_ecrit_sentence.append(fixed)
@@ -186,7 +187,7 @@ def _preprocess_chunk_batch(
         locuteur, interlocuteurs = detect_speakers(cleaned, config.mode)
         forme_relevee = _extract_forme(cleaned, config.expression)
         sent_offset = len(state.nlp_preprocessed_turn)
-        logger.warning("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sent_offset, raw[:100])
+        logger.info("Prétraitement des tours de parole avec Stanza:(%s/%s): %s ... ", sent_offset,chunk_size, raw[:20])
         
         _fill_nlp_preprocessed(cleaned, config.mode, state,i+sent_offset) 
         results.append(PreprocessedSentence(
