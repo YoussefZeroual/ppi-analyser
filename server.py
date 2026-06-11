@@ -127,7 +127,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         send("error", msg=f"Mode inconnu : '{mode}'. Valeurs acceptées : {[m.value for m in AnalysisMode]}")
         return
 
-    model_key = "mistral_batch"  # override for test
+    model_key = "deepseek"  # override for test
     if model_key not in MODELS_MAPPING:
         send("error", msg=f"Modèle inconnu : '{model_key}'. Valeurs acceptées : {list(MODELS_MAPPING)}")
         return

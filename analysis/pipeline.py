@@ -40,15 +40,13 @@ class PreprocessedSentence:
 # ---------------------------------------------------------------------------
 from ppi_analyser.preprocessing.speakers import detect_speakers, get_loc_full_turn
 def _fill_nlp_preprocessed(
-    raw: str,
+    fixed: str,
     mode: AnalysisMode,
     state: SessionState,
+    index:int
 ) -> None:
     """Compute NLP objects for a single sentence and append to state.nlp_preprocessed_turn."""
     from ppi_analyser.analysis.modifiers import get_ppi_sent
-
-    fixed = fix_speaker_turns(raw, mode)
-    fixed = re.sub(r'(\[.*?\])', '', fixed)
 
     full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
     full_turn = full_turn.replace("/", "")
@@ -74,6 +72,7 @@ def _fill_nlp_preprocessed(
         "expression_nlp_doc": expression_nlp_doc,
         "forme_nlp_doc": sent,
         "surface_sent_nlp": surface_sent_nlp,
+        "index":index
     })
 def _build_output_paths(config: PipelineConfig) -> OutputPaths:
     from pathlib import Path
@@ -115,8 +114,10 @@ def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState,sentid
             cleaned = clean_conv(cleaned, config.mode)
             cleaned = cleaned.replace('\\n', ' ')
             cleaned = cleaned.replace('[', '\n[')[1:]
+            fixed = fix_speaker_turns(raw, config.mode)
+            fixed = re.sub(r'(\[.*?\])', '', fixed)
             logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sentid, raw[:100])
-            _fill_nlp_preprocessed(raw, config.mode, state)
+            _fill_nlp_preprocessed(fixed, config.mode, state,sentid)
             state.conversation.append(cleaned)
 
         case AnalysisMode.ECRIT_IA:
@@ -127,7 +128,7 @@ def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState,sentid
             dialogue = get_dialogue(segmented)
             cleaned = fix_speaker_turns(clean_dialogue(dialogue), config.mode)
             logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sentid, raw[:100])
-            _fill_nlp_preprocessed(raw, config.mode, state)
+            _fill_nlp_preprocessed(cleaned, config.mode, state,sentid)
             
             
         case AnalysisMode.ECRIT:
@@ -156,7 +157,8 @@ def _preprocess_chunk_batch(
         raise ValueError("speaker_detection_model must be set for ECRIT_IA mode")
 
     segmented_list = detect_segments_ia_batch(chunk, config.speaker_detection_model)
-    sent_index = 0
+
+    i = 0
     results = []
     for raw, segmented in zip(chunk, segmented_list):
         fixed = fix_speaker_turns(segmented, config.mode)
@@ -166,13 +168,15 @@ def _preprocess_chunk_batch(
         cleaned = cleaned.replace('\\n', ' ')
         locuteur, interlocuteurs = detect_speakers(cleaned, config.mode)
         forme_relevee = _extract_forme(cleaned, config.expression)
-        logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sent_index, raw[:100])
-        _fill_nlp_preprocessed(raw, config.mode, state) 
+        sent_offset = len(state.nlp_preprocessed_turn)
+        logger.warning("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sent_offset, raw[:100])
+        
+        _fill_nlp_preprocessed(cleaned, config.mode, state,i+sent_offset) 
         results.append(PreprocessedSentence(
             raw=raw, cleaned=cleaned, locuteur=locuteur,
             interlocuteurs=interlocuteurs, forme_relevee=forme_relevee,
         ))
-        sent_index +=1
+        i +=1
     return results
 
 
@@ -251,7 +255,6 @@ def _analyse_batch(
 ) -> tuple[list[PreprocessedSentence], list[list[str]]]:
     """Batch analysis: chunks of batch_size, one batch prompt per property per chunk."""
     from ppi_analyser.analysis.sentence import process_sentences_batch
-
     chunks = _chunk(preprocessed, config.batch_size)
     lemme_chunks = _chunk(lemmes, config.batch_size) if lemmes else [None] * len(chunks)
     all_results = []
@@ -270,6 +273,9 @@ def _analyse_batch(
         else:
             expression = config.expression
 
+        # capturing the sentence offset
+        
+        start_offset = start_offset = idx * config.batch_size
         chunk_results = process_sentences_batch(
             expression=expression,
             forme_relevee=forme_relevee_list,
@@ -279,6 +285,7 @@ def _analyse_batch(
             state=state,
             models=config.models,
             mode=config.mode,
+            start_offset=start_offset
         )
         all_results.extend(chunk_results)
 

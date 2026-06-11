@@ -19,6 +19,7 @@ def process_sentences_batch(
     models: list[str],
     mode: str,
     properties: list[str] | None = None,
+    start_offset: int = 0
 ) -> list[list[str]]:
 
     from ppi_analyser.analysis.prompts import get_prompts_batch
@@ -29,7 +30,6 @@ def process_sentences_batch(
     if mode == AnalysisMode.ORAL:
     	NON_IA = [0,1,5]
     else:
-    	logger.warning("analysis zebbi = %s",mode)
     	NON_IA = [0, 1, 5, 7,8]
     n = len(models)
     models_resolved = []
@@ -79,6 +79,7 @@ def process_sentences_batch(
                 state=state,
                 mode=mode,
                 n_sentences=n_sents,
+                start_offset=start_offset
             )
             futures.append((i, future))
 
@@ -118,12 +119,13 @@ def _call_model_batch(
     state,
     mode: str,
     n_sentences: int,
+    start_offset: int = 0
 ) -> list[str]:
 
     if model == "no_model":
         return _handle_no_model_batch(
             system_prompt, conversations, expression,
-            forme_relevee_list, state, mode, n_sentences
+            forme_relevee_list, state, mode, n_sentences,start_offset
         )
     from ppi_analyser.models.factory import get_provider
     prompt_type = get_prompt_type(system_prompt)
@@ -161,12 +163,17 @@ def _handle_no_model_batch(
     state,
     mode: str,
     n_sentences: int,
+    start_offset: int = 0
 ) -> list[str]:
     import json
     from ppi_analyser.analysis.position import get_pos
     from ppi_analyser.analysis.expansion import detect_expansion, extract_ppi_sentence
     prompt_type = get_prompt_type(system_prompt)
     results = []
+
+    len_nlp_object = len(state.nlp_preprocessed_turn)
+        
+
     for i in range(n_sentences):
         if prompt_type == "Forme":
             val = json.dumps({
@@ -185,7 +192,7 @@ def _handle_no_model_batch(
                 tokenization_mode=state.tokenization_mode,
                 nlp=state.nlp,
                 state=state,
-                sent_id = i
+                sent_id = i+start_offset
             )
             if result:
                 val = json.dumps({"Propriété": result[0], "Justification": result[1]}, ensure_ascii=False)
@@ -197,7 +204,7 @@ def _handle_no_model_batch(
             conv = conversations[i]
             ppi_text, _ = extract_ppi_sentence(conv)
             if ppi_text and state.nlp is not None:
-                result = detect_expansion(state.nlp_preprocessed_turn[i]["full_turn_nlp_doc"], ppi_text)
+                result = detect_expansion(state.nlp_preprocessed_turn[i+start_offset]["full_turn_nlp_doc"], ppi_text)
                 expansion_text = " ".join(w.text for w in result[0]["tokens"]) if result[0]["tokens"] else ""
             else:
                 if state.nlp is None:
@@ -217,10 +224,11 @@ def _handle_no_model_batch(
             logger.info("traitement de la propriété %s par le modèle %s",prompt_type,"TAL (Stanza)")
             from ppi_analyser.analysis.modifiers import find_modifier, format_modifiers
             if state.nlp is not None:
+            	
                 labels, subtrees = find_modifier(
-                    state.nlp_preprocessed_turn[i]["forme_nlp_doc"],
-                    state.nlp_preprocessed_turn[i]["expression_nlp_doc"],
-                    state.nlp_preprocessed_turn[i]["full_turn_nlp_doc"],
+                    state.nlp_preprocessed_turn[i+start_offset]["forme_nlp_doc"],
+                    state.nlp_preprocessed_turn[i+start_offset]["expression_nlp_doc"],
+                    state.nlp_preprocessed_turn[i+start_offset]["full_turn_nlp_doc"],
                     state.nlp,
                 )
                 result_str = format_modifiers(labels, subtrees)
