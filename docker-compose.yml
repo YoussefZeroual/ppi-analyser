@@ -1,0 +1,51 @@
+# docker-compose.yml
+# ─────────────────────────────────────────────────────────────────────────────
+# PROD (no hot-reload):
+#   docker compose up -d
+#
+# DEV (bind-mount + hot-reload, edits reflected instantly):
+#   docker compose --profile dev up
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Production service ──────────────────────────────────────────────────────
+  ppi:
+    build: .
+    image: ppi_analyser:latest
+    container_name: ppi_analyser
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8000}:8000"   # change HOST_PORT in .env to avoid conflicts
+    volumes:
+      - ppi_data:/data              # persistent uploads, outputs, cache
+      - stanza_models:/root/stanza_resources
+    env_file:
+      - .env
+    environment:
+      UVICORN_WORKERS: "1"          # keep at 1 — multiprocessing inside already
+      UVICORN_RELOAD: "0"
+    profiles: ["prod", ""]          # default profile (no --profile flag needed)
+
+  # ── Dev service (bind-mount, hot-reload) ────────────────────────────────────
+  ppi_dev:
+    build: .
+    image: ppi_analyser:latest
+    container_name: ppi_analyser_dev
+    restart: "no"
+    ports:
+      - "${HOST_PORT:-8000}:8000"
+    volumes:
+      - .:/app                      # bind-mount: edit locally, reflected instantly
+      - ppi_data:/data
+      - stanza_models:/root/stanza_resources
+    env_file:
+      - .env
+    environment:
+      UVICORN_WORKERS: "1"
+      UVICORN_RELOAD: "1"           # --reload active
+    profiles: ["dev"]
+
+volumes:
+  ppi_data:
+  stanza_models:

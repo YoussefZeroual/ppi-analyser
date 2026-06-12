@@ -1,0 +1,33 @@
+# ── Web framework ──────────────────────────────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+
+# ── Stanza NLP server (stanza_api.py uses Flask) ──────────────────────────
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# ── NLP ────────────────────────────────────────────────────────────────────
+# torch is installed separately in the Dockerfile (CPU-only wheel, pinned)
+# to avoid the resolver pulling CUDA wheels for other packages' torch deps.
+stanza>=1.8.0
+nltk>=3.8.1
+
+# ── LLM clients ────────────────────────────────────────────────────────────
+mistralai>=1.0.0
+openai>=1.30.0          # deepseek uses the openai-compatible SDK
+ollama>=0.2.0
+google-generativeai>=0.7.0
+groq>=0.9.0
+
+# ── Data / export ──────────────────────────────────────────────────────────
+pandas>=2.2.0
+openpyxl>=3.1.2
+xlsxwriter>=3.2.0
+reportlab>=4.1.0        # pdf export
+
+# ── Utilities ──────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+requests>=2.31.0
+httpx>=0.27.0

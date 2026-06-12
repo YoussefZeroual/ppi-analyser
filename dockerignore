@@ -1,0 +1,14 @@
+.git
+.env
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.egg-info
+dist/
+build/
+.pytest_cache
+.mypy_cache
+*.log
+batched_prompts_tmp/
+ppi-analyser-output/
