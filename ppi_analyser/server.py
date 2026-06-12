@@ -161,7 +161,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         max_sentences=max_sentences,
         batch_mode=True,
         batch_size=batch_size,
-        n_threads=6, # 8 override for mistral
+        n_threads=12, # 8 override for mistral
         use_analysis_cache=use_analysis_cache,
         analysis_cache_path=_os.getenv("PPI_CACHE_PATH",
             str(Path.home() / ".ppi_analyser" / "analysis_cache.json")),
