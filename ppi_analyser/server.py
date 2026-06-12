@@ -8,7 +8,7 @@ from typing import Any
 
 import openpyxl
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -20,6 +20,9 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 jobs: dict[str, dict[str, Any]] = {}
 job_logs: dict[str, list[str]] = {}
 _jobs_lock = threading.Lock()
+
+def _get_client_ip(request: Request) -> str:
+    return request.headers.get("x-forwarded-for", request.client.host).split(",")[0].strip()
 
 # Active process handle — only one at a time
 _current_process: multiprocessing.Process | None = None
@@ -64,13 +67,14 @@ def shutdown_stanza_server():
 
 
 
-def _new_job(job_id: str, params: dict) -> dict:
+def _new_job(job_id: str, params: dict, client_ip: str = "") -> dict:
     return {
         "id": job_id, "status": "running", "params": params,
         "created_at": datetime.now().isoformat(), "finished_at": None,
         "error": None, "output_dir": None,
         "tokens_in": 0, "tokens_out": 0, "n_sentences": 0,
         "progress": 0, "phase": "init", "n_total_sentences": 0,
+        "client_ip": client_ip,
     }
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -316,6 +320,7 @@ async def preview_file(
 
 @app.post("/analyse", status_code=202)
 async def start_analysis(
+    request:            Request,
     file:               UploadFile = File(...),
     expression:         str        = Form(...),
     model:              str        = Form("mistral_large"),
@@ -332,11 +337,12 @@ async def start_analysis(
     if not file.filename.endswith(".xlsx"):
         raise HTTPException(400, "Seuls les fichiers .xlsx sont acceptés.")
 
-    # Only one running job at a time
+    # One running job per IP (X-Forwarded-For for reverse-proxy setups)
+    client_ip = _get_client_ip(request)
     with _jobs_lock:
-        running = [j for j in jobs.values() if j["status"] == "running"]
+        running = [j for j in jobs.values() if j["status"] == "running" and j.get("client_ip") == client_ip]
     if running:
-        raise HTTPException(409, f"Un job est déjà en cours (id: {running[0]['id']}). Attendez qu'il se termine ou arrêtez-le avant d'en lancer un nouveau.")
+        raise HTTPException(409, f"Un job est déjà en cours pour votre adresse (id: {running[0]['id']}). Attendez qu'il se termine ou arrêtez-le avant d'en lancer un nouveau.")
 
     dest = UPLOADS_DIR / f"{uuid.uuid4().hex}_{file.filename}"
     with dest.open("wb") as fh:
@@ -365,7 +371,7 @@ async def start_analysis(
     )
 
     with _jobs_lock:
-        jobs[job_id]     = _new_job(job_id, params)
+        jobs[job_id]     = _new_job(job_id, params, client_ip)
         job_logs[job_id] = []
 
     queue = multiprocessing.Queue()
@@ -389,12 +395,15 @@ async def start_analysis(
 
 
 @app.post("/jobs/{job_id}/stop")
-def stop_job(job_id: str):
+def stop_job(job_id: str, request: Request):
     global _current_process, _current_job_id
+    client_ip = _get_client_ip(request)
 
     with _jobs_lock:
         if job_id not in jobs:
             raise HTTPException(404, "Job introuvable.")
+        if jobs[job_id].get("client_ip") != client_ip:
+            raise HTTPException(403, "Ce job ne vous appartient pas.")
         if jobs[job_id]["status"] != "running":
             raise HTTPException(400, f"Le job n'est pas en cours (statut : {jobs[job_id]['status']}).")
 
@@ -412,23 +421,33 @@ def stop_job(job_id: str):
 
 
 @app.get("/jobs")
-def list_jobs():
+def list_jobs(request: Request):
+    client_ip = _get_client_ip(request)
     with _jobs_lock:
-        return sorted(jobs.values(), key=lambda j: j["created_at"], reverse=True)
+        return sorted(
+            [j for j in jobs.values() if j.get("client_ip") == client_ip],
+            key=lambda j: j["created_at"], reverse=True
+        )
 
 @app.get("/jobs/{job_id}")
-def get_job(job_id: str):
+def get_job(job_id: str, request: Request):
+    client_ip = _get_client_ip(request)
     with _jobs_lock:
         j = jobs.get(job_id)
     if not j:
         raise HTTPException(404, "Job introuvable.")
+    if j.get("client_ip") != client_ip:
+        raise HTTPException(403, "Ce job ne vous appartient pas.")
     return j
 
 @app.delete("/jobs/{job_id}")
-def delete_job(job_id: str):
+def delete_job(job_id: str, request: Request):
+    client_ip = _get_client_ip(request)
     with _jobs_lock:
         if job_id not in jobs:
             raise HTTPException(404, "Job introuvable.")
+        if jobs[job_id].get("client_ip") != client_ip:
+            raise HTTPException(403, "Ce job ne vous appartient pas.")
         if jobs[job_id]["status"] == "running":
             raise HTTPException(400, "Impossible de supprimer un job en cours. Arrêtez-le d'abord.")
         del jobs[job_id]
@@ -436,19 +455,25 @@ def delete_job(job_id: str):
     return {"deleted": job_id}
 
 @app.get("/jobs/{job_id}/logs")
-def get_logs(job_id: str, since: int = 0):
+def get_logs(job_id: str, request: Request, since: int = 0):
+    client_ip = _get_client_ip(request)
     with _jobs_lock:
         if job_id not in jobs:
             raise HTTPException(404, "Job introuvable.")
+        if jobs[job_id].get("client_ip") != client_ip:
+            raise HTTPException(403, "Ce job ne vous appartient pas.")
         lines = job_logs.get(job_id, [])[since:]
     return {"lines": lines, "total": since + len(lines)}
 
 @app.get("/results/{job_id}")
-def list_results(job_id: str):
+def list_results(job_id: str, request: Request):
+    client_ip = _get_client_ip(request)
     with _jobs_lock:
         j = jobs.get(job_id)
     if not j:
         raise HTTPException(404, "Job introuvable.")
+    if j.get("client_ip") != client_ip:
+        raise HTTPException(403, "Ce job ne vous appartient pas.")
     if j["status"] != "done":
         raise HTTPException(425, "Le job n'est pas encore terminé.")
     out = Path(j["output_dir"])
@@ -462,11 +487,14 @@ def list_results(job_id: str):
     }
 
 @app.get("/download/{job_id}/{filename}")
-def download_file(job_id: str, filename: str):
+def download_file(job_id: str, filename: str, request: Request):
+    client_ip = _get_client_ip(request)
     with _jobs_lock:
         j = jobs.get(job_id)
     if not j or j["status"] != "done":
         raise HTTPException(404, "Introuvable ou job non terminé.")
+    if j.get("client_ip") != client_ip:
+        raise HTTPException(403, "Ce job ne vous appartient pas.")
     p = Path(j["output_dir"]) / filename
     if not p.exists():
         raise HTTPException(404, "Fichier introuvable.")
