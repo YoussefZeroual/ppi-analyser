@@ -69,7 +69,7 @@ def _new_job(job_id: str, params: dict) -> dict:
         "created_at": datetime.now().isoformat(), "finished_at": None,
         "error": None, "output_dir": None,
         "tokens_in": 0, "tokens_out": 0, "n_sentences": 0,
-        "progress": 0,
+        "progress": 0, "phase": "init", "n_total_sentences": 0,
     }
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -140,7 +140,8 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
     out_dir = str(Path.home() / "ppi-analyser-output" / f"{slug}_{ts}")
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-    send("update", data={"output_dir": out_dir, "progress": 5})
+    has_preprocessing = (mode == "oral")
+    send("update", data={"output_dir": out_dir, "progress": 5, "phase": "init"})
 
     props_for_pipeline = selected_props if selected_props else None
 
@@ -162,11 +163,28 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
     )
 
     try:
-        send("update", data={"progress": 10})
+        send("update", data={"progress": 10, "phase": "init"})
         analyser = PPIAnalyser(tokenization_mode="nlp")
-        send("update", data={"progress": 20})
+        first_phase = "preprocessing" if has_preprocessing else "segmentation"
+        send("update", data={"progress": 20, "phase": first_phase})
 
-        df, state = analyser.process_sentences(config)
+        def _progress(phase, done, n_total):
+            # Called by pipeline.py after each sentence/chunk
+            # preprocessing maps to 20–45%, analysis to 45–95%
+            if n_total == 0:
+                return
+            ratio = done / n_total
+            if phase == "preprocessing":
+                pct = int(20 + ratio * 25)   # 20 → 45
+            else:
+                pct = int(45 + ratio * 50)   # 45 → 95
+            send("update", data={
+                "phase": phase,
+                "progress": pct,
+                "n_total_sentences": n_total,
+            })
+
+        df, state = analyser.process_sentences(config, progress_callback=_progress)
 
         if df is None:
             raise RuntimeError("Le pipeline n'a retourné aucun résultat.")
@@ -178,6 +196,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
             "tokens_out": state.total_tokens_out,
             "n_sentences": len(df),
             "progress": 100,
+            "phase": "done",
         })
 
     except Exception:
@@ -218,8 +237,7 @@ def _queue_reader(job_id: str, queue: multiprocessing.Queue):
             with _jobs_lock:
                 if job_id in job_logs:
                     job_logs[job_id].append(msg["msg"])
-            # Also parse progress from log lines
-            _update_progress_from_log(job_id, msg["msg"])
+
 
         elif t == "update":
             with _jobs_lock:
@@ -243,54 +261,6 @@ def _queue_reader(job_id: str, queue: multiprocessing.Queue):
             break
 
 
-_seg_pat = None
-_ana_pat = None
-
-def _update_progress_from_log(job_id: str, line: str):
-    global _seg_pat, _ana_pat
-    import re
-    if _seg_pat is None:
-        _seg_pat = re.compile(r"Segmentation batch (\d+)/(\d+)")
-        _ana_pat = re.compile(r"Analysis batch (\d+)/(\d+)")
-
-    with _jobs_lock:
-        if job_id not in jobs:
-            return
-        mode = jobs[job_id]["params"].get("mode", "")
-
-    has_segmentation = (mode == "écrit_ia")
-
-    m_seg = _seg_pat.search(line)
-    m_ana = _ana_pat.search(line)
-
-    if not m_seg and not m_ana:
-        return
-
-    with _jobs_lock:
-        if job_id not in jobs:
-            return
-        cur = jobs[job_id].get("progress", 20)
-
-    if has_segmentation:
-        if m_seg:
-            seg_cur, seg_tot = int(m_seg.group(1)), int(m_seg.group(2))
-            pct = int(10 + (seg_cur / seg_tot) * 35)
-            with _jobs_lock:
-                if job_id in jobs:
-                    jobs[job_id]["progress"] = max(cur, pct)
-        if m_ana:
-            ana_cur, ana_tot = int(m_ana.group(1)), int(m_ana.group(2))
-            pct = int(45 + (ana_cur / ana_tot) * 50)
-            with _jobs_lock:
-                if job_id in jobs:
-                    jobs[job_id]["progress"] = max(cur, pct)
-    else:
-        if m_ana:
-            ana_cur, ana_tot = int(m_ana.group(1)), int(m_ana.group(2))
-            pct = int(20 + (ana_cur / ana_tot) * 75)
-            with _jobs_lock:
-                if job_id in jobs:
-                    jobs[job_id]["progress"] = max(cur, pct)
 
 
 # ── FastAPI ──────────────────────────────────────────────────────────────────

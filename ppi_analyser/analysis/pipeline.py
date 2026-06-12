@@ -196,17 +196,30 @@ def _preprocess_all_batch(
     sentences: list[str],
     config: PipelineConfig,
     state: SessionState,
+    progress_callback=None,
 ) -> list[PreprocessedSentence]:
     """Preprocess all sentences in chunks of config.batch_size."""
+    n_total = len(sentences)
+
     if config.mode != AnalysisMode.ECRIT_IA:
-        return [_preprocess_one(raw, config, state,sent_id) for sent_id,raw in enumerate(sentences)]
+        preprocessed = []
+        for sent_id, raw in enumerate(sentences):
+            result = _preprocess_one(raw, config, state, sent_id)
+            preprocessed.append(result)
+            if progress_callback:
+                progress_callback("preprocessing", sent_id + 1, n_total)
+        return preprocessed
 
     chunks = _chunk(sentences, config.batch_size)
     preprocessed = []
+    done = 0
 
     for idx, chunk in enumerate(chunks):
         logger.info("Segmentation batch %d/%d (%d sentences)", idx + 1, len(chunks), len(chunk))
         preprocessed.extend(_preprocess_chunk_batch(chunk, config, state))
+        done += len(chunk)
+        if progress_callback:
+            progress_callback("preprocessing", done, n_total)
 
     return preprocessed
 
@@ -220,9 +233,11 @@ def _preprocess_and_analyse(
     lemmes: list[str] | None,
     config: PipelineConfig,
     state: SessionState,
+    progress_callback=None,
 ) -> tuple[list[PreprocessedSentence], list[list[str]]]:
     """Non-batch mode: segment + analyse each sentence before moving to the next."""
     sleep_time = _compute_sleep(config)
+    n_total = len(sentences)
     preprocessed = []
     all_results = []
 
@@ -250,6 +265,8 @@ def _preprocess_and_analyse(
             mode=config.mode,
         )
         all_results.append(results)
+        if progress_callback:
+            progress_callback("analysis", i + 1, n_total)
 
         if i < len(sentences) - 1:
             logger.info("Sleeping %.2fs for rate limit", sleep_time)
@@ -264,11 +281,14 @@ def _analyse_batch(
     lemmes: list[str] | None,
     config: PipelineConfig,
     state: SessionState,
+    progress_callback=None,
 ) -> tuple[list[PreprocessedSentence], list[list[str]]]:
     """Batch analysis: chunks of batch_size, one batch prompt per property per chunk."""
     from ppi_analyser.analysis.sentence import process_sentences_batch
     chunks = _chunk(preprocessed, config.batch_size)
     lemme_chunks = _chunk(lemmes, config.batch_size) if lemmes else [None] * len(chunks)
+    n_total = len(preprocessed)
+    done = 0
     all_results = []
 
     for idx, (chunk, lemme_chunk) in enumerate(zip(chunks, lemme_chunks)):
@@ -300,6 +320,9 @@ def _analyse_batch(
             start_offset=start_offset
         )
         all_results.extend(chunk_results)
+        done += len(chunk)
+        if progress_callback:
+            progress_callback("analysis", done, n_total)
 
     return preprocessed, all_results
 

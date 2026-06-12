@@ -33,5 +33,6 @@ class SessionState:
     nlp_preprocessed_turn: list = field(default_factory=list)
     no_ia: list[int] = field(default_factory=lambda: [0, 1, 5, 7, 8])
     analysis_mode:str = None
+    n_total_sentences: int = 0  # rempli après chargement du fichier
     def __post_init__(self):
         self._token_lock = threading.Lock()

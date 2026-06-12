@@ -149,14 +149,33 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .job-body{min-width:0}
 .job-expr{font-weight:600;font-size:13px;margin-bottom:2px}
 .job-meta{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;margin-bottom:4px}
-.job-progress-wrap{margin-top:6px;margin-bottom:6px}
-.job-progress-bar{
-  height:3px;background:var(--border);border-radius:2px;overflow:hidden;
+.job-progress-wrap{margin-top:6px;margin-bottom:4px}
+/* Segmented progress bar */
+.job-progress-phases{display:flex;gap:3px;align-items:center;margin-bottom:3px}
+.job-phase-seg{
+  display:flex;align-items:center;gap:0;flex:1;
 }
-.job-progress-fill{
-  height:100%;background:var(--accent);border-radius:2px;
-  transition:width .5s ease;
+.job-phase-label{
+  font-size:10px;color:var(--muted);white-space:nowrap;margin-right:5px;
+  font-family:var(--mono);letter-spacing:.02em;
+  transition:color .2s;
 }
+.job-phase-label.active{color:var(--accent)}
+.job-phase-label.done-phase{color:var(--accent2)}
+.job-phase-bar{
+  flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden;
+}
+.job-phase-fill{
+  height:100%;border-radius:2px;
+  transition:width .5s ease, background .3s;
+}
+.job-phase-fill.active{background:var(--accent)}
+.job-phase-fill.done-phase{background:var(--accent2)}
+.job-phase-fill.inactive{background:var(--border)}
+.job-phase-fill.error{background:var(--danger)}
+/* Legacy single bar (kept for compatibility) */
+.job-progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.job-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s ease}
 .job-progress-fill.done{background:var(--accent2)}
 .job-progress-fill.error{background:var(--danger)}
 .job-actions{display:flex;gap:6px;flex-shrink:0;flex-direction:column;align-items:flex-end}
@@ -902,6 +921,84 @@ function JobRecap({ params }) {
   );
 }
 
+// ── ProgressBar ──────────────────────────────────────────────────────────
+// Segmented progress bar: reflects pipeline phases per mode
+// oral: [prétraitement Stanza | analyse LLM]
+// écrit_ia / écrit: [segmentation+prétraitement | analyse LLM]
+
+function ProgressBar({ job, pct }) {
+  const mode   = job.params?.mode ?? "oral";
+  const phase  = job.phase ?? (job.status === "done" ? "done" : "init");
+  const status = job.status;
+
+  // Phase definitions per mode
+  // Each phase: { key, label, start, end } (start/end as % of total 0–100)
+  const phases = mode === "oral"
+    ? [
+        { key: "preprocessing", label: "Stanza",   start: 0,  end: 45 },
+        { key: "analysis",      label: "Analyse",  start: 45, end: 100 },
+      ]
+    : [
+        { key: "segmentation",  label: "Segm.",    start: 0,  end: 45 },
+        { key: "analysis",      label: "Analyse",  start: 45, end: 100 },
+      ];
+
+  // Map phase key → ordering index
+  const PHASE_ORDER = { init: -1, preprocessing: 0, segmentation: 0, analysis: 1, done: 2 };
+  const currentIdx  = PHASE_ORDER[phase] ?? -1;
+
+  if (status === "error") {
+    return (
+      <div className="job-progress-wrap">
+        <div className="job-progress-phases">
+          <div className="job-phase-seg" style={{flex:1}}>
+            <div className="job-phase-bar">
+              <div className="job-phase-fill error" style={{width:`${pct}%`}}/>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="job-progress-wrap">
+      <div className="job-progress-phases">
+        {phases.map((ph, i) => {
+          const phaseWidth = ph.end - ph.start; // share of total bar
+          const isDone   = status === "done" || currentIdx > i;
+          const isActive = currentIdx === i && status === "running";
+
+          // fill within this segment
+          let fill = 0;
+          if (isDone) {
+            fill = 100;
+          } else if (isActive) {
+            // map pct (0–100) into this segment
+            const clampedPct = Math.max(ph.start, Math.min(ph.end, pct));
+            fill = ((clampedPct - ph.start) / phaseWidth) * 100;
+          }
+
+          const fillClass = status === "done" ? "done-phase"
+            : isDone   ? "done-phase"
+            : isActive ? "active"
+            : "inactive";
+          const labelClass = isActive ? "active" : isDone ? "done-phase" : "";
+
+          return (
+            <div key={ph.key} className="job-phase-seg" style={{flex: phaseWidth}}>
+              <span className={`job-phase-label ${labelClass}`}>{ph.label}</span>
+              <div className="job-phase-bar">
+                <div className={`job-phase-fill ${fillClass}`} style={{width:`${fill}%`}}/>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── JobRow ────────────────────────────────────────────────────────────────
 
 function JobRow({ job, onView, onDelete, onStop, onRelaunch, serverOk, stopping }) {
@@ -926,11 +1023,7 @@ function JobRow({ job, onView, onDelete, onStop, onRelaunch, serverOk, stopping 
         </div>
 
         {!isHistoryOnly && (
-          <div className="job-progress-wrap">
-            <div className="job-progress-bar">
-              <div className={`job-progress-fill ${job.status}`} style={{width:`${pct}%`}}/>
-            </div>
-          </div>
+          <ProgressBar job={job} pct={pct}/>
         )}
 
         <JobRecap params={job.params}/>

@@ -47,6 +47,7 @@ class PPIAnalyser:
     def process_sentences(
         self,
         config: PipelineConfig,
+        progress_callback=None,
     ) -> tuple:
         self.state.fichier               = config.sentence_file
         self.state.expression            = config.expression
@@ -75,10 +76,13 @@ class PPIAnalyser:
         sentences, lemmes = _load_sentences(config) 
         sentences, lemmes = _validate_range(sentences, lemmes, config)
 
+        n_total = len(sentences)
+
         if _is_mistral_batch(config):
             from ppi_analyser.analysis.mistral_batch_pipeline import analyse_batch_mistral_async
             logger.info("Prétraitement des conversations (batch)")
-            preprocessed = _preprocess_all_batch(sentences, config, self.state)
+            preprocessed = _preprocess_all_batch(sentences, config, self.state,
+                                                  progress_callback=progress_callback)
             logger.info("Traitement des conversations (Mistral async batch)")
             preprocessed, results = analyse_batch_mistral_async(
                 preprocessed, lemmes, config, self.state
@@ -86,13 +90,16 @@ class PPIAnalyser:
 
         elif config.batch_mode:
             logger.info("Prétraitement des conversations (batch)")
-            preprocessed = _preprocess_all_batch(sentences, config, self.state)
+            preprocessed = _preprocess_all_batch(sentences, config, self.state,
+                                                  progress_callback=progress_callback)
             logger.info("Traitement des conversations (batch)")
-            preprocessed, results = _analyse_batch(preprocessed, lemmes, config, self.state)
+            preprocessed, results = _analyse_batch(preprocessed, lemmes, config, self.state,
+                                                    progress_callback=progress_callback)
 
         else:
             logger.info("Prétraitement et traitement séquentiels des conversations")
-            preprocessed, results = _preprocess_and_analyse(sentences, lemmes, config, self.state)
+            preprocessed, results = _preprocess_and_analyse(sentences, lemmes, config, self.state,
+                                                             progress_callback=progress_callback)
 
         logger.info("Exportation des résultats")
         df = _build_dataframe(results, preprocessed, config, self.state)
