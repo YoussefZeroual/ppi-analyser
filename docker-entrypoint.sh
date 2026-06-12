@@ -18,15 +18,15 @@ echo "[entrypoint] Starting Stanza API server on port ${STANZA_PORT}..."
 python /app/ppi_analyser/stanza/stanza_api.py &
 STANZA_PID=$!
 
-# Wait until the Stanza server is ready (max 60 s)
+# Wait until the Stanza server is ready (max 10 s)
 echo "[entrypoint] Waiting for Stanza server..."
-for i in $(seq 1 60); do
+for i in $(seq 1 10); do
     if curl -sf "http://localhost:${STANZA_PORT}/health" > /dev/null 2>&1; then
         echo "[entrypoint] Stanza server ready (${i}s)."
         break
     fi
     sleep 1
-    if [ $i -eq 60 ]; then
+    if [ $i -eq 10 ]; then
         echo "[entrypoint] WARNING: Stanza server did not respond after 60s — continuing anyway."
     fi
 done
