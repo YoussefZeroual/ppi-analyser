@@ -13,7 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
-UPLOADS_DIR = Path.home() / ".ppi_analyser" / "uploads"
+import os as _os
+UPLOADS_DIR = Path(_os.getenv("PPI_UPLOAD_DIR", Path.home() / ".ppi_analyser" / "uploads"))
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 jobs: dict[str, dict[str, Any]] = {}
@@ -137,7 +138,8 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
     # ── Output directory ─────────────────────────────────────────────────────
     ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
     slug = expression.replace(" ", "_").replace("'", "").replace("/", "_")
-    out_dir = str(Path.home() / "ppi-analyser-output" / f"{slug}_{ts}")
+    _out_base = Path(_os.getenv("PPI_OUTPUT_DIR", Path.home() / "ppi-analyser-output"))
+    out_dir = str(_out_base / f"{slug}_{ts}")
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     has_preprocessing = (mode == "oral")
@@ -157,7 +159,8 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         batch_size=batch_size,
         n_threads=6, # 8 override for mistral
         use_analysis_cache=use_analysis_cache,
-        analysis_cache_path=str(Path.home() / ".ppi_analyser" / "analysis_cache.json"),
+        analysis_cache_path=_os.getenv("PPI_CACHE_PATH",
+            str(Path.home() / ".ppi_analyser" / "analysis_cache.json")),
         speaker_detection_model=SPEAKER_DETECTION_MODEL,
         custom_properties=props_for_pipeline,
     )

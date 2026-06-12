@@ -6,7 +6,6 @@
 <title>Analyse automatique des PPIs</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -295,275 +294,534 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useCallback, useRef } = React;
-const  API = `http://localhost:8000`;
+<script>
+"use strict";
 
-const LIDILEM_LOGO = "https://lidilem.univ-grenoble-alpes.fr/sites/default/files/theme/logo-lidilem_0.svg";
-const UGA_LOGO     = "https://lidilem.univ-grenoble-alpes.fr/sites/default/files/2023-11/logo-uga.png";
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+var _React = React,
+  useState = _React.useState,
+  useEffect = _React.useEffect,
+  useCallback = _React.useCallback,
+  useRef = _React.useRef;
+var API = window.location.protocol + "//" + window.location.host;
+var LIDILEM_LOGO = "https://lidilem.univ-grenoble-alpes.fr/sites/default/files/theme/logo-lidilem_0.svg";
+var UGA_LOGO = "https://lidilem.univ-grenoble-alpes.fr/sites/default/files/2023-11/logo-uga.png";
 
 // ── Propriétés analysables ─────────────────────────────────────────────────
 
-const ALL_PROPS = [
-  { key: "Acception",                 label: "Acception" },
-  { key: "type_phrase",               label: "Type de phrase" },
-  { key: "Modalite",                  label: "Modalité" },
-  { key: "Position",                  label: "Position" },
-  { key: "Particularites_syntaxiques",label: "Particularités syntaxiques" },
-  { key: "Expansions",                label: "Expansions" },
-  { key: "Modifieurs",                label: "Modifieurs" },
-  { key: "Coocurrents",               label: "Cooccurrents" },
-  { key: "Portee",                    label: "Portée" },
-  { key: "Declenchement",             label: "Déclenchement" },
-  { key: "Fonction_globale",          label: "Fonction globale" },
-  { key: "Fonction_specifique",       label: "Fonction spécifique" },
-  { key: "Remarques_diverses",        label: "Remarques diverses" },
-];
+var ALL_PROPS = [{
+  key: "Acception",
+  label: "Acception"
+}, {
+  key: "type_phrase",
+  label: "Type de phrase"
+}, {
+  key: "Modalite",
+  label: "Modalité"
+}, {
+  key: "Position",
+  label: "Position"
+}, {
+  key: "Particularites_syntaxiques",
+  label: "Particularités syntaxiques"
+}, {
+  key: "Expansions",
+  label: "Expansions"
+}, {
+  key: "Modifieurs",
+  label: "Modifieurs"
+}, {
+  key: "Coocurrents",
+  label: "Cooccurrents"
+}, {
+  key: "Portee",
+  label: "Portée"
+}, {
+  key: "Declenchement",
+  label: "Déclenchement"
+}, {
+  key: "Fonction_globale",
+  label: "Fonction globale"
+}, {
+  key: "Fonction_specifique",
+  label: "Fonction spécifique"
+}, {
+  key: "Remarques_diverses",
+  label: "Remarques diverses"
+}];
 
 // ── LocalStorage helpers ───────────────────────────────────────────────────
 
-const LS_SETTINGS = "ppi_settings_v2";
-const LS_JOBS     = "ppi_jobs_history";
-
+var LS_SETTINGS = "ppi_settings_v2";
+var LS_JOBS = "ppi_jobs_history";
 function loadSettings() {
-  try { return JSON.parse(localStorage.getItem(LS_SETTINGS)) || {}; } catch { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(LS_SETTINGS)) || {};
+  } catch (_unused) {
+    return {};
+  }
 }
 function saveSettings(s) {
-  try { localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); } catch {}
+  try {
+    localStorage.setItem(LS_SETTINGS, JSON.stringify(s));
+  } catch (_unused2) {}
 }
 
 // Persisted job history – merges with live server data
 function loadJobHistory() {
-  try { return JSON.parse(localStorage.getItem(LS_JOBS)) || []; } catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(LS_JOBS)) || [];
+  } catch (_unused3) {
+    return [];
+  }
 }
 function saveJobHistory(jobs) {
-  try { localStorage.setItem(LS_JOBS, JSON.stringify(jobs)); } catch {}
+  try {
+    localStorage.setItem(LS_JOBS, JSON.stringify(jobs));
+  } catch (_unused4) {}
 }
 
 // ── utils ──────────────────────────────────────────────────────────────────
 
 function timeAgo(iso) {
   if (!iso) return "—";
-  const d = Math.floor((Date.now() - new Date(iso)) / 1000);
-  if (d < 60) return `${d}s`; if (d < 3600) return `${Math.floor(d/60)}m`; return `${Math.floor(d/3600)}h`;
+  var d = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (d < 60) return "".concat(d, "s");
+  if (d < 3600) return "".concat(Math.floor(d / 60), "m");
+  return "".concat(Math.floor(d / 3600), "h");
 }
 function duration(a, b) {
   if (!a || !b) return null;
-  const d = Math.round((new Date(b) - new Date(a)) / 1000);
-  return d < 60 ? `${d}s` : `${Math.floor(d/60)}m ${d%60}s`;
+  var d = Math.round((new Date(b) - new Date(a)) / 1000);
+  return d < 60 ? "".concat(d, "s") : "".concat(Math.floor(d / 60), "m ").concat(d % 60, "s");
 }
 
 // ── StatusPill ────────────────────────────────────────────────────────────
 
-function StatusPill({ status, stopping }) {
-  const label = stopping ? "arrêt…"
-    : status === "running" ? "en cours"
-    : status === "done" ? "terminé"
-    : status === "error" ? "erreur"
-    : status === "stopped" ? "arrêté"
-    : status;
-  const cls = stopping ? "running" : status;
-  return (
-    <span className={`status-pill ${cls}`}>
-      {(status === "running" || stopping) && <span className="pulse">●</span>}
-      {status === "done" && !stopping && "✓"}
-      {status === "error" && !stopping && "✗"}
-      {label}
-    </span>
-  );
+function StatusPill(_ref) {
+  var status = _ref.status,
+    stopping = _ref.stopping;
+  var label = stopping ? "arrêt…" : status === "running" ? "en cours" : status === "done" ? "terminé" : status === "error" ? "erreur" : status === "stopped" ? "arrêté" : status;
+  var cls = stopping ? "running" : status;
+  return /*#__PURE__*/React.createElement("span", {
+    className: "status-pill ".concat(cls)
+  }, (status === "running" || stopping) && /*#__PURE__*/React.createElement("span", {
+    className: "pulse"
+  }, "\u25CF"), status === "done" && !stopping && "✓", status === "error" && !stopping && "✗", label);
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 
-function Toast({ msg, onDone }) {
-  useEffect(() => { const t = setTimeout(onDone, 3500); return () => clearTimeout(t); }, []);
-  return <div className="toast">{msg}</div>;
+function Toast(_ref2) {
+  var msg = _ref2.msg,
+    onDone = _ref2.onDone;
+  useEffect(function () {
+    var t = setTimeout(onDone, 3500);
+    return function () {
+      return clearTimeout(t);
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "toast"
+  }, msg);
 }
 
 // ── PrefabBadge ───────────────────────────────────────────────────────────
 
 function PrefabBadge() {
-  return (
-    <span style={{
-      fontFamily:"var(--mono)", fontSize:13, fontWeight:700,
-      color:"var(--accent)", letterSpacing:".03em",
-      padding:"3px 8px", border:"1px solid var(--accent)",
-      borderRadius:4, background:"color-mix(in srgb,var(--accent) 10%,transparent)",
-      lineHeight:1,
-    }}>
-      PRE<span style={{color:"var(--text)"}}>FAB</span>
-    </span>
-  );
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: "var(--mono)",
+      fontSize: 13,
+      fontWeight: 700,
+      color: "var(--accent)",
+      letterSpacing: ".03em",
+      padding: "3px 8px",
+      border: "1px solid var(--accent)",
+      borderRadius: 4,
+      background: "color-mix(in srgb,var(--accent) 10%,transparent)",
+      lineHeight: 1
+    }
+  }, "PRE", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "FAB"));
 }
 
 // ── FileDropzone ──────────────────────────────────────────────────────────
 
 // ── ExcelPreviewModal ─────────────────────────────────────────────────────
 
-function ExcelPreviewModal({ file, onClose }) {
-  const [rows, setRows]     = useState(null);
-  const [headers, setHdrs]  = useState([]);
-  const [error, setError]   = useState(null);
-
-  useEffect(() => {
+function ExcelPreviewModal(_ref3) {
+  var file = _ref3.file,
+    onClose = _ref3.onClose;
+  var _useState = useState(null),
+    _useState2 = _slicedToArray(_useState, 2),
+    rows = _useState2[0],
+    setRows = _useState2[1];
+  var _useState3 = useState([]),
+    _useState4 = _slicedToArray(_useState3, 2),
+    headers = _useState4[0],
+    setHdrs = _useState4[1];
+  var _useState5 = useState(null),
+    _useState6 = _slicedToArray(_useState5, 2),
+    error = _useState6[0],
+    setError = _useState6[1];
+  useEffect(function () {
     if (!file) return;
-    setRows(null); setHdrs([]); setError(null);
-    const fd = new FormData();
+    setRows(null);
+    setHdrs([]);
+    setError(null);
+    var fd = new FormData();
     fd.append("file", file);
-    fetch(`${API}/preview`, { method: "POST", body: fd })
-      .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e.detail)))
-      .then(d => { setHdrs(d.header); setRows(d.rows); })
-      .catch(e => setError("Erreur : " + e));
+    fetch("".concat(API, "/preview"), {
+      method: "POST",
+      body: fd
+    }).then(function (r) {
+      return r.ok ? r.json() : r.json().then(function (e) {
+        return Promise.reject(e.detail);
+      });
+    }).then(function (d) {
+      setHdrs(d.header);
+      setRows(d.rows);
+    })["catch"](function (e) {
+      return setError("Erreur : " + e);
+    });
   }, [file]);
-
-  return (
-    <div style={{
-      position:"fixed",inset:0,background:"rgba(0,0,0,.7)",
-      display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,
-    }} onClick={onClose}>
-      <div style={{
-        background:"var(--surface)",border:"1px solid var(--border)",
-        borderRadius:"var(--radius)",padding:20,maxWidth:"92vw",width:860,
-        maxHeight:"82vh",display:"flex",flexDirection:"column",
-      }} onClick={e=>e.stopPropagation()}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-          <span style={{fontWeight:700,fontSize:14}}>Aperçu — {file?.name}</span>
-          <button className="btn btn-ghost" style={{padding:"4px 10px",fontSize:12}} onClick={onClose}>Fermer</button>
-        </div>
-        {error && <div className="err-inline">{error}</div>}
-        {!rows && !error && <p style={{color:"var(--muted)",fontSize:13}}>Chargement…</p>}
-        {rows && (
-          <div style={{overflowX:"auto",overflowY:"auto",flex:1}}>
-            <table style={{borderCollapse:"collapse",fontSize:11,width:"100%",fontFamily:"var(--mono)"}}>
-              <thead>
-                <tr style={{background:"var(--surface2)"}}>
-                  <th style={{padding:"5px 8px",border:"1px solid var(--border)",color:"var(--muted)",textAlign:"center"}}>#</th>
-                  {headers.map((h,i)=>(
-                    <th key={i} style={{padding:"5px 8px",border:"1px solid var(--border)",color:"var(--accent)",whiteSpace:"nowrap",textAlign:"left"}}>{String(h)}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row,ri)=>(
-                  <tr key={ri} style={{background:ri%2===0?"var(--bg)":"var(--surface2)"}}>
-                    <td style={{padding:"4px 8px",border:"1px solid var(--border)",color:"var(--muted)",textAlign:"center"}}>{ri+2}</td>
-                    {headers.map((_,ci)=>(
-                      <td key={ci} style={{padding:"4px 8px",border:"1px solid var(--border)",maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}
-                        title={String(row[ci]??"")}>{String(row[ci]??"")}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p style={{fontSize:11,color:"var(--muted)",marginTop:8}}>Contenu du fichier excel (indices Excel affichés).</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,.7)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000
+    },
+    onClick: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "var(--surface)",
+      border: "1px solid var(--border)",
+      borderRadius: "var(--radius)",
+      padding: 20,
+      maxWidth: "92vw",
+      width: 860,
+      maxHeight: "82vh",
+      display: "flex",
+      flexDirection: "column"
+    },
+    onClick: function onClick(e) {
+      return e.stopPropagation();
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      fontSize: 14
+    }
+  }, "Aper\xE7u \u2014 ", file === null || file === void 0 ? void 0 : file.name), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost",
+    style: {
+      padding: "4px 10px",
+      fontSize: 12
+    },
+    onClick: onClose
+  }, "Fermer")), error && /*#__PURE__*/React.createElement("div", {
+    className: "err-inline"
+  }, error), !rows && !error && /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "var(--muted)",
+      fontSize: 13
+    }
+  }, "Chargement\u2026"), rows && /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowX: "auto",
+      overflowY: "auto",
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    style: {
+      borderCollapse: "collapse",
+      fontSize: 11,
+      width: "100%",
+      fontFamily: "var(--mono)"
+    }
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
+    style: {
+      background: "var(--surface2)"
+    }
+  }, /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "5px 8px",
+      border: "1px solid var(--border)",
+      color: "var(--muted)",
+      textAlign: "center"
+    }
+  }, "#"), headers.map(function (h, i) {
+    return /*#__PURE__*/React.createElement("th", {
+      key: i,
+      style: {
+        padding: "5px 8px",
+        border: "1px solid var(--border)",
+        color: "var(--accent)",
+        whiteSpace: "nowrap",
+        textAlign: "left"
+      }
+    }, String(h));
+  }))), /*#__PURE__*/React.createElement("tbody", null, rows.map(function (row, ri) {
+    return /*#__PURE__*/React.createElement("tr", {
+      key: ri,
+      style: {
+        background: ri % 2 === 0 ? "var(--bg)" : "var(--surface2)"
+      }
+    }, /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "4px 8px",
+        border: "1px solid var(--border)",
+        color: "var(--muted)",
+        textAlign: "center"
+      }
+    }, ri + 2), headers.map(function (_, ci) {
+      var _row$ci, _row$ci2;
+      return /*#__PURE__*/React.createElement("td", {
+        key: ci,
+        style: {
+          padding: "4px 8px",
+          border: "1px solid var(--border)",
+          maxWidth: 220,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap"
+        },
+        title: String((_row$ci = row[ci]) !== null && _row$ci !== void 0 ? _row$ci : "")
+      }, String((_row$ci2 = row[ci]) !== null && _row$ci2 !== void 0 ? _row$ci2 : ""));
+    }));
+  }))), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: "var(--muted)",
+      marginTop: 8
+    }
+  }, "Contenu du fichier excel (indices Excel affich\xE9s)."))));
 }
 
 // ── InfoBubble ────────────────────────────────────────────────────────────
 
-function InfoBubble({ text }) {
-  const [show, setShow] = useState(false);
-  return (
-    <span style={{position:"relative",display:"inline-flex",alignItems:"center",marginLeft:5}}>
-      <button
-        style={{
-          width:15,height:15,borderRadius:"50%",border:"1px solid var(--muted)",
-          background:"var(--surface2)",color:"var(--muted)",fontSize:9,
-          cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",
-          fontWeight:700,lineHeight:1,padding:0,flexShrink:0,
-        }}
-        onMouseEnter={()=>setShow(true)} onMouseLeave={()=>setShow(false)}
-        onFocus={()=>setShow(true)} onBlur={()=>setShow(false)}
-      >i</button>
-      {show && (
-        <span style={{
-          position:"absolute",left:"calc(100% + 6px)",top:"50%",transform:"translateY(-50%)",
-          background:"var(--surface)",border:"1px solid var(--border)",
-          borderRadius:"var(--radius)",padding:"7px 10px",fontSize:11,color:"var(--text)",
-          lineHeight:1.5,width:230,zIndex:500,boxShadow:"var(--shadow)",
-          pointerEvents:"none",
-        }}>{text}</span>
-      )}
-    </span>
-  );
+function InfoBubble(_ref4) {
+  var text = _ref4.text;
+  var _useState7 = useState(false),
+    _useState8 = _slicedToArray(_useState7, 2),
+    show = _useState8[0],
+    setShow = _useState8[1];
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "relative",
+      display: "inline-flex",
+      alignItems: "center",
+      marginLeft: 5
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: 15,
+      height: 15,
+      borderRadius: "50%",
+      border: "1px solid var(--muted)",
+      background: "var(--surface2)",
+      color: "var(--muted)",
+      fontSize: 9,
+      cursor: "pointer",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: 700,
+      lineHeight: 1,
+      padding: 0,
+      flexShrink: 0
+    },
+    onMouseEnter: function onMouseEnter() {
+      return setShow(true);
+    },
+    onMouseLeave: function onMouseLeave() {
+      return setShow(false);
+    },
+    onFocus: function onFocus() {
+      return setShow(true);
+    },
+    onBlur: function onBlur() {
+      return setShow(false);
+    }
+  }, "i"), show && /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      left: "calc(100% + 6px)",
+      top: "50%",
+      transform: "translateY(-50%)",
+      background: "var(--surface)",
+      border: "1px solid var(--border)",
+      borderRadius: "var(--radius)",
+      padding: "7px 10px",
+      fontSize: 11,
+      color: "var(--text)",
+      lineHeight: 1.5,
+      width: 230,
+      zIndex: 500,
+      boxShadow: "var(--shadow)",
+      pointerEvents: "none"
+    }
+  }, text));
 }
 
 // ── FieldLabel ────────────────────────────────────────────────────────────
 
-function FieldLabel({ children, info }) {
-  return (
-    <label style={{display:"flex",alignItems:"center",fontSize:12,color:"var(--muted)",marginBottom:4}}>
-      {children}
-      {info && <InfoBubble text={info}/>}
-    </label>
-  );
+function FieldLabel(_ref5) {
+  var children = _ref5.children,
+    info = _ref5.info;
+  return /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      fontSize: 12,
+      color: "var(--muted)",
+      marginBottom: 4
+    }
+  }, children, info && /*#__PURE__*/React.createElement(InfoBubble, {
+    text: info
+  }));
 }
-
-function FileDropzone({ file, onChange, onPreview }) {
-  const [over, setOver] = useState(false);
-  return (
-    <div>
-      <div className={`dropzone ${over?"over":""} ${file?"has-file":""}`}
-        onDragOver={e=>{e.preventDefault();setOver(true)}}
-        onDragLeave={()=>setOver(false)}
-        onDrop={e=>{e.preventDefault();setOver(false);const f=e.dataTransfer.files[0];if(f)onChange(f)}}>
-        <input type="file" accept=".xlsx" onChange={e=>e.target.files[0]&&onChange(e.target.files[0])}/>
-        <div className="dz-icon">{file?"📊":"📂"}</div>
-        <div className="dz-label">{file?file.name:"Glissez un fichier .xlsx ou cliquez pour parcourir"}</div>
-        {!file&&<div className="dz-sub">Concordances au format Excel (left / node / right)</div>}
-      </div>
-      {file && (
-        <button className="btn btn-ghost" style={{marginTop:6,fontSize:11,padding:"4px 12px"}}
-          onClick={onPreview} type="button">
-          🔍 Aperçu du fichier
-        </button>
-      )}
-    </div>
-  );
+function FileDropzone(_ref6) {
+  var file = _ref6.file,
+    _onChange = _ref6.onChange,
+    onPreview = _ref6.onPreview;
+  var _useState9 = useState(false),
+    _useState0 = _slicedToArray(_useState9, 2),
+    over = _useState0[0],
+    setOver = _useState0[1];
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "dropzone ".concat(over ? "over" : "", " ").concat(file ? "has-file" : ""),
+    onDragOver: function onDragOver(e) {
+      e.preventDefault();
+      setOver(true);
+    },
+    onDragLeave: function onDragLeave() {
+      return setOver(false);
+    },
+    onDrop: function onDrop(e) {
+      e.preventDefault();
+      setOver(false);
+      var f = e.dataTransfer.files[0];
+      if (f) _onChange(f);
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: ".xlsx",
+    onChange: function onChange(e) {
+      return e.target.files[0] && _onChange(e.target.files[0]);
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "dz-icon"
+  }, file ? "📊" : "📂"), /*#__PURE__*/React.createElement("div", {
+    className: "dz-label"
+  }, file ? file.name : "Glissez un fichier .xlsx ou cliquez pour parcourir"), !file && /*#__PURE__*/React.createElement("div", {
+    className: "dz-sub"
+  }, "Concordances au format Excel (left / node / right)")), file && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost",
+    style: {
+      marginTop: 6,
+      fontSize: 11,
+      padding: "4px 12px"
+    },
+    onClick: onPreview,
+    type: "button"
+  }, "\uD83D\uDD0D Aper\xE7u du fichier"));
 }
 
 // ── PropsSelector ─────────────────────────────────────────────────────────
 
-function PropsSelector({ selected, onChange }) {
-  const allKeys = ALL_PROPS.map(p => p.key);
-  const toggle = (key) => {
-    const next = selected.includes(key) ? selected.filter(k => k !== key) : [...selected, key];
+function PropsSelector(_ref7) {
+  var selected = _ref7.selected,
+    onChange = _ref7.onChange;
+  var allKeys = ALL_PROPS.map(function (p) {
+    return p.key;
+  });
+  var toggle = function toggle(key) {
+    var next = selected.includes(key) ? selected.filter(function (k) {
+      return k !== key;
+    }) : [].concat(_toConsumableArray(selected), [key]);
     onChange(next);
   };
-  return (
-    <div>
-      <div className="props-actions">
-        <button onClick={()=>onChange(allKeys)}>Tout cocher</button>
-        <button onClick={()=>onChange([])}>Tout décocher</button>
-      </div>
-      <div className="props-grid">
-        {ALL_PROPS.map(p => (
-          <label key={p.key} className="prop-check">
-            <input type="checkbox" checked={selected.includes(p.key)}
-              onChange={()=>toggle(p.key)}/>
-            <span style={{fontSize:12}}>{p.label}</span>
-          </label>
-        ))}
-      </div>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "props-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return onChange(allKeys);
+    }
+  }, "Tout cocher"), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return onChange([]);
+    }
+  }, "Tout d\xE9cocher")), /*#__PURE__*/React.createElement("div", {
+    className: "props-grid"
+  }, ALL_PROPS.map(function (p) {
+    return /*#__PURE__*/React.createElement("label", {
+      key: p.key,
+      className: "prop-check"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      checked: selected.includes(p.key),
+      onChange: function onChange() {
+        return toggle(p.key);
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12
+      }
+    }, p.label));
+  })));
 }
 
 // ── AnalyseForm ───────────────────────────────────────────────────────────
 
-const DEFAULTS = {
+var DEFAULTS = {
   mode: "oral",
-  start_sent: 2,        // display index (backend = display - 2)
+  start_sent: 2,
+  // display index (backend = display - 2)
   max_sentences: "all",
   all_sentences: true,
-  batch_size: 5,        // hidden from UI
-  n_threads: 8,         // hidden from UI
+  batch_size: 5,
+  // hidden from UI
+  n_threads: 8,
+  // hidden from UI
   use_analysis_cache: true,
-  selected_props: ALL_PROPS.map(p => p.key),
+  selected_props: ALL_PROPS.map(function (p) {
+    return p.key;
+  })
 };
 
 // Detect mode from filename suffix
@@ -573,27 +831,52 @@ function modeFromFilename(name) {
   if (name.endsWith("_Or.xlsx")) return "oral";
   return null;
 }
+function AnalyseForm(_ref8) {
+  var _settings$start_sent;
+  var onJobStarted = _ref8.onJobStarted,
+    hasRunningJob = _ref8.hasRunningJob;
+  var _useState1 = useState(null),
+    _useState10 = _slicedToArray(_useState1, 2),
+    file = _useState10[0],
+    setFile = _useState10[1];
+  var _useState11 = useState(""),
+    _useState12 = _slicedToArray(_useState11, 2),
+    expression = _useState12[0],
+    setExpr = _useState12[1];
+  var _useState13 = useState(false),
+    _useState14 = _slicedToArray(_useState13, 2),
+    advanced = _useState14[0],
+    setAdvanced = _useState14[1];
+  var _useState15 = useState(false),
+    _useState16 = _slicedToArray(_useState15, 2),
+    preview = _useState16[0],
+    setPreview = _useState16[1];
+  var _useState17 = useState(function () {
+      var _saved$selected_props;
+      var saved = loadSettings();
+      return _objectSpread(_objectSpread(_objectSpread({}, DEFAULTS), saved), {}, {
+        selected_props: (_saved$selected_props = saved.selected_props) !== null && _saved$selected_props !== void 0 ? _saved$selected_props : DEFAULTS.selected_props,
+        all_sentences: saved.all_sentences !== undefined ? saved.all_sentences : true
+      });
+    }),
+    _useState18 = _slicedToArray(_useState17, 2),
+    settings = _useState18[0],
+    setSettings = _useState18[1];
+  var _useState19 = useState(false),
+    _useState20 = _slicedToArray(_useState19, 2),
+    loading = _useState20[0],
+    setLoading = _useState20[1];
+  var _useState21 = useState(null),
+    _useState22 = _slicedToArray(_useState21, 2),
+    error = _useState22[0],
+    setError = _useState22[1];
+  var _useState23 = useState(null),
+    _useState24 = _slicedToArray(_useState23, 2),
+    totalRows = _useState24[0],
+    setTotalRows = _useState24[1]; // total data rows in the file
 
-function AnalyseForm({ onJobStarted, hasRunningJob }) {
-  const [file, setFile]         = useState(null);
-  const [expression, setExpr]   = useState("");
-  const [advanced, setAdvanced] = useState(false);
-  const [preview, setPreview]   = useState(false);
-  const [settings, setSettings] = useState(() => {
-    const saved = loadSettings();
-    return {
-      ...DEFAULTS,
-      ...saved,
-      selected_props: saved.selected_props ?? DEFAULTS.selected_props,
-      all_sentences: saved.all_sentences !== undefined ? saved.all_sentences : true,
-    };
-  });
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
-  const [totalRows, setTotalRows] = useState(null); // total data rows in the file
-
-  const set = (k, v) => {
-    const next = { ...settings, [k]: v };
+  var set = function set(k, v) {
+    var next = _objectSpread(_objectSpread({}, settings), {}, _defineProperty({}, k, v));
     setSettings(next);
     saveSettings(next);
   };
@@ -602,323 +885,487 @@ function AnalyseForm({ onJobStarted, hasRunningJob }) {
   function handleFileChange(f) {
     setFile(f);
     setTotalRows(null);
-    const detected = modeFromFilename(f?.name);
+    var detected = modeFromFilename(f === null || f === void 0 ? void 0 : f.name);
     if (detected) set("mode", detected);
-    if (f?.name) {
-      const base = f.name.replace(/\.xlsx$/i, "").replace(/_Ph$|_Or$/, "");
+    if (f !== null && f !== void 0 && f.name) {
+      var base = f.name.replace(/\.xlsx$/i, "").replace(/_Ph$|_Or$/, "");
       setExpr(base);
     }
     // Fetch total row count from backend
-    const fd = new FormData();
+    var fd = new FormData();
     fd.append("file", f);
-    fetch(`${API}/preview`, { method: "POST", body: fd })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => setTotalRows(d.total_rows))
-      .catch(() => {});
+    fetch("".concat(API, "/preview"), {
+      method: "POST",
+      body: fd
+    }).then(function (r) {
+      return r.ok ? r.json() : Promise.reject();
+    }).then(function (d) {
+      return setTotalRows(d.total_rows);
+    })["catch"](function () {});
   }
-
-  const displayStart = settings.start_sent ?? 2;
-
-  async function submit() {
-    if (!file)             { setError("Veuillez sélectionner un fichier .xlsx."); return; }
-    if (!expression.trim()){ setError("Veuillez saisir une expression cible."); return; }
-    if (advanced && settings.selected_props.length === 0) {
-      setError("Veuillez sélectionner au moins une propriété à analyser."); return;
-    }
-    setLoading(true); setError(null);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("expression", expression.trim());
-    fd.append("model", "mistral_large");
-    const s = advanced ? settings : { ...DEFAULTS, mode: settings.mode };
-
-    // Convert display start_sent (2-based) to backend (0-based)
-    const backendStart = Math.max(0, (parseInt(s.start_sent) || 2) - 2);
-    fd.append("mode", s.mode);
-    fd.append("start_sent", String(backendStart));
-
-    // Backend range is half-open [start_sent, max_sentences[  (0-based)
-    // display is 2-based inclusive: backend_max = display_end - 2 + 1 = display_end - 1
-    // e.g. display start=28 end=28 → backend start=26, max=27 → row 26 only
-    let backendMax;
-    if (s.all_sentences) {
-      backendMax = "all";
-    } else {
-      const endIdx = parseInt(s.max_sentences);
-      backendMax = isNaN(endIdx) ? "all" : String(endIdx - 1);
-    }
-    fd.append("max_sentences", backendMax);
-    fd.append("batch_size", String(s.batch_size));
-    fd.append("n_threads", String(s.n_threads));
-    fd.append("use_analysis_cache", s.use_analysis_cache ? "true" : "false");
-    const props = advanced ? s.selected_props : DEFAULTS.selected_props;
-    fd.append("selected_props", JSON.stringify(props));
-    try {
-      const res = await fetch(`${API}/analyse`, { method:"POST", body:fd });
-      if (!res.ok) { const e = await res.json().catch(()=>({detail:res.statusText})); throw new Error(e.detail); }
-      const { job_id } = await res.json();
-      onJobStarted(job_id, expression.trim(), { ...s, model:"mistral_large", selected_props: props });
-    } catch(e) { setError(e.message); }
-    finally { setLoading(false); }
+  var displayStart = (_settings$start_sent = settings.start_sent) !== null && _settings$start_sent !== void 0 ? _settings$start_sent : 2;
+  function submit() {
+    return _submit.apply(this, arguments);
   }
+  function _submit() {
+    _submit = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+      var fd, s, backendStart, backendMax, endIdx, props, res, e, _yield$res$json, job_id, _t;
+      return _regenerator().w(function (_context) {
+        while (1) switch (_context.p = _context.n) {
+          case 0:
+            if (file) {
+              _context.n = 1;
+              break;
+            }
+            setError("Veuillez sélectionner un fichier .xlsx.");
+            return _context.a(2);
+          case 1:
+            if (expression.trim()) {
+              _context.n = 2;
+              break;
+            }
+            setError("Veuillez saisir une expression cible.");
+            return _context.a(2);
+          case 2:
+            if (!(advanced && settings.selected_props.length === 0)) {
+              _context.n = 3;
+              break;
+            }
+            setError("Veuillez sélectionner au moins une propriété à analyser.");
+            return _context.a(2);
+          case 3:
+            setLoading(true);
+            setError(null);
+            fd = new FormData();
+            fd.append("file", file);
+            fd.append("expression", expression.trim());
+            fd.append("model", "mistral_large");
+            s = advanced ? settings : _objectSpread(_objectSpread({}, DEFAULTS), {}, {
+              mode: settings.mode
+            }); // Convert display start_sent (2-based) to backend (0-based)
+            backendStart = Math.max(0, (parseInt(s.start_sent) || 2) - 2);
+            fd.append("mode", s.mode);
+            fd.append("start_sent", String(backendStart));
 
-  return (
-    <div className="card">
-      {preview && <ExcelPreviewModal file={file} onClose={()=>setPreview(false)}/>}
-      <div className="card-title">Nouvelle analyse</div>
-      <div className="mode-toggle">
-        <button className={`mode-btn ${!advanced?"active":""}`} onClick={()=>setAdvanced(false)}>Simple</button>
-        <button className={`mode-btn ${advanced?"active":""}`} onClick={()=>setAdvanced(true)}>Avancé</button>
-      </div>
+            // Backend range is half-open [start_sent, max_sentences[  (0-based)
+            // display is 2-based inclusive: backend_max = display_end - 2 + 1 = display_end - 1
+            // e.g. display start=28 end=28 → backend start=26, max=27 → row 26 only
 
-      <div className="field">
-        <FieldLabel info="Fichier Excel (.xlsx) de concordances. Le mode est détecté automatiquement selon le suffixe : _Or.xlsx → dialogues authentiques, _Ph.xlsx → dialogues romanesques.">
-          Fichier de concordances
-        </FieldLabel>
-        <FileDropzone file={file} onChange={handleFileChange} onPreview={()=>setPreview(true)}/>
-        <div style={{display:"flex",gap:12,marginTop:4,flexWrap:"wrap"}}>
-          {file && modeFromFilename(file.name) && (
-            <span style={{fontSize:11,color:"var(--accent2)"}}>
-              ✓ Mode : {modeFromFilename(file.name)==="oral"?"Dialogues authentiques":"Dialogues romanesques"}
-            </span>
-          )}
-          {totalRows !== null && (
-            <span style={{fontSize:11,color:"var(--muted)",fontFamily:"var(--mono)"}}>
-              {totalRows} ligne{totalRows>1?"s":""} de données
-            </span>
-          )}
-          {file && totalRows === null && (
-            <span style={{fontSize:11,color:"var(--muted)"}}>calcul des lignes…</span>
-          )}
-        </div>
-      </div>
-
-      <div className="field">
-        <FieldLabel info="L'expression linguistique à analyser (ex. : « tu veux que je te dise »). Elle doit correspondre aux occurrences présentes dans le fichier de concordances.">
-          Expression cible
-        </FieldLabel>
-        <input placeholder="ex. tu veux que je te dise"
-          value={expression} onChange={e=>setExpr(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&submit()}/>
-      </div>
-
-      {advanced && (
-        <div>
-          <div className="row">
-            <div className="field">
-              <FieldLabel info="Type de corpus analysé. Détecté automatiquement depuis le suffixe du fichier (_Or → authentique, _Ph → romanesque). Peut être modifié manuellement.">
-                Mode
-              </FieldLabel>
-              <select value={settings.mode} onChange={e=>set("mode",e.target.value)}>
-                <option value="oral">Dialogues authentiques</option>
-                <option value="écrit_ia">Dialogues romanesques</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="row" style={{alignItems:"flex-end"}}>
-            <div className="field">
-              <FieldLabel info="Numéro de la première ligne à analyser, tel qu'affiché dans Excel (la ligne 2 est la première ligne de données, la ligne 1 étant l'en-tête). En interne, ce numéro est décalé de 2.">
-                Index de début (Excel)
-                {totalRows && <span style={{color:"var(--muted)",fontSize:10,marginLeft:6,fontFamily:"var(--mono)"}}>max {totalRows+1}</span>}
-              </FieldLabel>
-              <input type="number" min="2"
-                max={totalRows ? totalRows + 1 : undefined}
-                value={displayStart}
-                onChange={e => {
-                  const v = Math.max(2, Math.min(parseInt(e.target.value)||2, totalRows ? totalRows+1 : Infinity));
-                  const next = { ...settings, start_sent: v };
-                  // bump end index if it became less than new start
-                  if (!next.all_sentences && parseInt(next.max_sentences) < v) {
-                    next.max_sentences = v;
-                  }
-                  setSettings(next);
-                  saveSettings(next);
-                }}/>
-            </div>
-            <div className="field">
-              <FieldLabel info="Index Excel de la dernière phrase à analyser (incluse). Doit être supérieur ou égal à l'index de début. « Toutes les phrases » traite jusqu'à la fin du fichier.">
-                Index de fin (Excel)
-              </FieldLabel>
-              <div className="check-row" style={{marginBottom:8}}>
-                <input type="checkbox" id="all_sent" checked={settings.all_sentences}
-                  onChange={e=>set("all_sentences",e.target.checked)}/>
-                <label htmlFor="all_sent">Toutes les phrases</label>
-              </div>
-              {!settings.all_sentences && (() => {
-                const lastRow = totalRows ? totalRows + 1 : null;
-                return (
-                  <input type="number"
-                    min={displayStart}
-                    max={lastRow ?? undefined}
-                    value={settings.max_sentences === "all" ? "" : settings.max_sentences}
-                    placeholder={lastRow ? `jusqu'à ${lastRow}` : "Index de fin"}
-                    onChange={e => {
-                      const v = parseInt(e.target.value);
-                      if (isNaN(v)) { set("max_sentences", ""); return; }
-                      const clamped = lastRow
-                        ? Math.min(Math.max(displayStart, v), lastRow)
-                        : Math.max(displayStart, v);
-                      set("max_sentences", clamped);
-                    }}/>
-                );
-              })()}
-            </div>
-            <div className="field" style={{display:"flex",alignItems:"flex-end",paddingBottom:1}}>
-              <div style={{display:"flex",alignItems:"center",gap:4}}>
-                <div className="check-row">
-                  <input type="checkbox" id="cache" checked={settings.use_analysis_cache}
-                    onChange={e=>set("use_analysis_cache",e.target.checked)}/>
-                  <label htmlFor="cache">Cache d'analyse</label>
-                </div>
-                <InfoBubble text="Si activé, les phrases déjà analysées sont récupérées depuis le cache local plutôt que renvoyées au modèle. Accélère considérablement les relances sur les mêmes données."/>
-              </div>
-            </div>
-          </div>
-
-          <div className="field" style={{marginTop:8}}>
-            <FieldLabel info="Propriétés linguistiques que le modèle devra annoter. Décocher une propriété la retire de l'analyse et réduit le coût en tokens.">
-              Propriétés à analyser
-            </FieldLabel>
-            <PropsSelector selected={settings.selected_props}
-              onChange={v=>set("selected_props",v)}/>
-          </div>
-        </div>
-      )}
-
-      {error && <div className="err-inline">{error}</div>}
-      {hasRunningJob && (
-        <div style={{
-          background:"color-mix(in srgb,var(--warn) 12%,transparent)",
-          border:"1px solid color-mix(in srgb,var(--warn) 35%,transparent)",
-          borderRadius:"var(--radius)",padding:"8px 12px",fontSize:12,
-          color:"var(--warn)",marginTop:10,
-        }}>
-          ⚠️ Un job est déjà en cours. Attendez qu'il se termine ou arrêtez-le depuis l'onglet Jobs avant d'en lancer un nouveau.
-        </div>
-      )}
-      <button className="btn btn-primary" onClick={submit} disabled={loading || hasRunningJob} style={{marginTop:12}}>
-        {loading ? "Envoi en cours…" : "Lancer l'analyse →"}
-      </button>
-    </div>
-  );
+            if (s.all_sentences) {
+              backendMax = "all";
+            } else {
+              endIdx = parseInt(s.max_sentences);
+              backendMax = isNaN(endIdx) ? "all" : String(endIdx - 1);
+            }
+            fd.append("max_sentences", backendMax);
+            fd.append("batch_size", String(s.batch_size));
+            fd.append("n_threads", String(s.n_threads));
+            fd.append("use_analysis_cache", s.use_analysis_cache ? "true" : "false");
+            props = advanced ? s.selected_props : DEFAULTS.selected_props;
+            fd.append("selected_props", JSON.stringify(props));
+            _context.p = 4;
+            _context.n = 5;
+            return fetch("".concat(API, "/analyse"), {
+              method: "POST",
+              body: fd
+            });
+          case 5:
+            res = _context.v;
+            if (res.ok) {
+              _context.n = 7;
+              break;
+            }
+            _context.n = 6;
+            return res.json()["catch"](function () {
+              return {
+                detail: res.statusText
+              };
+            });
+          case 6:
+            e = _context.v;
+            throw new Error(e.detail);
+          case 7:
+            _context.n = 8;
+            return res.json();
+          case 8:
+            _yield$res$json = _context.v;
+            job_id = _yield$res$json.job_id;
+            onJobStarted(job_id, expression.trim(), _objectSpread(_objectSpread({}, s), {}, {
+              model: "mistral_large",
+              selected_props: props
+            }));
+            _context.n = 10;
+            break;
+          case 9:
+            _context.p = 9;
+            _t = _context.v;
+            setError(_t.message);
+          case 10:
+            _context.p = 10;
+            setLoading(false);
+            return _context.f(10);
+          case 11:
+            return _context.a(2);
+        }
+      }, _callee, null, [[4, 9, 10, 11]]);
+    }));
+    return _submit.apply(this, arguments);
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, preview && /*#__PURE__*/React.createElement(ExcelPreviewModal, {
+    file: file,
+    onClose: function onClose() {
+      return setPreview(false);
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Nouvelle analyse"), /*#__PURE__*/React.createElement("div", {
+    className: "mode-toggle"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "mode-btn ".concat(!advanced ? "active" : ""),
+    onClick: function onClick() {
+      return setAdvanced(false);
+    }
+  }, "Simple"), /*#__PURE__*/React.createElement("button", {
+    className: "mode-btn ".concat(advanced ? "active" : ""),
+    onClick: function onClick() {
+      return setAdvanced(true);
+    }
+  }, "Avanc\xE9")), /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement(FieldLabel, {
+    info: "Fichier Excel (.xlsx) de concordances. Le mode est d\xE9tect\xE9 automatiquement selon le suffixe : _Or.xlsx \u2192 dialogues authentiques, _Ph.xlsx \u2192 dialogues romanesques."
+  }, "Fichier de concordances"), /*#__PURE__*/React.createElement(FileDropzone, {
+    file: file,
+    onChange: handleFileChange,
+    onPreview: function onPreview() {
+      return setPreview(true);
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 12,
+      marginTop: 4,
+      flexWrap: "wrap"
+    }
+  }, file && modeFromFilename(file.name) && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "var(--accent2)"
+    }
+  }, "\u2713 Mode : ", modeFromFilename(file.name) === "oral" ? "Dialogues authentiques" : "Dialogues romanesques"), totalRows !== null && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "var(--muted)",
+      fontFamily: "var(--mono)"
+    }
+  }, totalRows, " ligne", totalRows > 1 ? "s" : "", " de donn\xE9es"), file && totalRows === null && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "var(--muted)"
+    }
+  }, "calcul des lignes\u2026"))), /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement(FieldLabel, {
+    info: "L'expression linguistique \xE0 analyser (ex. : \xAB tu veux que je te dise \xBB). Elle doit correspondre aux occurrences pr\xE9sentes dans le fichier de concordances."
+  }, "Expression cible"), /*#__PURE__*/React.createElement("input", {
+    placeholder: "ex. tu veux que je te dise",
+    value: expression,
+    onChange: function onChange(e) {
+      return setExpr(e.target.value);
+    },
+    onKeyDown: function onKeyDown(e) {
+      return e.key === "Enter" && submit();
+    }
+  })), advanced && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement(FieldLabel, {
+    info: "Type de corpus analys\xE9. D\xE9tect\xE9 automatiquement depuis le suffixe du fichier (_Or \u2192 authentique, _Ph \u2192 romanesque). Peut \xEAtre modifi\xE9 manuellement."
+  }, "Mode"), /*#__PURE__*/React.createElement("select", {
+    value: settings.mode,
+    onChange: function onChange(e) {
+      return set("mode", e.target.value);
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "oral"
+  }, "Dialogues authentiques"), /*#__PURE__*/React.createElement("option", {
+    value: "\xE9crit_ia"
+  }, "Dialogues romanesques")))), /*#__PURE__*/React.createElement("div", {
+    className: "row",
+    style: {
+      alignItems: "flex-end"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement(FieldLabel, {
+    info: "Num\xE9ro de la premi\xE8re ligne \xE0 analyser, tel qu'affich\xE9 dans Excel (la ligne 2 est la premi\xE8re ligne de donn\xE9es, la ligne 1 \xE9tant l'en-t\xEAte). En interne, ce num\xE9ro est d\xE9cal\xE9 de 2."
+  }, "Index de d\xE9but (Excel)", totalRows && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--muted)",
+      fontSize: 10,
+      marginLeft: 6,
+      fontFamily: "var(--mono)"
+    }
+  }, "max ", totalRows + 1)), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    min: "2",
+    max: totalRows ? totalRows + 1 : undefined,
+    value: displayStart,
+    onChange: function onChange(e) {
+      var v = Math.max(2, Math.min(parseInt(e.target.value) || 2, totalRows ? totalRows + 1 : Infinity));
+      var next = _objectSpread(_objectSpread({}, settings), {}, {
+        start_sent: v
+      });
+      // bump end index if it became less than new start
+      if (!next.all_sentences && parseInt(next.max_sentences) < v) {
+        next.max_sentences = v;
+      }
+      setSettings(next);
+      saveSettings(next);
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement(FieldLabel, {
+    info: "Index Excel de la derni\xE8re phrase \xE0 analyser (incluse). Doit \xEAtre sup\xE9rieur ou \xE9gal \xE0 l'index de d\xE9but. \xAB Toutes les phrases \xBB traite jusqu'\xE0 la fin du fichier."
+  }, "Index de fin (Excel)"), /*#__PURE__*/React.createElement("div", {
+    className: "check-row",
+    style: {
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    id: "all_sent",
+    checked: settings.all_sentences,
+    onChange: function onChange(e) {
+      return set("all_sentences", e.target.checked);
+    }
+  }), /*#__PURE__*/React.createElement("label", {
+    htmlFor: "all_sent"
+  }, "Toutes les phrases")), !settings.all_sentences && function () {
+    var lastRow = totalRows ? totalRows + 1 : null;
+    return /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      min: displayStart,
+      max: lastRow !== null && lastRow !== void 0 ? lastRow : undefined,
+      value: settings.max_sentences === "all" ? "" : settings.max_sentences,
+      placeholder: lastRow ? "jusqu'\xE0 ".concat(lastRow) : "Index de fin",
+      onChange: function onChange(e) {
+        var v = parseInt(e.target.value);
+        if (isNaN(v)) {
+          set("max_sentences", "");
+          return;
+        }
+        var clamped = lastRow ? Math.min(Math.max(displayStart, v), lastRow) : Math.max(displayStart, v);
+        set("max_sentences", clamped);
+      }
+    });
+  }()), /*#__PURE__*/React.createElement("div", {
+    className: "field",
+    style: {
+      display: "flex",
+      alignItems: "flex-end",
+      paddingBottom: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "check-row"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    id: "cache",
+    checked: settings.use_analysis_cache,
+    onChange: function onChange(e) {
+      return set("use_analysis_cache", e.target.checked);
+    }
+  }), /*#__PURE__*/React.createElement("label", {
+    htmlFor: "cache"
+  }, "Cache d'analyse")), /*#__PURE__*/React.createElement(InfoBubble, {
+    text: "Si activ\xE9, les phrases d\xE9j\xE0 analys\xE9es sont r\xE9cup\xE9r\xE9es depuis le cache local plut\xF4t que renvoy\xE9es au mod\xE8le. Acc\xE9l\xE8re consid\xE9rablement les relances sur les m\xEAmes donn\xE9es."
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "field",
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(FieldLabel, {
+    info: "Propri\xE9t\xE9s linguistiques que le mod\xE8le devra annoter. D\xE9cocher une propri\xE9t\xE9 la retire de l'analyse et r\xE9duit le co\xFBt en tokens."
+  }, "Propri\xE9t\xE9s \xE0 analyser"), /*#__PURE__*/React.createElement(PropsSelector, {
+    selected: settings.selected_props,
+    onChange: function onChange(v) {
+      return set("selected_props", v);
+    }
+  }))), error && /*#__PURE__*/React.createElement("div", {
+    className: "err-inline"
+  }, error), hasRunningJob && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "color-mix(in srgb,var(--warn) 12%,transparent)",
+      border: "1px solid color-mix(in srgb,var(--warn) 35%,transparent)",
+      borderRadius: "var(--radius)",
+      padding: "8px 12px",
+      fontSize: 12,
+      color: "var(--warn)",
+      marginTop: 10
+    }
+  }, "\u26A0\uFE0F Un job est d\xE9j\xE0 en cours. Attendez qu'il se termine ou arr\xEAtez-le depuis l'onglet Jobs avant d'en lancer un nouveau."), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-primary",
+    onClick: submit,
+    disabled: loading || hasRunningJob,
+    style: {
+      marginTop: 12
+    }
+  }, loading ? "Envoi en cours…" : "Lancer l'analyse →"));
 }
 
 // ── LogPanel ──────────────────────────────────────────────────────────────
 
-function LogPanel({ jobId, status }) {
-  const [open, setOpen]   = useState(false);
-  const [lines, setLines] = useState([]);
-  const sinceRef          = useRef(0);
-  const bodyRef           = useRef(null);
-  const intervalRef       = useRef(null);
-
-  useEffect(() => {
+function LogPanel(_ref9) {
+  var jobId = _ref9.jobId,
+    status = _ref9.status;
+  var _useState25 = useState(false),
+    _useState26 = _slicedToArray(_useState25, 2),
+    open = _useState26[0],
+    setOpen = _useState26[1];
+  var _useState27 = useState([]),
+    _useState28 = _slicedToArray(_useState27, 2),
+    lines = _useState28[0],
+    setLines = _useState28[1];
+  var sinceRef = useRef(0);
+  var bodyRef = useRef(null);
+  var intervalRef = useRef(null);
+  useEffect(function () {
     if (!open) return;
     sinceRef.current = 0;
     setLines([]);
-    const poll = () => {
-      fetch(`${API}/jobs/${jobId}/logs?since=${sinceRef.current}`)
-        .then(r=>r.json())
-        .then(d => {
-          if (d.lines.length > 0) {
-            setLines(prev => [...prev, ...d.lines]);
-            sinceRef.current = d.total;
-          }
-        }).catch(()=>{});
+    var poll = function poll() {
+      fetch("".concat(API, "/jobs/").concat(jobId, "/logs?since=").concat(sinceRef.current)).then(function (r) {
+        return r.json();
+      }).then(function (d) {
+        if (d.lines.length > 0) {
+          setLines(function (prev) {
+            return [].concat(_toConsumableArray(prev), _toConsumableArray(d.lines));
+          });
+          sinceRef.current = d.total;
+        }
+      })["catch"](function () {});
     };
     poll();
     intervalRef.current = setInterval(poll, 1500);
-    return () => clearInterval(intervalRef.current);
+    return function () {
+      return clearInterval(intervalRef.current);
+    };
   }, [open, jobId]);
-
-  useEffect(() => {
+  useEffect(function () {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [lines]);
-
-  useEffect(() => {
+  useEffect(function () {
     if (status !== "running") clearInterval(intervalRef.current);
   }, [status]);
-
   function lineClass(l) {
     if (l.includes("[WARNING]") || l.includes("WARNING")) return "log-line warn";
     if (l.includes("[ERROR]") || l.includes("ERROR")) return "log-line error";
     return "log-line";
   }
-
-  return (
-    <div className="logs-panel">
-      <div className="logs-header" onClick={()=>setOpen(o=>!o)}>
-        <span>📋 Logs {lines.length > 0 && `(${lines.length} lignes)`}</span>
-        <span>{open ? "▲ masquer" : "▼ afficher"}</span>
-      </div>
-      {open && (
-        <div className="logs-body" ref={bodyRef}>
-          {lines.length === 0
-            ? <span className="logs-empty">Aucun log pour l'instant…</span>
-            : lines.map((l,i) => <div key={i} className={lineClass(l)}>{l}</div>)
-          }
-        </div>
-      )}
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    className: "logs-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "logs-header",
+    onClick: function onClick() {
+      return setOpen(function (o) {
+        return !o;
+      });
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCCB Logs ", lines.length > 0 && "(".concat(lines.length, " lignes)")), /*#__PURE__*/React.createElement("span", null, open ? "▲ masquer" : "▼ afficher")), open && /*#__PURE__*/React.createElement("div", {
+    className: "logs-body",
+    ref: bodyRef
+  }, lines.length === 0 ? /*#__PURE__*/React.createElement("span", {
+    className: "logs-empty"
+  }, "Aucun log pour l'instant\u2026") : lines.map(function (l, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: lineClass(l)
+    }, l);
+  })));
 }
 
 // ── JobRecap ──────────────────────────────────────────────────────────────
 
-function JobRecap({ params }) {
-  const [open, setOpen] = useState(false);
+function JobRecap(_ref0) {
+  var _modeLabels$params$mo, _params$start_sent, _params$max_sentences;
+  var params = _ref0.params;
+  var _useState29 = useState(false),
+    _useState30 = _slicedToArray(_useState29, 2),
+    open = _useState30[0],
+    setOpen = _useState30[1];
   if (!params) return null;
-
-  const modeLabels = {
+  var modeLabels = {
     oral: "Dialogues authentiques",
     "écrit_ia": "Dialogues romanesques",
     "écrit": "Écrit",
-    "écrit_test": "Écrit test",
+    "écrit_test": "Écrit test"
   };
 
   // selected_props is now stored as an array (or null) from the server
-  const props = (() => {
+  var props = function () {
     if (!params.selected_props) return null;
     if (Array.isArray(params.selected_props)) return params.selected_props;
-    try { return JSON.parse(params.selected_props); }
-    catch { return null; }
-  })();
-  const propLabels = props && props.length > 0
-    ? props.map(k => ALL_PROPS.find(p=>p.key===k)?.label ?? k).join(", ")
-    : "toutes";
-
-  const items = [
-    ["Fichier", params.original_file],
-    ["Mode", modeLabels[params.mode] ?? params.mode],
-    ["Début (Excel)", (params.start_sent ?? 0) + 2],
-    ["Phrases max", params.max_sentences ?? "all"],
-    ["Batch size", params.batch_size],
-    ["Threads", params.n_threads],
-    ["Cache", params.use_analysis_cache ? "oui" : "non"],
-  ];
-
-  return (
-    <div style={{marginTop:4}}>
-      <button className="recap-toggle" onClick={()=>setOpen(o=>!o)}>
-        {open ? "▲ masquer le récap" : "▼ voir les options"}
-      </button>
-      {open && (
-        <div className="recap-box">
-          {items.map(([k,v])=>(
-            <div className="recap-item" key={k}>
-              <span className="recap-key">{k} :</span>
-              <span className="recap-val">{String(v)}</span>
-            </div>
-          ))}
-          <div className="recap-item" style={{gridColumn:"1/-1"}}>
-            <span className="recap-key">Propriétés :</span>
-            <span className="recap-val" style={{whiteSpace:"normal",fontFamily:"inherit"}}>{propLabels}</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    try {
+      return JSON.parse(params.selected_props);
+    } catch (_unused5) {
+      return null;
+    }
+  }();
+  var propLabels = props && props.length > 0 ? props.map(function (k) {
+    var _ALL_PROPS$find$label, _ALL_PROPS$find;
+    return (_ALL_PROPS$find$label = (_ALL_PROPS$find = ALL_PROPS.find(function (p) {
+      return p.key === k;
+    })) === null || _ALL_PROPS$find === void 0 ? void 0 : _ALL_PROPS$find.label) !== null && _ALL_PROPS$find$label !== void 0 ? _ALL_PROPS$find$label : k;
+  }).join(", ") : "toutes";
+  var items = [["Fichier", params.original_file], ["Mode", (_modeLabels$params$mo = modeLabels[params.mode]) !== null && _modeLabels$params$mo !== void 0 ? _modeLabels$params$mo : params.mode], ["Début (Excel)", ((_params$start_sent = params.start_sent) !== null && _params$start_sent !== void 0 ? _params$start_sent : 0) + 2], ["Phrases max", (_params$max_sentences = params.max_sentences) !== null && _params$max_sentences !== void 0 ? _params$max_sentences : "all"], ["Batch size", params.batch_size], ["Threads", params.n_threads], ["Cache", params.use_analysis_cache ? "oui" : "non"]];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "recap-toggle",
+    onClick: function onClick() {
+      return setOpen(function (o) {
+        return !o;
+      });
+    }
+  }, open ? "▲ masquer le récap" : "▼ voir les options"), open && /*#__PURE__*/React.createElement("div", {
+    className: "recap-box"
+  }, items.map(function (_ref1) {
+    var _ref10 = _slicedToArray(_ref1, 2),
+      k = _ref10[0],
+      v = _ref10[1];
+    return /*#__PURE__*/React.createElement("div", {
+      className: "recap-item",
+      key: k
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "recap-key"
+    }, k, " :"), /*#__PURE__*/React.createElement("span", {
+      className: "recap-val"
+    }, String(v)));
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "recap-item",
+    style: {
+      gridColumn: "1/-1"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "recap-key"
+  }, "Propri\xE9t\xE9s :"), /*#__PURE__*/React.createElement("span", {
+    className: "recap-val",
+    style: {
+      whiteSpace: "normal",
+      fontFamily: "inherit"
+    }
+  }, propLabels))));
 }
 
 // ── ProgressBar ──────────────────────────────────────────────────────────
@@ -926,453 +1373,746 @@ function JobRecap({ params }) {
 // oral: [prétraitement Stanza | analyse LLM]
 // écrit_ia / écrit: [segmentation+prétraitement | analyse LLM]
 
-function ProgressBar({ job, pct }) {
-  const mode   = job.params?.mode ?? "oral";
-  const phase  = job.phase ?? (job.status === "done" ? "done" : "init");
-  const status = job.status;
+function ProgressBar(_ref11) {
+  var _job$params$mode, _job$params, _job$phase, _PHASE_ORDER$phase;
+  var job = _ref11.job,
+    pct = _ref11.pct;
+  var mode = (_job$params$mode = (_job$params = job.params) === null || _job$params === void 0 ? void 0 : _job$params.mode) !== null && _job$params$mode !== void 0 ? _job$params$mode : "oral";
+  var phase = (_job$phase = job.phase) !== null && _job$phase !== void 0 ? _job$phase : job.status === "done" ? "done" : "init";
+  var status = job.status;
 
   // Phase definitions per mode
   // Each phase: { key, label, start, end } (start/end as % of total 0–100)
-  const phases = mode === "oral"
-    ? [
-        { key: "preprocessing", label: "Stanza",   start: 0,  end: 45 },
-        { key: "analysis",      label: "Analyse",  start: 45, end: 100 },
-      ]
-    : [
-        { key: "segmentation",  label: "Segm.",    start: 0,  end: 45 },
-        { key: "analysis",      label: "Analyse",  start: 45, end: 100 },
-      ];
+  var phases = mode === "oral" ? [{
+    key: "preprocessing",
+    label: "Stanza",
+    start: 0,
+    end: 45
+  }, {
+    key: "analysis",
+    label: "Analyse",
+    start: 45,
+    end: 100
+  }] : [{
+    key: "segmentation",
+    label: "Segm.",
+    start: 0,
+    end: 45
+  }, {
+    key: "analysis",
+    label: "Analyse",
+    start: 45,
+    end: 100
+  }];
 
   // Map phase key → ordering index
-  const PHASE_ORDER = { init: -1, preprocessing: 0, segmentation: 0, analysis: 1, done: 2 };
-  const currentIdx  = PHASE_ORDER[phase] ?? -1;
-
+  var PHASE_ORDER = {
+    init: -1,
+    preprocessing: 0,
+    segmentation: 0,
+    analysis: 1,
+    done: 2
+  };
+  var currentIdx = (_PHASE_ORDER$phase = PHASE_ORDER[phase]) !== null && _PHASE_ORDER$phase !== void 0 ? _PHASE_ORDER$phase : -1;
   if (status === "error") {
-    return (
-      <div className="job-progress-wrap">
-        <div className="job-progress-phases">
-          <div className="job-phase-seg" style={{flex:1}}>
-            <div className="job-phase-bar">
-              <div className="job-phase-fill error" style={{width:`${pct}%`}}/>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return /*#__PURE__*/React.createElement("div", {
+      className: "job-progress-wrap"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "job-progress-phases"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "job-phase-seg",
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "job-phase-bar"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "job-phase-fill error",
+      style: {
+        width: "".concat(pct, "%")
+      }
+    })))));
   }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "job-progress-wrap"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "job-progress-phases"
+  }, phases.map(function (ph, i) {
+    var phaseWidth = ph.end - ph.start; // share of total bar
+    var isDone = status === "done" || currentIdx > i;
+    var isActive = currentIdx === i && status === "running";
 
-  return (
-    <div className="job-progress-wrap">
-      <div className="job-progress-phases">
-        {phases.map((ph, i) => {
-          const phaseWidth = ph.end - ph.start; // share of total bar
-          const isDone   = status === "done" || currentIdx > i;
-          const isActive = currentIdx === i && status === "running";
-
-          // fill within this segment
-          let fill = 0;
-          if (isDone) {
-            fill = 100;
-          } else if (isActive) {
-            // map pct (0–100) into this segment
-            const clampedPct = Math.max(ph.start, Math.min(ph.end, pct));
-            fill = ((clampedPct - ph.start) / phaseWidth) * 100;
-          }
-
-          const fillClass = status === "done" ? "done-phase"
-            : isDone   ? "done-phase"
-            : isActive ? "active"
-            : "inactive";
-          const labelClass = isActive ? "active" : isDone ? "done-phase" : "";
-
-          return (
-            <div key={ph.key} className="job-phase-seg" style={{flex: phaseWidth}}>
-              <span className={`job-phase-label ${labelClass}`}>{ph.label}</span>
-              <div className="job-phase-bar">
-                <div className={`job-phase-fill ${fillClass}`} style={{width:`${fill}%`}}/>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+    // fill within this segment
+    var fill = 0;
+    if (isDone) {
+      fill = 100;
+    } else if (isActive) {
+      // map pct (0–100) into this segment
+      var clampedPct = Math.max(ph.start, Math.min(ph.end, pct));
+      fill = (clampedPct - ph.start) / phaseWidth * 100;
+    }
+    var fillClass = status === "done" ? "done-phase" : isDone ? "done-phase" : isActive ? "active" : "inactive";
+    var labelClass = isActive ? "active" : isDone ? "done-phase" : "";
+    return /*#__PURE__*/React.createElement("div", {
+      key: ph.key,
+      className: "job-phase-seg",
+      style: {
+        flex: phaseWidth
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "job-phase-label ".concat(labelClass)
+    }, ph.label), /*#__PURE__*/React.createElement("div", {
+      className: "job-phase-bar"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "job-phase-fill ".concat(fillClass),
+      style: {
+        width: "".concat(fill, "%")
+      }
+    })));
+  })));
 }
 
 // ── JobRow ────────────────────────────────────────────────────────────────
 
-function JobRow({ job, onView, onDelete, onStop, onRelaunch, serverOk, stopping }) {
-  const dur = duration(job.created_at, job.finished_at);
-  const pct = job.progress ?? 0;
-  const isRunning = job.status === "running";
-  const isHistoryOnly = job._historyOnly;
-
-  return (
-    <div className="job-row">
-      <StatusPill status={job.status} stopping={stopping}/>
-
-      <div className="job-body">
-        <div className="job-expr">{job.params.expression}</div>
-        <div className="job-meta">
-          <span title="fichier source">{job.params.original_file}</span>
-          <span>{job.params.mode}</span>
-          {job.n_sentences > 0 && <span>{job.n_sentences} phrases</span>}
-          {dur && <span>⏱ {dur}</span>}
-          <span>{timeAgo(job.created_at)}</span>
-          {isHistoryOnly && <span style={{color:"var(--warn)",fontStyle:"italic"}}>hors-ligne</span>}
-        </div>
-
-        {!isHistoryOnly && (
-          <ProgressBar job={job} pct={pct}/>
-        )}
-
-        <JobRecap params={job.params}/>
-
-        {!isHistoryOnly && <LogPanel jobId={job.id} status={job.status}/>}
-      </div>
-
-      <div className="job-actions">
-        {(job.status==="done") && (
-          <button className="btn btn-ghost" style={{fontSize:12,padding:"5px 12px"}}
-            onClick={()=>onView(job)}>Résultats</button>
-        )}
-        {job.status==="error" && (
-          <button className="btn btn-ghost" style={{fontSize:12,padding:"5px 12px"}}
-            onClick={()=>onView(job)}>Erreur</button>
-        )}
-        {isRunning && serverOk && (
-          <button className="btn btn-warn" style={{fontSize:11,padding:"4px 10px"}}
-            onClick={()=>onStop(job.id)} disabled={stopping}>
-            {stopping ? "Arrêt…" : "⏹ Arrêter"}
-          </button>
-        )}
-        {(job.status==="error" || job.status==="done" || isHistoryOnly) && serverOk && (
-          <button className="btn btn-ghost" style={{fontSize:11,padding:"4px 10px",color:"var(--accent)"}}
-            onClick={()=>onRelaunch(job)}>↺ Relancer</button>
-        )}
-        {!isRunning && (
-          <button className="btn btn-ghost" style={{fontSize:12,padding:"5px 10px",color:"var(--muted)"}}
-            onClick={()=>onDelete(job.id)} title="Supprimer ce job">✕</button>
-        )}
-      </div>
-    </div>
-  );
+function JobRow(_ref12) {
+  var _job$progress;
+  var job = _ref12.job,
+    onView = _ref12.onView,
+    onDelete = _ref12.onDelete,
+    onStop = _ref12.onStop,
+    onRelaunch = _ref12.onRelaunch,
+    serverOk = _ref12.serverOk,
+    stopping = _ref12.stopping;
+  var dur = duration(job.created_at, job.finished_at);
+  var pct = (_job$progress = job.progress) !== null && _job$progress !== void 0 ? _job$progress : 0;
+  var isRunning = job.status === "running";
+  var isHistoryOnly = job._historyOnly;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "job-row"
+  }, /*#__PURE__*/React.createElement(StatusPill, {
+    status: job.status,
+    stopping: stopping
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "job-body"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "job-expr"
+  }, job.params.expression), /*#__PURE__*/React.createElement("div", {
+    className: "job-meta"
+  }, /*#__PURE__*/React.createElement("span", {
+    title: "fichier source"
+  }, job.params.original_file), /*#__PURE__*/React.createElement("span", null, job.params.mode), job.n_sentences > 0 && /*#__PURE__*/React.createElement("span", null, job.n_sentences, " phrases"), dur && /*#__PURE__*/React.createElement("span", null, "\u23F1 ", dur), /*#__PURE__*/React.createElement("span", null, timeAgo(job.created_at)), isHistoryOnly && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--warn)",
+      fontStyle: "italic"
+    }
+  }, "hors-ligne")), !isHistoryOnly && /*#__PURE__*/React.createElement(ProgressBar, {
+    job: job,
+    pct: pct
+  }), /*#__PURE__*/React.createElement(JobRecap, {
+    params: job.params
+  }), !isHistoryOnly && /*#__PURE__*/React.createElement(LogPanel, {
+    jobId: job.id,
+    status: job.status
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "job-actions"
+  }, job.status === "done" && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost",
+    style: {
+      fontSize: 12,
+      padding: "5px 12px"
+    },
+    onClick: function onClick() {
+      return onView(job);
+    }
+  }, "R\xE9sultats"), job.status === "error" && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost",
+    style: {
+      fontSize: 12,
+      padding: "5px 12px"
+    },
+    onClick: function onClick() {
+      return onView(job);
+    }
+  }, "Erreur"), isRunning && serverOk && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-warn",
+    style: {
+      fontSize: 11,
+      padding: "4px 10px"
+    },
+    onClick: function onClick() {
+      return onStop(job.id);
+    },
+    disabled: stopping
+  }, stopping ? "Arrêt…" : "⏹ Arrêter"), (job.status === "error" || job.status === "done" || isHistoryOnly) && serverOk && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost",
+    style: {
+      fontSize: 11,
+      padding: "4px 10px",
+      color: "var(--accent)"
+    },
+    onClick: function onClick() {
+      return onRelaunch(job);
+    }
+  }, "\u21BA Relancer"), !isRunning && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost",
+    style: {
+      fontSize: 12,
+      padding: "5px 10px",
+      color: "var(--muted)"
+    },
+    onClick: function onClick() {
+      return onDelete(job.id);
+    },
+    title: "Supprimer ce job"
+  }, "\u2715")));
 }
 
 // ── ResultsPanel ──────────────────────────────────────────────────────────
 
-function ResultsPanel({ job, onBack }) {
-  const [files, setFiles] = useState(null);
-
-  useEffect(() => {
+function ResultsPanel(_ref13) {
+  var _job$tokens_in, _job$tokens_out;
+  var job = _ref13.job,
+    onBack = _ref13.onBack;
+  var _useState31 = useState(null),
+    _useState32 = _slicedToArray(_useState31, 2),
+    files = _useState32[0],
+    setFiles = _useState32[1];
+  useEffect(function () {
     if (job.status !== "done") return;
-    fetch(`${API}/results/${job.id}`).then(r=>r.json()).then(d=>setFiles(d.files)).catch(()=>setFiles([]));
+    fetch("".concat(API, "/results/").concat(job.id)).then(function (r) {
+      return r.json();
+    }).then(function (d) {
+      return setFiles(d.files);
+    })["catch"](function () {
+      return setFiles([]);
+    });
   }, [job.id, job.status]);
-
   function typeClass(s) {
-    if (s===".xlsx") return "xlsx"; if (s===".pdf") return "pdf";
-    if (s===".json") return "json"; return "other";
+    if (s === ".xlsx") return "xlsx";
+    if (s === ".pdf") return "pdf";
+    if (s === ".json") return "json";
+    return "other";
   }
-
-  return (
-    <div>
-      <div className="results-back" onClick={onBack}>← Retour aux jobs</div>
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-        <span style={{fontWeight:700,fontSize:15}}>{job.params.expression}</span>
-        <StatusPill status={job.status}/>
-      </div>
-
-      {job.status==="done" && (
-        <div className="stats">
-          {[["Phrases",job.n_sentences],["Tokens in",job.tokens_in?.toLocaleString()],
-            ["Tokens out",job.tokens_out?.toLocaleString()],["Total",((job.tokens_in||0)+(job.tokens_out||0)).toLocaleString()]
-          ].map(([l,v])=>(
-            <div className="stat" key={l}><div className="label">{l}</div><div className="value">{v}</div></div>
-          ))}
-        </div>
-      )}
-
-      {job.status==="error" && (
-        <div className="card" style={{marginBottom:16}}>
-          <div className="card-title">Erreur</div>
-          <div className="error-box">{job.error}</div>
-        </div>
-      )}
-
-      {job.status==="done" && (
-        <div className="card">
-          <div className="card-title">Fichiers produits</div>
-          {!files && <p style={{color:"var(--muted)",fontSize:12}}>Chargement…</p>}
-          {files?.length===0 && <p style={{color:"var(--muted)",fontSize:12}}>Aucun fichier.</p>}
-          {files?.length>0 && (
-            <>
-              <div className="file-grid">
-                {files.map(f=>(
-                  <a key={f.path} className="file-card"
-                    href={`${API}/download/${job.id}/${encodeURIComponent(f.name)}`} download={f.name}>
-                    <div className="fname">{f.name}</div>
-                    <div className="fmeta">{f.size_kb} KB</div>
-                    <span className={`ftype ${typeClass(f.suffix)}`}>{f.suffix.replace(".","")}</span>
-                  </a>
-                ))}
-              </div>
-              <p style={{fontSize:11,color:"var(--muted)",marginTop:12}}>📁 {job.output_dir}</p>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "results-back",
+    onClick: onBack
+  }, "\u2190 Retour aux jobs"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      fontSize: 15
+    }
+  }, job.params.expression), /*#__PURE__*/React.createElement(StatusPill, {
+    status: job.status
+  })), job.status === "done" && /*#__PURE__*/React.createElement("div", {
+    className: "stats"
+  }, [["Phrases", job.n_sentences], ["Tokens in", (_job$tokens_in = job.tokens_in) === null || _job$tokens_in === void 0 ? void 0 : _job$tokens_in.toLocaleString()], ["Tokens out", (_job$tokens_out = job.tokens_out) === null || _job$tokens_out === void 0 ? void 0 : _job$tokens_out.toLocaleString()], ["Total", ((job.tokens_in || 0) + (job.tokens_out || 0)).toLocaleString()]].map(function (_ref14) {
+    var _ref15 = _slicedToArray(_ref14, 2),
+      l = _ref15[0],
+      v = _ref15[1];
+    return /*#__PURE__*/React.createElement("div", {
+      className: "stat",
+      key: l
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "label"
+    }, l), /*#__PURE__*/React.createElement("div", {
+      className: "value"
+    }, v));
+  })), job.status === "error" && /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Erreur"), /*#__PURE__*/React.createElement("div", {
+    className: "error-box"
+  }, job.error)), job.status === "done" && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Fichiers produits"), !files && /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "var(--muted)",
+      fontSize: 12
+    }
+  }, "Chargement\u2026"), (files === null || files === void 0 ? void 0 : files.length) === 0 && /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "var(--muted)",
+      fontSize: 12
+    }
+  }, "Aucun fichier."), (files === null || files === void 0 ? void 0 : files.length) > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "file-grid"
+  }, files.map(function (f) {
+    return /*#__PURE__*/React.createElement("a", {
+      key: f.path,
+      className: "file-card",
+      href: "".concat(API, "/download/").concat(job.id, "/").concat(encodeURIComponent(f.name)),
+      download: f.name
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "fname"
+    }, f.name), /*#__PURE__*/React.createElement("div", {
+      className: "fmeta"
+    }, f.size_kb, " KB"), /*#__PURE__*/React.createElement("span", {
+      className: "ftype ".concat(typeClass(f.suffix))
+    }, f.suffix.replace(".", "")));
+  })), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: "var(--muted)",
+      marginTop: 12
+    }
+  }, "\uD83D\uDCC1 ", job.output_dir))));
 }
 
 // ── RelaunchModal ─────────────────────────────────────────────────────────
 
-function RelaunchModal({ job, onClose, onConfirm }) {
-  return (
-    <div style={{
-      position:"fixed",inset:0,background:"rgba(0,0,0,.6)",
-      display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,
-    }} onClick={onClose}>
-      <div style={{
-        background:"var(--surface)",border:"1px solid var(--border)",
-        borderRadius:"var(--radius)",padding:24,maxWidth:400,width:"90%",
-      }} onClick={e=>e.stopPropagation()}>
-        <div style={{fontWeight:700,marginBottom:8}}>Relancer le job</div>
-        <p style={{fontSize:13,color:"var(--muted)",marginBottom:16}}>
-          Relancer « <strong style={{color:"var(--text)"}}>{job.params.expression}</strong> » avec les mêmes paramètres ?
-        </p>
-        <p style={{fontSize:11,color:"var(--warn)",marginBottom:16}}>
-          ⚠️ Le fichier d'origine ({job.params.original_file}) doit être re-sélectionné manuellement.
-        </p>
-        <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-          <button className="btn btn-ghost" onClick={onClose}>Annuler</button>
-          <button className="btn btn-primary" onClick={()=>onConfirm(job)}>Aller au formulaire →</button>
-        </div>
-      </div>
-    </div>
-  );
+function RelaunchModal(_ref16) {
+  var job = _ref16.job,
+    onClose = _ref16.onClose,
+    onConfirm = _ref16.onConfirm;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,.6)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000
+    },
+    onClick: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "var(--surface)",
+      border: "1px solid var(--border)",
+      borderRadius: "var(--radius)",
+      padding: 24,
+      maxWidth: 400,
+      width: "90%"
+    },
+    onClick: function onClick(e) {
+      return e.stopPropagation();
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      marginBottom: 8
+    }
+  }, "Relancer le job"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 13,
+      color: "var(--muted)",
+      marginBottom: 16
+    }
+  }, "Relancer \xAB ", /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: "var(--text)"
+    }
+  }, job.params.expression), " \xBB avec les m\xEAmes param\xE8tres ?"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: "var(--warn)",
+      marginBottom: 16
+    }
+  }, "\u26A0\uFE0F Le fichier d'origine (", job.params.original_file, ") doit \xEAtre re-s\xE9lectionn\xE9 manuellement."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      justifyContent: "flex-end"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost",
+    onClick: onClose
+  }, "Annuler"), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-primary",
+    onClick: function onClick() {
+      return onConfirm(job);
+    }
+  }, "Aller au formulaire \u2192"))));
 }
 
 // ── App ───────────────────────────────────────────────────────────────────
 
 function App() {
-  const [theme, setTheme]         = useState(() => localStorage.getItem("ppi_theme") || "dark");
-  const [tab, setTab]             = useState("launch");
-  const [liveJobs, setLiveJobs]   = useState([]);
-  const [histJobs, setHistJobs]   = useState(() => loadJobHistory());
-  const [selected, setSel]        = useState(null);
-  const [toast, setToast]         = useState(null);
-  const [serverOk, setOk]         = useState(null);
-  const [relaunchJob, setRelaunch]= useState(null);
-  const [stoppingIds, setStoppingIds] = useState(new Set());
-
-  useEffect(() => {
+  var _useState33 = useState(function () {
+      return localStorage.getItem("ppi_theme") || "dark";
+    }),
+    _useState34 = _slicedToArray(_useState33, 2),
+    theme = _useState34[0],
+    setTheme = _useState34[1];
+  var _useState35 = useState("launch"),
+    _useState36 = _slicedToArray(_useState35, 2),
+    tab = _useState36[0],
+    setTab = _useState36[1];
+  var _useState37 = useState([]),
+    _useState38 = _slicedToArray(_useState37, 2),
+    liveJobs = _useState38[0],
+    setLiveJobs = _useState38[1];
+  var _useState39 = useState(function () {
+      return loadJobHistory();
+    }),
+    _useState40 = _slicedToArray(_useState39, 2),
+    histJobs = _useState40[0],
+    setHistJobs = _useState40[1];
+  var _useState41 = useState(null),
+    _useState42 = _slicedToArray(_useState41, 2),
+    selected = _useState42[0],
+    setSel = _useState42[1];
+  var _useState43 = useState(null),
+    _useState44 = _slicedToArray(_useState43, 2),
+    toast = _useState44[0],
+    setToast = _useState44[1];
+  var _useState45 = useState(null),
+    _useState46 = _slicedToArray(_useState45, 2),
+    serverOk = _useState46[0],
+    setOk = _useState46[1];
+  var _useState47 = useState(null),
+    _useState48 = _slicedToArray(_useState47, 2),
+    relaunchJob = _useState48[0],
+    setRelaunch = _useState48[1];
+  var _useState49 = useState(new Set()),
+    _useState50 = _slicedToArray(_useState49, 2),
+    stoppingIds = _useState50[0],
+    setStoppingIds = _useState50[1];
+  useEffect(function () {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("ppi_theme", theme);
   }, [theme]);
-
-  useEffect(() => {
-    fetch(`${API}/health`).then(()=>setOk(true)).catch(()=>setOk(false));
-    const t = setInterval(()=>fetch(`${API}/health`).then(()=>setOk(true)).catch(()=>setOk(false)), 10000);
-    return ()=>clearInterval(t);
+  useEffect(function () {
+    fetch("".concat(API, "/health")).then(function () {
+      return setOk(true);
+    })["catch"](function () {
+      return setOk(false);
+    });
+    var t = setInterval(function () {
+      return fetch("".concat(API, "/health")).then(function () {
+        return setOk(true);
+      })["catch"](function () {
+        return setOk(false);
+      });
+    }, 10000);
+    return function () {
+      return clearInterval(t);
+    };
   }, []);
-
-  const fetchJobs = useCallback(() => {
-    fetch(`${API}/jobs`).then(r=>r.json()).then(data => {
+  var fetchJobs = useCallback(function () {
+    fetch("".concat(API, "/jobs")).then(function (r) {
+      return r.json();
+    }).then(function (data) {
       setLiveJobs(data);
       // Merge into history: update existing entries, add new finished ones
       // Only persist non-running jobs so restarts don't show ghost running jobs
-      setHistJobs(prev => {
-        const map = new Map(prev.map(j=>[j.id,j]));
-        data.forEach(j => map.set(j.id, j));
-        const merged = Array.from(map.values())
-          .sort((a,b)=>b.created_at.localeCompare(a.created_at))
-          .slice(0, 100); // cap history
+      setHistJobs(function (prev) {
+        var map = new Map(prev.map(function (j) {
+          return [j.id, j];
+        }));
+        data.forEach(function (j) {
+          return map.set(j.id, j);
+        });
+        var merged = Array.from(map.values()).sort(function (a, b) {
+          return b.created_at.localeCompare(a.created_at);
+        }).slice(0, 100); // cap history
         // Only persist finished jobs to localStorage
-        const toSave = merged.filter(j => j.status !== "running");
+        var toSave = merged.filter(function (j) {
+          return j.status !== "running";
+        });
         saveJobHistory(toSave);
         return merged;
       });
-    }).catch(()=>{});
+    })["catch"](function () {});
   }, []);
-
-  useEffect(() => {
+  useEffect(function () {
     fetchJobs();
-    const id = setInterval(fetchJobs, 3000);
-    return () => clearInterval(id);
+    var id = setInterval(fetchJobs, 3000);
+    return function () {
+      return clearInterval(id);
+    };
   }, [fetchJobs]);
 
   // Update selected job when live data refreshes
-  useEffect(() => {
+  useEffect(function () {
     if (!selected) return;
-    const up = liveJobs.find(j=>j.id===selected.id);
+    var up = liveJobs.find(function (j) {
+      return j.id === selected.id;
+    });
     if (up) setSel(up);
   }, [liveJobs]);
 
   // Clear stopping flag when job leaves running state
-  useEffect(() => {
+  useEffect(function () {
     if (stoppingIds.size === 0) return;
-    const stillRunning = new Set(liveJobs.filter(j=>j.status==="running").map(j=>j.id));
-    setStoppingIds(prev => {
-      const next = new Set([...prev].filter(id => stillRunning.has(id)));
+    var stillRunning = new Set(liveJobs.filter(function (j) {
+      return j.status === "running";
+    }).map(function (j) {
+      return j.id;
+    }));
+    setStoppingIds(function (prev) {
+      var next = new Set(_toConsumableArray(prev).filter(function (id) {
+        return stillRunning.has(id);
+      }));
       return next.size === prev.size ? prev : next;
     });
   }, [liveJobs]);
 
   // Merged jobs for display: live jobs take precedence, history fills the rest
-  const liveIds = new Set(liveJobs.map(j=>j.id));
-  const jobs = [
-    ...liveJobs,
-    ...histJobs.filter(j=>!liveIds.has(j.id)).map(j=>({...j, _historyOnly:true})),
-  ].sort((a,b)=>b.created_at.localeCompare(a.created_at));
-
+  var liveIds = new Set(liveJobs.map(function (j) {
+    return j.id;
+  }));
+  var jobs = [].concat(_toConsumableArray(liveJobs), _toConsumableArray(histJobs.filter(function (j) {
+    return !liveIds.has(j.id);
+  }).map(function (j) {
+    return _objectSpread(_objectSpread({}, j), {}, {
+      _historyOnly: true
+    });
+  }))).sort(function (a, b) {
+    return b.created_at.localeCompare(a.created_at);
+  });
   function handleJobStarted(job_id, expr, params) {
-    setToast(`Job lancé : « ${expr} »`);
+    setToast("Job lanc\xE9 : \xAB ".concat(expr, " \xBB"));
     setTab("jobs");
     fetchJobs();
   }
-
-  async function handleStop(id) {
-    const res = await fetch(`${API}/jobs/${id}/stop`, { method: "POST" }).catch(() => null);
-    if (res?.ok) {
-      setStoppingIds(prev => new Set([...prev, id]));
-      setToast("Signal d'arrêt envoyé — attente de la fin du batch en cours…");
-    } else {
-      setToast("Impossible d'arrêter le job.");
-    }
-    fetchJobs();
+  function handleStop(_x) {
+    return _handleStop.apply(this, arguments);
   }
-
-  async function handleDelete(id) {
-    try {
-      const res = await fetch(`${API}/jobs/${id}`, { method: "DELETE" });
-      if (!res.ok && res.status !== 404) {
-        const e = await res.json().catch(() => ({ detail: "Erreur inconnue" }));
-        setToast("❌ " + e.detail);
-        return;
-      }
-    } catch {}
-    setHistJobs(prev => {
-      const next = prev.filter(j => j.id !== id);
-      saveJobHistory(next);
-      return next;
-    });
-    fetchJobs();
-    if (selected?.id === id) setSel(null);
+  function _handleStop() {
+    _handleStop = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2(id) {
+      var res;
+      return _regenerator().w(function (_context2) {
+        while (1) switch (_context2.n) {
+          case 0:
+            _context2.n = 1;
+            return fetch("".concat(API, "/jobs/").concat(id, "/stop"), {
+              method: "POST"
+            })["catch"](function () {
+              return null;
+            });
+          case 1:
+            res = _context2.v;
+            if (res !== null && res !== void 0 && res.ok) {
+              setStoppingIds(function (prev) {
+                return new Set([].concat(_toConsumableArray(prev), [id]));
+              });
+              setToast("Signal d'arrêt envoyé — attente de la fin du batch en cours…");
+            } else {
+              setToast("Impossible d'arrêter le job.");
+            }
+            fetchJobs();
+          case 2:
+            return _context2.a(2);
+        }
+      }, _callee2);
+    }));
+    return _handleStop.apply(this, arguments);
   }
-
+  function handleDelete(_x2) {
+    return _handleDelete.apply(this, arguments);
+  }
+  function _handleDelete() {
+    _handleDelete = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3(id) {
+      var res, e, _t2;
+      return _regenerator().w(function (_context3) {
+        while (1) switch (_context3.p = _context3.n) {
+          case 0:
+            _context3.p = 0;
+            _context3.n = 1;
+            return fetch("".concat(API, "/jobs/").concat(id), {
+              method: "DELETE"
+            });
+          case 1:
+            res = _context3.v;
+            if (!(!res.ok && res.status !== 404)) {
+              _context3.n = 3;
+              break;
+            }
+            _context3.n = 2;
+            return res.json()["catch"](function () {
+              return {
+                detail: "Erreur inconnue"
+              };
+            });
+          case 2:
+            e = _context3.v;
+            setToast("❌ " + e.detail);
+            return _context3.a(2);
+          case 3:
+            _context3.n = 5;
+            break;
+          case 4:
+            _context3.p = 4;
+            _t2 = _context3.v;
+          case 5:
+            setHistJobs(function (prev) {
+              var next = prev.filter(function (j) {
+                return j.id !== id;
+              });
+              saveJobHistory(next);
+              return next;
+            });
+            fetchJobs();
+            if ((selected === null || selected === void 0 ? void 0 : selected.id) === id) setSel(null);
+          case 6:
+            return _context3.a(2);
+        }
+      }, _callee3, null, [[0, 4]]);
+    }));
+    return _handleDelete.apply(this, arguments);
+  }
   function handleRelaunch(job) {
     setRelaunch(job);
   }
-
   function confirmRelaunch(job) {
+    var _job$params$mode2, _job$params$start_sen, _job$params$max_sente, _job$params$batch_siz, _job$params$n_threads;
     setRelaunch(null);
     // Pre-populate form via localStorage with job's params
-    const settings = {
-      mode: job.params.mode ?? "oral",
-      start_sent: (job.params.start_sent ?? 0) + 2,
-      max_sentences: job.params.max_sentences ?? "all",
+    var settings = {
+      mode: (_job$params$mode2 = job.params.mode) !== null && _job$params$mode2 !== void 0 ? _job$params$mode2 : "oral",
+      start_sent: ((_job$params$start_sen = job.params.start_sent) !== null && _job$params$start_sen !== void 0 ? _job$params$start_sen : 0) + 2,
+      max_sentences: (_job$params$max_sente = job.params.max_sentences) !== null && _job$params$max_sente !== void 0 ? _job$params$max_sente : "all",
       all_sentences: job.params.max_sentences === "all",
-      batch_size: job.params.batch_size ?? 5,
-      n_threads: job.params.n_threads ?? 8,
+      batch_size: (_job$params$batch_siz = job.params.batch_size) !== null && _job$params$batch_siz !== void 0 ? _job$params$batch_siz : 5,
+      n_threads: (_job$params$n_threads = job.params.n_threads) !== null && _job$params$n_threads !== void 0 ? _job$params$n_threads : 8,
       use_analysis_cache: job.params.use_analysis_cache !== false,
-      selected_props: (() => {
+      selected_props: function () {
         try {
-          const sp = job.params.selected_props;
+          var sp = job.params.selected_props;
           if (Array.isArray(sp)) return sp;
           if (typeof sp === "string") return JSON.parse(sp);
-        } catch {}
-        return ALL_PROPS.map(p=>p.key);
-      })(),
+        } catch (_unused6) {}
+        return ALL_PROPS.map(function (p) {
+          return p.key;
+        });
+      }()
     };
     saveSettings(settings);
     setTab("launch");
     setToast("Paramètres pré-remplis — sélectionnez le fichier et lancez.");
   }
-
-  const running = liveJobs.filter(j=>j.status==="running").length;
-
-  return (
-    <div className="app">
-      <header>
-        <div className="header-top">
-          <div className="logos">
-            <img src={UGA_LOGO} alt="UGA" title="Université Grenoble Alpes"
-              onError={e=>e.target.style.display="none"}/>
-            <div className="header-divider"/>
-            <img src={LIDILEM_LOGO} alt="LIDILEM" title="LIDILEM"
-              onError={e=>e.target.style.display="none"}/>
-            <div className="header-divider"/>
-            <PrefabBadge/>
-          </div>
-
-          <div className="header-titles">
-            <h1>Analyse automatique des Phrases préfabriquées des interactions</h1>
-            <p>Projet ANR PREFAB · LIDILEM, Université Grenoble Alpes</p>
-          </div>
-
-          <div className="header-actions">
-            <button className="theme-btn" title="Basculer le thème"
-              onClick={()=>setTheme(t=>t==="dark"?"light":"dark")}>
-              {theme==="dark"?"☀️":"🌙"}
-            </button>
-            {serverOk===true  && <><div className="server-dot"/><span className="server-status">serveur actif</span></>}
-            {serverOk===false && <span className="server-status" style={{color:"var(--danger)"}}>serveur inaccessible</span>}
-          </div>
-        </div>
-      </header>
-
-      {serverOk===false && (
-        <div className="offline-notice">
-          ⚠️ Serveur inaccessible — l'historique local est affiché mais les actions en ligne ne sont pas disponibles.
-        </div>
-      )}
-
-      <div className="site-banner">
-        <div className="banner-text">
-          <h2>Analyse automatique des PPIs</h2>
-          <p>Phrases Préfabriquées des Interactions · ANR PREFAB</p>
-        </div>
-      </div>
-
-      <div className="tabs">
-        <button className={`tab ${tab==="launch"?"active":""}`}
-          onClick={()=>{setTab("launch");setSel(null)}}>Lancer</button>
-        <button className={`tab ${tab==="jobs"?"active":""}`}
-          onClick={()=>{setTab("jobs");setSel(null)}}>
-          Jobs {running>0&&<span className="tab-badge">{running}</span>}
-          {jobs.length>0&&<span style={{marginLeft:5,fontSize:10,color:"var(--muted)"}}>({jobs.length})</span>}
-        </button>
-      </div>
-
-      <div className="content">
-        {tab==="launch" && <AnalyseForm onJobStarted={handleJobStarted} hasRunningJob={running > 0}/>}
-
-        {tab==="jobs" && !selected && (
-          jobs.length===0
-            ? <div className="empty"><div className="icon">📭</div><div>Aucun job pour l'instant.</div></div>
-            : <div className="jobs-list">
-                {jobs.map(j=>(
-                  <JobRow key={j.id} job={j} onView={setSel}
-                    onDelete={handleDelete} onStop={handleStop}
-                    onRelaunch={handleRelaunch} serverOk={serverOk}
-                    stopping={stoppingIds.has(j.id)}/>
-                ))}
-              </div>
-        )}
-
-        {tab==="jobs" && selected && (
-          <ResultsPanel job={selected} onBack={()=>setSel(null)}/>
-        )}
-      </div>
-
-      {toast && <Toast msg={toast} onDone={()=>setToast(null)}/>}
-      {relaunchJob && <RelaunchModal job={relaunchJob} onClose={()=>setRelaunch(null)} onConfirm={confirmRelaunch}/>}
-    </div>
-  );
+  var running = liveJobs.filter(function (j) {
+    return j.status === "running";
+  }).length;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app"
+  }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("div", {
+    className: "header-top"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "logos"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: UGA_LOGO,
+    alt: "UGA",
+    title: "Universit\xE9 Grenoble Alpes",
+    onError: function onError(e) {
+      return e.target.style.display = "none";
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "header-divider"
+  }), /*#__PURE__*/React.createElement("img", {
+    src: LIDILEM_LOGO,
+    alt: "LIDILEM",
+    title: "LIDILEM",
+    onError: function onError(e) {
+      return e.target.style.display = "none";
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "header-divider"
+  }), /*#__PURE__*/React.createElement(PrefabBadge, null)), /*#__PURE__*/React.createElement("div", {
+    className: "header-titles"
+  }, /*#__PURE__*/React.createElement("h1", null, "Analyse automatique des Phrases pr\xE9fabriqu\xE9es des interactions"), /*#__PURE__*/React.createElement("p", null, "Projet ANR PREFAB \xB7 LIDILEM, Universit\xE9 Grenoble Alpes")), /*#__PURE__*/React.createElement("div", {
+    className: "header-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "theme-btn",
+    title: "Basculer le th\xE8me",
+    onClick: function onClick() {
+      return setTheme(function (t) {
+        return t === "dark" ? "light" : "dark";
+      });
+    }
+  }, theme === "dark" ? "☀️" : "🌙"), serverOk === true && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "server-dot"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "server-status"
+  }, "serveur actif")), serverOk === false && /*#__PURE__*/React.createElement("span", {
+    className: "server-status",
+    style: {
+      color: "var(--danger)"
+    }
+  }, "serveur inaccessible")))), serverOk === false && /*#__PURE__*/React.createElement("div", {
+    className: "offline-notice"
+  }, "\u26A0\uFE0F Serveur inaccessible \u2014 l'historique local est affich\xE9 mais les actions en ligne ne sont pas disponibles."), /*#__PURE__*/React.createElement("div", {
+    className: "site-banner"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "banner-text"
+  }, /*#__PURE__*/React.createElement("h2", null, "Analyse automatique des PPIs"), /*#__PURE__*/React.createElement("p", null, "Phrases Pr\xE9fabriqu\xE9es des Interactions \xB7 ANR PREFAB"))), /*#__PURE__*/React.createElement("div", {
+    className: "tabs"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "tab ".concat(tab === "launch" ? "active" : ""),
+    onClick: function onClick() {
+      setTab("launch");
+      setSel(null);
+    }
+  }, "Lancer"), /*#__PURE__*/React.createElement("button", {
+    className: "tab ".concat(tab === "jobs" ? "active" : ""),
+    onClick: function onClick() {
+      setTab("jobs");
+      setSel(null);
+    }
+  }, "Jobs ", running > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "tab-badge"
+  }, running), jobs.length > 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 5,
+      fontSize: 10,
+      color: "var(--muted)"
+    }
+  }, "(", jobs.length, ")"))), /*#__PURE__*/React.createElement("div", {
+    className: "content"
+  }, tab === "launch" && /*#__PURE__*/React.createElement(AnalyseForm, {
+    onJobStarted: handleJobStarted,
+    hasRunningJob: running > 0
+  }), tab === "jobs" && !selected && (jobs.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "icon"
+  }, "\uD83D\uDCED"), /*#__PURE__*/React.createElement("div", null, "Aucun job pour l'instant.")) : /*#__PURE__*/React.createElement("div", {
+    className: "jobs-list"
+  }, jobs.map(function (j) {
+    return /*#__PURE__*/React.createElement(JobRow, {
+      key: j.id,
+      job: j,
+      onView: setSel,
+      onDelete: handleDelete,
+      onStop: handleStop,
+      onRelaunch: handleRelaunch,
+      serverOk: serverOk,
+      stopping: stoppingIds.has(j.id)
+    });
+  }))), tab === "jobs" && selected && /*#__PURE__*/React.createElement(ResultsPanel, {
+    job: selected,
+    onBack: function onBack() {
+      return setSel(null);
+    }
+  })), toast && /*#__PURE__*/React.createElement(Toast, {
+    msg: toast,
+    onDone: function onDone() {
+      return setToast(null);
+    }
+  }), relaunchJob && /*#__PURE__*/React.createElement(RelaunchModal, {
+    job: relaunchJob,
+    onClose: function onClose() {
+      return setRelaunch(null);
+    },
+    onConfirm: confirmRelaunch
+  }));
 }
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
 </html>
