@@ -92,7 +92,11 @@ INSTRUCTION FORMAT ABSOLU :
 """
 
 
-def load_prompts(prompt_file: str = "prompts.txt") -> list[str]:
+from pathlib import Path
+
+def load_prompts(prompt_file: str | Path | None = None) -> list[str]:
+    if prompt_file is None:
+        prompt_file = Path(__file__).parent / "prompts.txt"
     START_MARKER = "start_prompt"
     END_MARKER = "end_prompt"
     try:
@@ -120,7 +124,9 @@ def load_prompts(prompt_file: str = "prompts.txt") -> list[str]:
         return []
 
 
-def load_system_prompts(prompt_file: str = "system_prompts.txt") -> list[str]:
+def load_system_prompts(prompt_file: str | Path | None = None) -> list[str]:
+    if prompt_file is None:
+        prompt_file = Path(__file__).parent / "system_prompts.txt"
     try:
         with open(prompt_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -140,7 +146,6 @@ def load_system_prompts(prompt_file: str = "system_prompts.txt") -> list[str]:
     except Exception as e:
         logger.error("Error loading system prompts: %s", e)
         return []
-
 
 def get_prompts(
     expression: str,

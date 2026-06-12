@@ -7,7 +7,9 @@ import nltk
 nltk.download('punkt')
 _stemmer = FrenchStemmer()
 
-def load_modifier_rules(path: str | Path = "modifier_rules.yaml") -> dict:
+def load_modifier_rules(path: str | Path | None = None) -> dict:
+    if path is None:
+        path = Path(__file__).parent / "modifier_rules.yaml"
     with open(path, encoding="utf-8") as f:
         rules = yaml.safe_load(f)
     return {

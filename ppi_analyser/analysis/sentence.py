@@ -130,7 +130,7 @@ def _call_model_batch(
     from ppi_analyser.models.factory import get_provider
     prompt_type = get_prompt_type(system_prompt)
 
-    if (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
+    if (prompt_type not in ['Forme','Lemme']) and (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
     	return ignore_response
 
     # Check analysis cache — batch responses are keyed on the concatenated prompt
@@ -172,7 +172,7 @@ def _handle_no_model_batch(
     results = []
 
     #len_nlp_object = len(state.nlp_preprocessed_turn)
-    if (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
+    if (prompt_type not in ['Forme','Lemme']) and (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
         return [ignore_response] * n_sentences
 
     for i in range(n_sentences):
@@ -421,7 +421,7 @@ def _call_model(
         )
     prompt_type = get_prompt_type(system_prompt)
     logger.info("Traitement de la propriété %s par le modèle %s",prompt_type,model)
-    if (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
+    if (prompt_type not in ['Forme','Lemme']) and (state.custom_properties_list is not None) and (prompt_type not in state.custom_properties_list):
     	return ignore_response
     # Check analysis cache
     if getattr(state, 'use_analysis_cache', False):
