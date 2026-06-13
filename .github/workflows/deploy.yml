@@ -1,10 +1,10 @@
-# .github/workflows/deploy.yml
 on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -13,3 +13,5 @@ jobs:
         with:
           push: true
           tags: youssefzeroual/ppi_analyser:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
