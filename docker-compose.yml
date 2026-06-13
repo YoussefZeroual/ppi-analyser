@@ -9,7 +9,7 @@
 services:
   # ── Production service ──────────────────────────────────────────────────────
   ppi:
-    image: YoussefZeroual/ppi_analyser:latest   # pulled from Docker Hub
+    image: youssefzeroual/ppi_analyser:latest   # pulled from Docker Hub
     container_name: ppi_analyser
     restart: unless-stopped
     ports:
@@ -27,7 +27,7 @@ services:
   # ── Dev service (bind-mount, hot-reload) ────────────────────────────────────
   ppi_dev:
     build: .                              # still builds locally
-    image: YoussefZeroual/ppi_analyser:latest
+    image: youssefzeroual/ppi_analyser:latest
     container_name: ppi_analyser_dev
     restart: "no"
     ports:
