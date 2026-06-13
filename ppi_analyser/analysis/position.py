@@ -23,7 +23,7 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, stat
     from ppi_analyser.analysis.expansion import detect_expansion
     full_turn_lemmas = [w.lemma for s in state.nlp_preprocessed_turn[sent_id]["full_turn_stripped_nlp_doc"].sentences for w in s.words]
     forme_doc = state.nlp_preprocessed_turn[sent_id]["forme_nlp_doc"]
-    form_lemmas = [w.lemma for w in forme_doc.words] if forme_doc is not None else []
+    form_lemmas = [w.lemma for s in forme_doc.sentences for  w in s.words] if forme_doc is not None else []
     from ppi_analyser.analysis.expansion import extract_ppi_sentence,detect_expansion
     ppi_text, _ = extract_ppi_sentence(conv)
     expansion = detect_expansion(state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"], ppi_text,state.nlp_preprocessed_turn[sent_id]["ppi_occurrence"])
@@ -49,7 +49,7 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, stat
     nlp_turn = [w.text for s in full_turn_doc.sentences for w in s.words if w.upos != "PUNCT"]
     #logger.debug("traitement de la position sentid= %s:full turn %s , expression + expansion %s , %s",sent_id,nlp_turn,extended_expression)
     # Tokens de la forme PPI
-    forme_lemmas = [w.lemma for w in forme_doc.words if w.upos != "PUNCT"]
+    forme_lemmas = [w.lemma for s in forme_doc.sentences for w in s.words if w.upos != "PUNCT"]
 
    
     nlp_sent = extended_expression
