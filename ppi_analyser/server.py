@@ -2,7 +2,7 @@
 # Run: uvicorn server:app --reload --port 8000
 
 import uuid, shutil, threading, traceback, logging, json, io, multiprocessing
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -70,7 +70,7 @@ def shutdown_stanza_server():
 def _new_job(job_id: str, params: dict, client_ip: str = "") -> dict:
     return {
         "id": job_id, "status": "running", "params": params,
-        "created_at": datetime.now().isoformat(), "finished_at": None,
+        "created_at": datetime.now(timezone.utc).isoformat(), "finished_at": None,
         "error": None, "output_dir": None,
         "tokens_in": 0, "tokens_out": 0, "n_sentences": 0,
         "progress": 0, "phase": "init", "n_total_sentences": 0,

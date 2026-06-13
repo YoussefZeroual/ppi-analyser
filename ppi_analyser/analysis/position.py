@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, state=None,sent_id:int =None) -> tuple | None:
     from ppi_analyser.preprocessing.speakers import get_loc_full_turn, detect_speakers
     from ppi_analyser.analysis.expansion import detect_expansion
-    full_turn_lemmas = [w.lemma for s in state.nlp_preprocessed_turn[sent_id]["full_turn_stripped_nlp_doc"].sentences for w in s.words  ] 
-    form_lemmas =  [w.lemma for w in state.nlp_preprocessed_turn[sent_id]["forme_nlp_doc"].words  ] 
+    full_turn_lemmas = [w.lemma for s in state.nlp_preprocessed_turn[sent_id]["full_turn_stripped_nlp_doc"].sentences for w in s.words]
+    forme_doc = state.nlp_preprocessed_turn[sent_id]["forme_nlp_doc"]
+    form_lemmas = [w.lemma for w in forme_doc.words] if forme_doc is not None else []
     from ppi_analyser.analysis.expansion import extract_ppi_sentence,detect_expansion
     ppi_text, _ = extract_ppi_sentence(conv)
     expansion = detect_expansion(state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"], ppi_text,state.nlp_preprocessed_turn[sent_id]["ppi_occurrence"])
