@@ -9,7 +9,7 @@
 services:
   # ── Production service ──────────────────────────────────────────────────────
   ppi:
-    image: youruser/ppi_analyser:latest   # pulled from Docker Hub
+    image: YoussefZeroual/ppi_analyser:latest   # pulled from Docker Hub
     container_name: ppi_analyser
     restart: unless-stopped
     ports:
