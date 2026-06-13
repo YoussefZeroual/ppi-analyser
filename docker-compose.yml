@@ -27,7 +27,7 @@ services:
   # ── Dev service (bind-mount, hot-reload) ────────────────────────────────────
   ppi_dev:
     build: .                              # still builds locally
-    image: youruser/ppi_analyser:latest
+    image: YoussefZeroual/ppi_analyser:latest
     container_name: ppi_analyser_dev
     restart: "no"
     ports:
