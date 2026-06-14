@@ -182,18 +182,14 @@ def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState,sentid
         raw=raw, cleaned=cleaned, locuteur=locuteur,
         interlocuteurs=interlocuteurs, forme_relevee=forme_relevee,
     )
-
-
 def _preprocess_chunk_batch(
     chunk: list[str],
     config: PipelineConfig,
     state: SessionState,
+    segmented_list: list[str],
 ) -> list[PreprocessedSentence]:
-    """Segment one chunk with a single model call, then finish per-sentence work."""
     if not config.speaker_detection_model:
         raise ValueError("speaker_detection_model must be set for ECRIT_IA mode")
-    logger.warning("zzzaaabbaa ")
-    segmented_list = detect_segments_ia_batch(chunk, config.speaker_detection_model)
 
     i = 0
     results = []
@@ -207,14 +203,13 @@ def _preprocess_chunk_batch(
         locuteur, interlocuteurs = detect_speakers(cleaned, config.mode)
         forme_relevee = _extract_forme(cleaned, config.expression)
         sent_offset = len(state.nlp_preprocessed_turn)
-        logger.info("Prétraitement des tours de parole avec Stanza:(%s/%s): %s ... ", i+1,chunk_size, raw[:20])
-        
-        _fill_nlp_preprocessed(cleaned, config.mode, state,i+sent_offset) 
+        logger.info("Prétraitement des tours de parole avec Stanza:(%s/%s): %s ... ", i+1, chunk_size, raw[:20])
+        _fill_nlp_preprocessed(cleaned, config.mode, state, i+sent_offset)
         results.append(PreprocessedSentence(
             raw=raw, cleaned=cleaned, locuteur=locuteur,
             interlocuteurs=interlocuteurs, forme_relevee=forme_relevee,
         ))
-        i +=1
+        i += 1
     return results
 
 
@@ -224,7 +219,7 @@ def _preprocess_all_batch(
     state: SessionState,
     progress_callback=None,
 ) -> list[PreprocessedSentence]:
-    """Preprocess all sentences in chunks of config.batch_size."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     n_total = len(sentences)
 
     if config.mode != AnalysisMode.ECRIT_IA:
@@ -237,18 +232,30 @@ def _preprocess_all_batch(
         return preprocessed
 
     chunks = _chunk(sentences, config.batch_size)
+
+    # run all segmentation calls in parallel
+    segmented_by_chunk = {}
+    with ThreadPoolExecutor(max_workers=min(len(chunks), 5)) as executor:
+        logger.info("Détection automatique des tours de parole par l'IA (%s files d'exécution)",min(len(chunks), 5))
+        futures = {
+            executor.submit(detect_segments_ia_batch, chunk, config.speaker_detection_model): idx
+            for idx, chunk in enumerate(chunks)
+        }
+        for future in as_completed(futures):
+            idx = futures[future]
+            segmented_by_chunk[idx] = future.result()
+
+    # sequential NLP preprocessing per chunk
     preprocessed = []
     done = 0
-
     for idx, chunk in enumerate(chunks):
         logger.info("Segmentation batch %d/%d (%d sentences)", idx + 1, len(chunks), len(chunk))
-        preprocessed.extend(_preprocess_chunk_batch(chunk, config, state))
+        preprocessed.extend(_preprocess_chunk_batch(chunk, config, state, segmented_by_chunk[idx]))
         done += len(chunk)
         if progress_callback:
             progress_callback("preprocessing", done, n_total)
 
     return preprocessed
-
 
 # ---------------------------------------------------------------------------
 # Analysis

@@ -122,7 +122,7 @@ def detect_segments_ia_batch(texts: list[str], model: str) -> list[str]:
     processed = [None] * len(texts)
     batch_texts = []
     batch_indices = []
-
+    logger.info("Détection des tours de parole (%s conversations) par le modèle %s",len(texts),model)
     for i, text in enumerate(texts):
         if not re.search(r'[«"\u2018\u2019][^»"\u2018\u2019]*[»"\u2018\u2019]|[\u2014\u2013-]\s*\w+|«[^»]*»', text):
             processed[i] = "<dialogue>[Locuteur1] " + text + "</dialogue>"
