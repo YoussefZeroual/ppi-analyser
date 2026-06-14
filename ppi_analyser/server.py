@@ -552,8 +552,10 @@ def admin_pull(x_admin_secret: str = _Header(None)):
                 target.mkdir(parents=True, exist_ok=True)
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(z.read(member))
-                updated += 1
+                data = z.read(member)
+                if not target.exists() or target.read_bytes() != data:
+                    target.write_bytes(data)
+                    updated += 1
         return {"status": "ok", "files_updated": updated, "repo": GITHUB_REPO, "branch": GITHUB_BRANCH}
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {e}")
