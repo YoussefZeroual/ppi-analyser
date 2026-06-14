@@ -14,6 +14,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import os as _os
+from dotenv import load_dotenv
+load_dotenv()
 UPLOADS_DIR = Path(_os.getenv("PPI_UPLOAD_DIR", Path.home() / ".ppi_analyser" / "uploads"))
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -503,3 +505,44 @@ def download_file(job_id: str, filename: str, request: Request):
 @app.get("/health")
 def health():
     return {"status": "ok", "jobs_in_memory": len(jobs)}
+
+
+# ── Admin endpoints ──────────────────────────────────────────────────────────
+
+_ADMIN_SECRET = _os.getenv("ADMIN_SECRET", "changeme")
+
+def _check_admin(x_admin_secret: str = None):
+    if x_admin_secret != _ADMIN_SECRET:
+        raise HTTPException(403, "Forbidden")
+
+from fastapi import Header as _Header
+
+@app.post("/admin/set-env")
+def admin_set_env(
+    payload: dict,
+    x_admin_secret: str = _Header(None),
+):
+    _check_admin(x_admin_secret)
+    key = payload.get("key", "").strip()
+    value = payload.get("value", "")
+    if not key:
+        raise HTTPException(400, "Missing key")
+    _os.environ[key] = value
+    return {"set": key}
+
+
+@app.post("/admin/pull")
+def admin_pull(x_admin_secret: str = _Header(None)):
+    _check_admin(x_admin_secret)
+    try:
+        result = subprocess.run(
+            ["git", "pull"],
+            capture_output=True, text=True, cwd=Path(__file__).parent
+        )
+        return {
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "returncode": result.returncode,
+        }
+    except Exception as e:
+        raise HTTPException(500, str(e))

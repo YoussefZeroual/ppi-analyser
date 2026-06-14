@@ -2184,7 +2184,133 @@ function App() {
     onConfirm: confirmRelaunch
   }));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
+// ── AdminPanel ────────────────────────────────────────────────────────────
+
+function AdminPanel() {
+  var _useState_a = useState(""), _useState_a2 = _slicedToArray(_useState_a, 2), secret = _useState_a2[0], setSecret = _useState_a2[1];
+  var _useState_b = useState(""), _useState_b2 = _slicedToArray(_useState_b, 2), envKey = _useState_b2[0], setEnvKey = _useState_b2[1];
+  var _useState_c = useState(""), _useState_c2 = _slicedToArray(_useState_c, 2), envVal = _useState_c2[0], setEnvVal = _useState_c2[1];
+  var _useState_d = useState(null), _useState_d2 = _slicedToArray(_useState_d, 2), msg = _useState_d2[0], setMsg = _useState_d2[1];
+  var _useState_e = useState(null), _useState_e2 = _slicedToArray(_useState_e, 2), pullOut = _useState_e2[0], setPullOut = _useState_e2[1];
+  var _useState_f = useState(false), _useState_f2 = _slicedToArray(_useState_f, 2), loading = _useState_f2[0], setLoading = _useState_f2[1];
+
+  function withSecret(fn) {
+    if (!secret.trim()) { setMsg({ ok: false, text: "Entrez le secret admin." }); return; }
+    fn();
+  }
+
+  function setEnv() {
+    withSecret(function() {
+      setLoading(true); setMsg(null);
+      fetch(API + "/admin/set-env", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-secret": secret },
+        body: JSON.stringify({ key: envKey.trim(), value: envVal })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        setMsg(d.set ? { ok: true, text: "✓ " + d.set + " défini." } : { ok: false, text: d.detail });
+      }).catch(function() { setMsg({ ok: false, text: "Erreur réseau." }); })
+      .finally(function() { setLoading(false); });
+    });
+  }
+
+  function pull() {
+    withSecret(function() {
+      setLoading(true); setPullOut(null); setMsg(null);
+      fetch(API + "/admin/pull", {
+        method: "POST",
+        headers: { "x-admin-secret": secret }
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        setPullOut(d.stdout + (d.stderr ? "\n[stderr]\n" + d.stderr : ""));
+        setMsg(d.returncode === 0 ? { ok: true, text: "✓ Pull réussi." } : { ok: false, text: "Erreur (code " + d.returncode + ")." });
+      }).catch(function() { setMsg({ ok: false, text: "Erreur réseau." }); })
+      .finally(function() { setLoading(false); });
+    });
+  }
+
+  return React.createElement("div", { className: "card" },
+    React.createElement("div", { className: "card-title" }, "⚙️ Admin"),
+
+    React.createElement("div", { className: "field" },
+      React.createElement("label", null, "Secret admin"),
+      React.createElement("input", { type: "password", placeholder: "ADMIN_SECRET", value: secret, onChange: function(e) { setSecret(e.target.value); } })
+    ),
+
+    React.createElement("hr", { style: { border: "none", borderTop: "1px solid var(--border)", margin: "16px 0" } }),
+
+    React.createElement("div", { className: "card-title" }, "Variable d'environnement"),
+    React.createElement("div", { className: "row" },
+      React.createElement("div", { className: "field" },
+        React.createElement("label", null, "Clé (ex: DEEPSEEK_API_KEY)"),
+        React.createElement("input", { placeholder: "NOM_VARIABLE", value: envKey, onChange: function(e) { setEnvKey(e.target.value); } })
+      ),
+      React.createElement("div", { className: "field" },
+        React.createElement("label", null, "Valeur"),
+        React.createElement("input", { type: "password", placeholder: "valeur", value: envVal, onChange: function(e) { setEnvVal(e.target.value); } })
+      )
+    ),
+    React.createElement("button", { className: "btn btn-primary", onClick: setEnv, disabled: loading || !envKey.trim() }, "Définir la variable"),
+
+    React.createElement("hr", { style: { border: "none", borderTop: "1px solid var(--border)", margin: "16px 0" } }),
+
+    React.createElement("div", { className: "card-title" }, "Déploiement"),
+    React.createElement("button", { className: "btn btn-warn", onClick: pull, disabled: loading }, loading ? "En cours…" : "⬇ Git pull"),
+
+    msg && React.createElement("div", {
+      style: { marginTop: 12, fontSize: 12, color: msg.ok ? "var(--accent2)" : "var(--danger)" }
+    }, msg.text),
+
+    pullOut && React.createElement("pre", {
+      style: { marginTop: 10, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: 10, fontSize: 11, fontFamily: "var(--mono)", whiteSpace: "pre-wrap", wordBreak: "break-all", maxHeight: 200, overflowY: "auto" }
+    }, pullOut)
+  );
+}
+
+// Patch App to support admin tab
+var _OrigApp = App;
+App = function AppWithAdmin() {
+  var showAdmin = window.location.search.includes("admin=1");
+  var el = _OrigApp();
+  if (!showAdmin) return el;
+
+  // Inject admin tab by cloning the element tree
+  // Simpler: just render our own wrapper
+  return el;
+};
+
+// Override render to inject admin tab when ?admin=1
+(function() {
+  var showAdmin = window.location.search.includes("admin=1");
+  if (!showAdmin) {
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App, null));
+    return;
+  }
+
+  // Wrap App to add admin tab
+  function AppWithAdmin() {
+    var _useState_tab = useState("launch"), _useState_tab2 = _slicedToArray(_useState_tab, 2), adminTab = _useState_tab2[0], setAdminTab = _useState_tab2[1];
+    // Render original app but intercept tab clicks — simpler: just show admin as overlay toggle
+    var _useState_showAdminPanel = useState(false), _useState_sap2 = _slicedToArray(_useState_showAdminPanel, 2), showPanel = _useState_sap2[0], setShowPanel = _useState_sap2[1];
+
+    return React.createElement("div", null,
+      React.createElement("div", {
+        style: { position: "fixed", bottom: 16, right: 16, zIndex: 9999 }
+      },
+        React.createElement("button", {
+          className: "btn btn-ghost",
+          style: { fontSize: 11, opacity: 0.6 },
+          onClick: function() { setShowPanel(function(p) { return !p; }); }
+        }, showPanel ? "✕ Fermer admin" : "⚙ Admin")
+      ),
+      showPanel
+        ? React.createElement("div", {
+            style: { maxWidth: 700, margin: "24px auto", padding: "0 24px" }
+          }, React.createElement(AdminPanel, null))
+        : React.createElement(App, null)
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AppWithAdmin, null));
+})();
 
 </script>
 </body>

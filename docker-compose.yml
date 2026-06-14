@@ -4,7 +4,7 @@
 #   docker compose --profile prod up -d
 #
 # DEV (bind-mount + hot-reload, edits reflected instantly):
-#   docker compose --profile dev up
+#   docker compose up
 # ─────────────────────────────────────────────────────────────────────────────
 services:
   # ── Production service ──────────────────────────────────────────────────────
@@ -26,8 +26,8 @@ services:
   # ── Dev service (bind-mount, hot-reload) ────────────────────────────────────
   ppi_dev:
     image: youssefzeroual/ppi_analyser:latest
-    container_name: ppi_analyser
-    restart: "unless-stopped"
+    container_name: ppi_analyser_dev
+    restart: unless-stopped
     ports:
       - "${HOST_PORT:-5000}:8000"
     volumes:
@@ -39,6 +39,18 @@ services:
     environment:
       UVICORN_WORKERS: "1"
       UVICORN_RELOAD: "1"
+
+  # ── WUD (auto-update on new image) ───────────────────────────────────────────
+  wud:
+    image: fmartinou/whats-up-docker:latest
+    container_name: wud
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WUD_REGISTRY_DOCKERHUB_LOGIN: "${DOCKERHUB_USER}"
+      WUD_REGISTRY_DOCKERHUB_TOKEN: "${DOCKERHUB_TOKEN}"
+      WUD_TRIGGER_DOCKER_LOCAL_PULL: "true"
+    restart: unless-stopped
 
 volumes:
   ppi_data:
