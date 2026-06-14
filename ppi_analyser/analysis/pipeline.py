@@ -76,17 +76,20 @@ def _fill_nlp_preprocessed(
     occurrence_index = len(re.findall(re.escape(ppi_text_norm), pre_ppi_norm, re.IGNORECASE))
 
     full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
+    full_turn = full_turn.replace("-","")
     full_turn = full_turn.replace("/", "")
     full_turn = re.sub(r'(<.*?>)', '', full_turn)
     full_turn = re.sub(r'(\[.*?\])', '', full_turn).strip()
+    surface_sent = surface_sent.replace("-","")
     surface_sent = re.sub(r'(<.*?>)', '', surface_sent).strip()
     surface_sent_nlp = state.nlp(surface_sent)
     full_turn_nlp_doc = state.nlp(full_turn)
-    segments = segments = re.split(r'[,;.?!…:]|\bque\b|\.\.\.', full_turn) # <--- added 'que' as a delimiter to exclude completives
+    segments = re.split(r'[,;.?!…:]|\bque\b|\.\.\.', full_turn) # <--- added 'que' as a delimiter to exclude completives
     full_turn_stripped = next(
         (seg for seg in segments if surface_sent.lower() in seg.lower()),
         full_turn,
     )
+    full_turn_stripped = full_turn_stripped.replace("-","")
     full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
     sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
     if sent is None:
@@ -94,7 +97,6 @@ def _fill_nlp_preprocessed(
         forme_nlp_doc = surface_sent_nlp          # Document — fallback
     else:
         forme_nlp_doc = state.nlp(sent.text)      # re-parse Sentence → Document
-
     expression_nlp_doc = state.nlp(state.expression)
     state.nlp_preprocessed_turn.append({
 	    "full_turn_nlp_doc": full_turn_nlp_doc,
