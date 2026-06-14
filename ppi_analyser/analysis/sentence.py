@@ -229,7 +229,7 @@ def _handle_no_model_batch(
                 labels, subtrees = find_modifier(
                     state.nlp_preprocessed_turn[i+start_offset]["forme_nlp_doc"],
                     state.nlp_preprocessed_turn[i+start_offset]["expression_nlp_doc"],
-                    state.nlp_preprocessed_turn[i+start_offset]["surface_sent_nlp"], #<--- limitting to the forme because full turn contains noise
+                    state.nlp_preprocessed_turn[i+start_offset]["full_turn_nlp_doc"], 
                     state.nlp,
                     state.nlp_preprocessed_turn[i+start_offset]["ppi_occurrence"]
                 )

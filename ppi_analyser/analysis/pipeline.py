@@ -81,6 +81,7 @@ def _fill_nlp_preprocessed(
     full_turn = re.sub(r'(<.*?>)', '', full_turn)
     full_turn = re.sub(r'(\[.*?\])', '', full_turn).strip()
     surface_sent = surface_sent.replace("-"," ").lower()
+    logger.warning("surface_sent %s",surface_sent)
     surface_sent = re.sub(r'(<.*?>)', '', surface_sent).strip()
     surface_sent_nlp = state.nlp(surface_sent)
     full_turn_nlp_doc = state.nlp(full_turn)
@@ -90,6 +91,7 @@ def _fill_nlp_preprocessed(
         full_turn,
     )
     full_turn_stripped = full_turn_stripped.replace("-"," ").lower()
+    logger.warning("surface_sent %s",surface_sent)
     full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
     sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
     if sent is None:
@@ -97,7 +99,8 @@ def _fill_nlp_preprocessed(
         forme_nlp_doc = surface_sent_nlp          # Document — fallback
     else:
         forme_nlp_doc = state.nlp(sent.text)      # re-parse Sentence → Document
-    expression_nlp_doc = state.nlp(state.expression)
+    expression = state.expression.replace("-"," ").lower()  # expression --> standard forme  
+    expression_nlp_doc = state.nlp(expression)
     state.nlp_preprocessed_turn.append({
 	    "full_turn_nlp_doc": full_turn_nlp_doc,
 	    "full_turn_stripped_nlp_doc": full_turn_stripped_nlp_doc,
@@ -189,7 +192,7 @@ def _preprocess_chunk_batch(
     """Segment one chunk with a single model call, then finish per-sentence work."""
     if not config.speaker_detection_model:
         raise ValueError("speaker_detection_model must be set for ECRIT_IA mode")
-
+    logger.warning("zzzaaabbaa ")
     segmented_list = detect_segments_ia_batch(chunk, config.speaker_detection_model)
 
     i = 0

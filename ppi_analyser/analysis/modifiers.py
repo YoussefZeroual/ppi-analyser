@@ -15,7 +15,10 @@ def load_modifier_rules(path: str | Path | None = None) -> dict:
     return {
         "upos": set(rules.get("upos", [])),
         "deprel": set(rules.get("deprel", [])),
-        "lemma": set(rules.get("lemma", []))
+        "lemma": set(rules.get("lemma", [])),
+        "excluded_upos": set(rules.get("excluded_upos", [])),
+        "excluded_deprel":set(rules.get("excluded_deprel", [])),
+        "excluded_lemma":set(rules.get("excluded_lemma", []))
     }
 
 MODIFIER_RULES = load_modifier_rules()
@@ -58,7 +61,7 @@ def get_ppi_sent(tagged_ppi_nlp, text_nlp, nlp):
     for s in text_nlp.sentences:
         s_lemmas = [w.lemma.strip() for w in s.words]
         if set(tagged_ppi_lemmas).issubset(set(s_lemmas)):
-            return s, s_lemmas
+            return s, s_lemmas 
     return None, None
 
 def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
@@ -87,6 +90,9 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
         )
         and w.lemma not in ppi_standard_form_lemmas
         and _stemmer.stem(w.lemma) not in ppi_standard_stems
+        and w.upos not in rules["excluded_upos"]
+        and w.deprel not in rules["excluded_deprel"]
+        
     ]
 
     subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp, occurrence)}</MOD>" for w in ppi_modifs]

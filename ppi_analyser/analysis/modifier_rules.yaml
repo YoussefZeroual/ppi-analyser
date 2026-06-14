@@ -1,7 +1,6 @@
 upos:
   - ADV
   - ADJ
-  - INTJ
 
 deprel:
   - obl:mod
@@ -13,3 +12,10 @@ deprel:
 lemma:
   - dieu
   - diable
+  
+excluded_upos:
+  - PUNKT
+
+excluded_deprel:
+  -
+
