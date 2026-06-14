@@ -13,7 +13,7 @@ services:
     container_name: ppi_analyser
     restart: unless-stopped
     ports:
-      - "${HOST_PORT:-8000}:5000"
+      - "${HOST_PORT:-5000}:8000"
     volumes:
       - ppi_data:/data
       - stanza_models:/root/stanza_resources
@@ -29,7 +29,7 @@ services:
     container_name: ppi_analyser
     restart: "unless-stopped"
     ports:
-      - "${HOST_PORT:-8000}:5000"
+      - "${HOST_PORT:-5000}:8000"
     volumes:
       - .:/app
       - ppi_data:/data
