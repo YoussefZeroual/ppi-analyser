@@ -1,15 +1,12 @@
 # docker-compose.yml
 # ─────────────────────────────────────────────────────────────────────────────
-# PROD (no hot-reload):
-#   docker compose --profile prod up -d
-#
-# DEV (bind-mount + hot-reload, edits reflected instantly):
-#   docker compose up
+#   docker compose up -d
 # ─────────────────────────────────────────────────────────────────────────────
 services:
-  # ── Production service ──────────────────────────────────────────────────────
   ppi:
+    build: .
     image: youssefzeroual/ppi_analyser:latest
+    pull_policy: always
     container_name: ppi_analyser
     restart: unless-stopped
     ports:
@@ -17,40 +14,9 @@ services:
     volumes:
       - ppi_data:/data
       - stanza_models:/root/stanza_resources
-    env_file:
-      - .env
-    environment:
-      UVICORN_WORKERS: "1"
-    profiles: ["prod"]
-
-  # ── Dev service (bind-mount, hot-reload) ────────────────────────────────────
-  ppi_dev:
-    image: youssefzeroual/ppi_analyser:latest
-    container_name: ppi_analyser_dev
-    restart: unless-stopped
-    ports:
-      - "${HOST_PORT:-5000}:8000"
-    volumes:
-      - .:/app
-      - ppi_data:/data
-      - stanza_models:/root/stanza_resources
-    env_file:
-      - .env
     environment:
       UVICORN_WORKERS: "1"
       UVICORN_RELOAD: "1"
-
-  # ── WUD (auto-update on new image) ───────────────────────────────────────────
-  wud:
-    image: fmartinou/whats-up-docker:latest
-    container_name: wud
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WUD_REGISTRY_DOCKERHUB_LOGIN: "${DOCKERHUB_USER}"
-      WUD_REGISTRY_DOCKERHUB_TOKEN: "${DOCKERHUB_TOKEN}"
-      WUD_TRIGGER_DOCKER_LOCAL_PULL: "true"
-    restart: unless-stopped
 
 volumes:
   ppi_data:

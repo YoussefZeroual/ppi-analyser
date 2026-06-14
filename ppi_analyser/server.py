@@ -534,15 +534,19 @@ def admin_set_env(
 @app.post("/admin/pull")
 def admin_pull(x_admin_secret: str = _Header(None)):
     _check_admin(x_admin_secret)
+    cwd = Path(__file__).parent
     try:
         result = subprocess.run(
             ["git", "pull"],
-            capture_output=True, text=True, cwd=Path(__file__).parent
+            capture_output=True, text=True, cwd=cwd
         )
         return {
-            "stdout": result.stdout,
-            "stderr": result.stderr,
+            "stdout": result.stdout or "(no output)",
+            "stderr": result.stderr or "(no stderr)",
             "returncode": result.returncode,
+            "cwd": str(cwd),
         }
+    except FileNotFoundError:
+        raise HTTPException(500, "git not found — add: RUN apt-get install -y git to your Dockerfile")
     except Exception as e:
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, f"{type(e).__name__}: {e}")
