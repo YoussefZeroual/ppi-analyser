@@ -538,7 +538,7 @@ def admin_pull(x_admin_secret: str = _Header(None)):
     GITHUB_REPO = _os.getenv("GITHUB_REPO", "YoussefZeroual/ppi-analyser")
     GITHUB_BRANCH = _os.getenv("GITHUB_BRANCH", "main")
     url = f"https://github.com/{GITHUB_REPO}/archive/refs/heads/{GITHUB_BRANCH}.zip"
-    cwd = Path(__file__).parent
+    cwd = Path(__file__).parent.parent
     try:
         with urllib.request.urlopen(url) as r:
             z = zipfile.ZipFile(_io.BytesIO(r.read()))
