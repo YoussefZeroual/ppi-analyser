@@ -1,6 +1,6 @@
 # server.py — drop next to core.py
 # Run: uvicorn server:app --reload --port 8000
-
+# zzaaaabba
 import uuid, shutil, threading, traceback, logging, json, io, multiprocessing
 from datetime import datetime, timezone
 from pathlib import Path
@@ -534,19 +534,26 @@ def admin_set_env(
 @app.post("/admin/pull")
 def admin_pull(x_admin_secret: str = _Header(None)):
     _check_admin(x_admin_secret)
+    import urllib.request, zipfile, io as _io
+    GITHUB_REPO = _os.getenv("GITHUB_REPO", "YoussefZeroual/ppi-analyser")
+    GITHUB_BRANCH = _os.getenv("GITHUB_BRANCH", "main")
+    url = f"https://github.com/{GITHUB_REPO}/archive/refs/heads/{GITHUB_BRANCH}.zip"
     cwd = Path(__file__).parent
     try:
-        result = subprocess.run(
-            ["git", "pull"],
-            capture_output=True, text=True, cwd=cwd
-        )
-        return {
-            "stdout": result.stdout or "(no output)",
-            "stderr": result.stderr or "(no stderr)",
-            "returncode": result.returncode,
-            "cwd": str(cwd),
-        }
-    except FileNotFoundError:
-        raise HTTPException(500, "git not found — add: RUN apt-get install -y git to your Dockerfile")
+        with urllib.request.urlopen(url) as r:
+            z = zipfile.ZipFile(_io.BytesIO(r.read()))
+        updated = 0
+        for member in z.namelist():
+            parts = Path(member).parts
+            if len(parts) < 2:
+                continue
+            target = cwd / Path(*parts[1:])
+            if member.endswith("/"):
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(z.read(member))
+                updated += 1
+        return {"status": "ok", "files_updated": updated, "repo": GITHUB_REPO, "branch": GITHUB_BRANCH}
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {e}")
