@@ -1,7 +1,7 @@
 # docker-compose.yml
 # ─────────────────────────────────────────────────────────────────────────────
 # PROD (no hot-reload):
-#   docker compose up -d
+#   docker compose --profile prod up -d
 #
 # DEV (bind-mount + hot-reload, edits reflected instantly):
 #   docker compose --profile dev up
@@ -9,11 +9,11 @@
 services:
   # ── Production service ──────────────────────────────────────────────────────
   ppi:
-    image: youssefzeroual/ppi_analyser:latest   # pulled from Docker Hub
+    image: youssefzeroual/ppi_analyser:latest
     container_name: ppi_analyser
     restart: unless-stopped
     ports:
-      - "${HOST_PORT:-8000}:8000"
+      - "${HOST_PORT:-8000}:5000"
     volumes:
       - ppi_data:/data
       - stanza_models:/root/stanza_resources
@@ -21,17 +21,15 @@ services:
       - .env
     environment:
       UVICORN_WORKERS: "1"
-      UVICORN_RELOAD: "0"
-    profiles: ["prod", ""]
+    profiles: ["prod"]
 
   # ── Dev service (bind-mount, hot-reload) ────────────────────────────────────
   ppi_dev:
-    build: .                              # still builds locally
     image: youssefzeroual/ppi_analyser:latest
-    container_name: ppi_analyser_dev
-    restart: "no"
+    container_name: ppi_analyser
+    restart: "unless-stopped"
     ports:
-      - "${HOST_PORT:-8000}:8000"
+      - "${HOST_PORT:-8000}:5000"
     volumes:
       - .:/app
       - ppi_data:/data
@@ -41,15 +39,6 @@ services:
     environment:
       UVICORN_WORKERS: "1"
       UVICORN_RELOAD: "1"
-    profiles: ["dev"]
-
-  # ── Watchtower (auto-update prod image) ─────────────────────────────────────
-  watchtower:
-    image: containrrr/watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 30 --cleanup
-    restart: unless-stopped
 
 volumes:
   ppi_data:
