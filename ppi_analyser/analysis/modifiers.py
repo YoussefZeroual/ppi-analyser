@@ -69,6 +69,9 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
         return [], []
 
     ppi_sent = tagged_ppi_nlp
+    ppi_sent = tagged_ppi_nlp
+    if hasattr(ppi_sent, 'sentences'):  # Document passed instead of Sentence
+        ppi_sent = ppi_sent.sentences[0] if ppi_sent.sentences else None
     if ppi_sent is None:
         logger.debug("find_modifier: PPI sentence not found in text")
         return [], []
