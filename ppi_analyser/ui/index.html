@@ -2220,8 +2220,8 @@ function AdminPanel() {
         method: "POST",
         headers: { "x-admin-secret": secret }
       }).then(function(r) { return r.json(); }).then(function(d) {
-        setPullOut(d.stdout + (d.stderr ? "\n[stderr]\n" + d.stderr : ""));
-        setMsg(d.returncode === 0 ? { ok: true, text: "✓ Pull réussi." } : { ok: false, text: "Erreur (code " + d.returncode + ")." });
+        setPullOut(d.files_updated !== undefined ? (d.files_updated + " fichier(s) mis à jour.") : JSON.stringify(d));
+        setMsg(d.status === "ok" ? { ok: true, text: "✓ Pull réussi." } : { ok: false, text: "Erreur: " + JSON.stringify(d) });
       }).catch(function() { setMsg({ ok: false, text: "Erreur réseau." }); })
       .finally(function() { setLoading(false); });
     });
