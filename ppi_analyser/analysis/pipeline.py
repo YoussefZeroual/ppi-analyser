@@ -76,11 +76,11 @@ def _fill_nlp_preprocessed(
     occurrence_index = len(re.findall(re.escape(ppi_text_norm), pre_ppi_norm, re.IGNORECASE))
 
     full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
-    full_turn = full_turn.replace("-"," ")
+    full_turn = full_turn.replace("-"," ").lower()
     full_turn = full_turn.replace("/", "")
     full_turn = re.sub(r'(<.*?>)', '', full_turn)
     full_turn = re.sub(r'(\[.*?\])', '', full_turn).strip()
-    surface_sent = surface_sent.replace("-"," ")
+    surface_sent = surface_sent.replace("-"," ").lower()
     surface_sent = re.sub(r'(<.*?>)', '', surface_sent).strip()
     surface_sent_nlp = state.nlp(surface_sent)
     full_turn_nlp_doc = state.nlp(full_turn)
@@ -89,7 +89,7 @@ def _fill_nlp_preprocessed(
         (seg for seg in segments if surface_sent.lower() in seg.lower()),
         full_turn,
     )
-    full_turn_stripped = full_turn_stripped.replace("-"," ")
+    full_turn_stripped = full_turn_stripped.replace("-"," ").lower()
     full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
     sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
     if sent is None:
