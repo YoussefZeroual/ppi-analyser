@@ -79,7 +79,7 @@ def _fill_nlp_preprocessed(
     full_turn = full_turn.replace("-"," ")
     
     matches = re.findall(r"<PPI>(.*?)[:!,;?…]", full_turn)
-    if  matches[0] is None:
+    if  matches is None:
     	logger.warning("Couldnt cut PPI from first punctuation")
     full_turn_stripped = matches[0] if matches else full_turn
     full_turn_stripped = re.sub(r"</?PPI>","",full_turn_stripped)
