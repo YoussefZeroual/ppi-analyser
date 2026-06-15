@@ -19,6 +19,12 @@ load_dotenv()
 UPLOADS_DIR = Path(_os.getenv("PPI_UPLOAD_DIR", Path.home() / ".ppi_analyser" / "uploads"))
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
+USER_TURN_MODEL= _os.getenv("USER_TURN_MODEL","NO_MODEL")  
+ANALYSIS_MODEL=_os.getenv("ANALYSIS_MODEL","NO_MODEL") 
+
+
+
+
 jobs: dict[str, dict[str, Any]] = {}
 job_logs: dict[str, list[str]] = {}
 _jobs_lock = threading.Lock()
@@ -88,10 +94,11 @@ MODELS_MAPPING = {
     "gemma":          "ollama_gemma3:27b",
     "mistral_local":"ollama_mistral:latest",
     "deepseek_local":"ollama_deepseek-r1:32b",
-    "mistral_batch":"mistral_batch_mistral-large-latest"
+    "mistral_batch":"mistral_batch_mistral-large-latest",
+    "NO_MODEL":"NO_MODEL"
 }
 
-SPEAKER_DETECTION_MODEL = MODELS_MAPPING["deepseek"]
+SPEAKER_DETECTION_MODEL = MODELS_MAPPING[USER_TURN_MODEL]
 
 # ── Worker (runs in a separate Process) ─────────────────────────────────────
 
@@ -99,7 +106,9 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
              model_key: str, mode: str, start_sent: int,
              max_sentences: int | str, batch_size: int, n_threads: int,
              use_analysis_cache: bool, selected_props: list[str] | None,
-             queue: multiprocessing.Queue):
+             queue: multiprocessing.Queue,
+             analysis_model: str = "NO_MODEL",
+             speaker_detection_model: str = "NO_MODEL"):
     """
     Runs entirely in a child Process. Communicates back via queue messages:
       {"type": "log",    "msg": str}
@@ -134,7 +143,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         send("error", msg=f"Mode inconnu : '{mode}'. Valeurs acceptées : {[m.value for m in AnalysisMode]}")
         return
 
-    model_key = "deepseek"  # override for test
+    model_key = analysis_model
     if model_key not in MODELS_MAPPING:
         send("error", msg=f"Modèle inconnu : '{model_key}'. Valeurs acceptées : {list(MODELS_MAPPING)}")
         return
@@ -167,7 +176,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         use_analysis_cache=use_analysis_cache,
         analysis_cache_path=_os.getenv("PPI_CACHE_PATH",
             str(Path.home() / ".ppi_analyser" / "analysis_cache.json")),
-        speaker_detection_model=SPEAKER_DETECTION_MODEL,
+        speaker_detection_model=MODELS_MAPPING.get(speaker_detection_model, speaker_detection_model),
         custom_properties=props_for_pipeline,
     )
 
@@ -382,7 +391,8 @@ async def start_analysis(
         target=_run_job,
         args=(job_id, str(dest), expression, model, mode,
               start_sent, max_s, batch_size, n_threads,
-              use_analysis_cache, props_list, queue),
+              use_analysis_cache, props_list, queue,
+              ANALYSIS_MODEL, SPEAKER_DETECTION_MODEL),
         daemon=True,
     )
     proc.start()
@@ -522,12 +532,17 @@ def admin_set_env(
     payload: dict,
     x_admin_secret: str = _Header(None),
 ):
+    global SPEAKER_DETECTION_MODEL, ANALYSIS_MODEL
     _check_admin(x_admin_secret)
     key = payload.get("key", "").strip()
     value = payload.get("value", "")
     if not key:
         raise HTTPException(400, "Missing key")
     _os.environ[key] = value
+    if key == "USER_TURN_MODEL":
+        SPEAKER_DETECTION_MODEL = MODELS_MAPPING.get(value, value)
+    elif key == "ANALYSIS_MODEL":
+        ANALYSIS_MODEL = value
     return {"set": key}
 
 

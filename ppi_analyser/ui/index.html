@@ -2240,15 +2240,55 @@ function AdminPanel() {
     React.createElement("div", { className: "card-title" }, "Variable d'environnement"),
     React.createElement("div", { className: "row" },
       React.createElement("div", { className: "field" },
-        React.createElement("label", null, "Clé (ex: DEEPSEEK_API_KEY)"),
-        React.createElement("input", { placeholder: "NOM_VARIABLE", value: envKey, onChange: function(e) { setEnvKey(e.target.value); } })
+        React.createElement("label", null, "Variable"),
+        React.createElement("select", { value: envKey, onChange: function(e) { setEnvKey(e.target.value); setEnvVal(""); } },
+          React.createElement("option", { value: "" }, "-- Choisir une variable --"),
+          React.createElement("optgroup", { label: "Modèles" },
+            React.createElement("option", { value: "USER_TURN_MODEL" }, "USER_TURN_MODEL"),
+            React.createElement("option", { value: "ANALYSIS_MODEL" }, "ANALYSIS_MODEL")
+          ),
+          React.createElement("optgroup", { label: "Clés API" },
+            React.createElement("option", { value: "MISTRAL_API_KEY" }, "MISTRAL_API_KEY"),
+            React.createElement("option", { value: "DEEPSEEK_API_KEY" }, "DEEPSEEK_API_KEY"),
+            React.createElement("option", { value: "OPENAI_API_KEY" }, "OPENAI_API_KEY")
+          ),
+          React.createElement("optgroup", { label: "Chemins & Config" },
+            React.createElement("option", { value: "PPI_UPLOAD_DIR" }, "PPI_UPLOAD_DIR"),
+            React.createElement("option", { value: "PPI_OUTPUT_DIR" }, "PPI_OUTPUT_DIR"),
+            React.createElement("option", { value: "PPI_CACHE_PATH" }, "PPI_CACHE_PATH"),
+            React.createElement("option", { value: "ADMIN_SECRET" }, "ADMIN_SECRET"),
+            React.createElement("option", { value: "GITHUB_REPO" }, "GITHUB_REPO"),
+            React.createElement("option", { value: "GITHUB_BRANCH" }, "GITHUB_BRANCH")
+          )
+        )
       ),
       React.createElement("div", { className: "field" },
-        React.createElement("label", null, "Valeur"),
-        React.createElement("input", { type: "password", placeholder: "valeur", value: envVal, onChange: function(e) { setEnvVal(e.target.value); } })
+        React.createElement("label", null,
+          ["USER_TURN_MODEL", "ANALYSIS_MODEL"].includes(envKey)
+            ? "Valeur (nom du modèle)"
+            : "Valeur"
+        ),
+        ["USER_TURN_MODEL", "ANALYSIS_MODEL"].includes(envKey)
+          ? React.createElement("select", { value: envVal, onChange: function(e) { setEnvVal(e.target.value); } },
+              React.createElement("option", { value: "" }, "-- Choisir un modèle --"),
+              React.createElement("option", { value: "mistral_large" }, "mistral_large"),
+              React.createElement("option", { value: "mistral_medium" }, "mistral_medium"),
+              React.createElement("option", { value: "mistral_batch" }, "mistral_batch"),
+              React.createElement("option", { value: "deepseek" }, "deepseek"),
+              React.createElement("option", { value: "gemma" }, "gemma (ollama)"),
+              React.createElement("option", { value: "mistral_local" }, "mistral_local (ollama)"),
+              React.createElement("option", { value: "deepseek_local" }, "deepseek_local (ollama)"),
+              React.createElement("option", { value: "NO_MODEL" }, "NO_MODEL")
+            )
+          : React.createElement("input", {
+              type: ["MISTRAL_API_KEY","DEEPSEEK_API_KEY","OPENAI_API_KEY","ADMIN_SECRET"].includes(envKey) ? "password" : "text",
+              placeholder: "valeur",
+              value: envVal,
+              onChange: function(e) { setEnvVal(e.target.value); }
+            })
       )
     ),
-    React.createElement("button", { className: "btn btn-primary", onClick: setEnv, disabled: loading || !envKey.trim() }, "Définir la variable"),
+    React.createElement("button", { className: "btn btn-primary", onClick: setEnv, disabled: loading || !envKey.trim() || !envVal.trim() }, "Définir la variable"),
 
     React.createElement("hr", { style: { border: "none", borderTop: "1px solid var(--border)", margin: "16px 0" } }),
 
