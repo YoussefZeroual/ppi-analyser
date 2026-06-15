@@ -78,3 +78,4 @@ class PipelineConfig:
     use_analysis_cache: bool = False
     analysis_cache_path: str | None = None  # e.g. "/home/joe/.ppi_analyser/analysis_cache.json"
     non_ia:list[int]  =  None
+    exporting_mode:str = "simple"

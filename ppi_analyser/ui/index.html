@@ -892,6 +892,7 @@ var DEFAULTS = {
   n_threads: 8,
   // hidden from UI
   use_analysis_cache: true,
+  exporting_mode: "simple",
   selected_props: ALL_PROPS.map(function (p) {
     return p.key;
   })
@@ -1034,6 +1035,7 @@ function AnalyseForm(_ref8) {
             fd.append("batch_size", String(s.batch_size));
             fd.append("n_threads", String(s.n_threads));
             fd.append("use_analysis_cache", s.use_analysis_cache ? "true" : "false");
+            fd.append("exporting_mode", s.exporting_mode || "simple");
             props = advanced ? s.selected_props : DEFAULTS.selected_props;
             fd.append("selected_props", JSON.stringify(props));
             _context.p = 4;
@@ -1273,7 +1275,23 @@ function AnalyseForm(_ref8) {
     onChange: function onChange(v) {
       return set("selected_props", v);
     }
-  }))), error && /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "field",
+    style: { marginTop: 14 }
+  }, /*#__PURE__*/React.createElement(FieldLabel, {
+    info: "Mode d'export des résultats. « Simple » génère uniquement le fichier Excel de concordances. « Complet » génère en plus les exports PDF et HTML avec les justifications du modèle."
+  }, "Mode d'export"), /*#__PURE__*/React.createElement("div", {
+    className: "mode-toggle",
+    style: { marginTop: 6 }
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "mode-btn ".concat((settings.exporting_mode || "simple") === "simple" ? "active" : ""),
+    onClick: function onClick() { return set("exporting_mode", "simple"); }
+  }, "Excel simple"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "mode-btn ".concat((settings.exporting_mode || "simple") === "full" ? "active" : ""),
+    onClick: function onClick() { return set("exporting_mode", "full"); }
+  }, "Excel + PDF + HTML avec justifications"))), error && /*#__PURE__*/React.createElement("div", {
     className: "err-inline"
   }, error), hasRunningJob && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1399,7 +1417,7 @@ function JobRecap(_ref0) {
       return p.key === k;
     })) === null || _ALL_PROPS$find === void 0 ? void 0 : _ALL_PROPS$find.label) !== null && _ALL_PROPS$find$label !== void 0 ? _ALL_PROPS$find$label : k;
   }).join(", ") : "toutes";
-  var items = [["Fichier", params.original_file], ["Mode", (_modeLabels$params$mo = modeLabels[params.mode]) !== null && _modeLabels$params$mo !== void 0 ? _modeLabels$params$mo : params.mode], ["Début (Excel)", ((_params$start_sent = params.start_sent) !== null && _params$start_sent !== void 0 ? _params$start_sent : 0) + 2], ["Phrases max", (_params$max_sentences = params.max_sentences) !== null && _params$max_sentences !== void 0 ? _params$max_sentences : "all"], ["Batch size", params.batch_size], ["Threads", params.n_threads], ["Cache", params.use_analysis_cache ? "oui" : "non"]];
+  var items = [["Fichier", params.original_file], ["Mode", (_modeLabels$params$mo = modeLabels[params.mode]) !== null && _modeLabels$params$mo !== void 0 ? _modeLabels$params$mo : params.mode], ["Début (Excel)", ((_params$start_sent = params.start_sent) !== null && _params$start_sent !== void 0 ? _params$start_sent : 0) + 2], ["Phrases max", (_params$max_sentences = params.max_sentences) !== null && _params$max_sentences !== void 0 ? _params$max_sentences : "all"], ["Batch size", params.batch_size], ["Threads", params.n_threads], ["Cache", params.use_analysis_cache ? "oui" : "non"], ["Export", params.exporting_mode === "full" ? "Excel + PDF + HTML" : "Excel simple"]];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 4
@@ -2053,6 +2071,7 @@ function App() {
       batch_size: (_job$params$batch_siz = job.params.batch_size) !== null && _job$params$batch_siz !== void 0 ? _job$params$batch_siz : 5,
       n_threads: (_job$params$n_threads = job.params.n_threads) !== null && _job$params$n_threads !== void 0 ? _job$params$n_threads : 8,
       use_analysis_cache: job.params.use_analysis_cache !== false,
+      exporting_mode: job.params.exporting_mode || "simple",
       selected_props: function () {
         try {
           var sp = job.params.selected_props;
@@ -2187,55 +2206,38 @@ function App() {
 // ── AdminPanel ────────────────────────────────────────────────────────────
 
 function AdminPanel() {
-  var _useState_a = useState(""), _useState_a2 = _slicedToArray(_useState_a, 2), secret = _useState_a2[0], setSecret = _useState_a2[1];
   var _useState_b = useState(""), _useState_b2 = _slicedToArray(_useState_b, 2), envKey = _useState_b2[0], setEnvKey = _useState_b2[1];
   var _useState_c = useState(""), _useState_c2 = _slicedToArray(_useState_c, 2), envVal = _useState_c2[0], setEnvVal = _useState_c2[1];
   var _useState_d = useState(null), _useState_d2 = _slicedToArray(_useState_d, 2), msg = _useState_d2[0], setMsg = _useState_d2[1];
   var _useState_e = useState(null), _useState_e2 = _slicedToArray(_useState_e, 2), pullOut = _useState_e2[0], setPullOut = _useState_e2[1];
   var _useState_f = useState(false), _useState_f2 = _slicedToArray(_useState_f, 2), loading = _useState_f2[0], setLoading = _useState_f2[1];
 
-  function withSecret(fn) {
-    if (!secret.trim()) { setMsg({ ok: false, text: "Entrez le secret admin." }); return; }
-    fn();
-  }
-
   function setEnv() {
-    withSecret(function() {
-      setLoading(true); setMsg(null);
+    setLoading(true); setMsg(null);
       fetch(API + "/admin/set-env", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-secret": secret },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: envKey.trim(), value: envVal })
       }).then(function(r) { return r.json(); }).then(function(d) {
         setMsg(d.set ? { ok: true, text: "✓ " + d.set + " défini." } : { ok: false, text: d.detail });
       }).catch(function() { setMsg({ ok: false, text: "Erreur réseau." }); })
       .finally(function() { setLoading(false); });
-    });
   }
 
   function pull() {
-    withSecret(function() {
-      setLoading(true); setPullOut(null); setMsg(null);
+    setLoading(true); setPullOut(null); setMsg(null);
       fetch(API + "/admin/pull", {
         method: "POST",
-        headers: { "x-admin-secret": secret }
+        headers: {}
       }).then(function(r) { return r.json(); }).then(function(d) {
         setPullOut(d.files_updated !== undefined ? (d.files_updated + " fichier(s) mis à jour.") : JSON.stringify(d));
         setMsg(d.status === "ok" ? { ok: true, text: "✓ Pull réussi." } : { ok: false, text: "Erreur: " + JSON.stringify(d) });
       }).catch(function() { setMsg({ ok: false, text: "Erreur réseau." }); })
       .finally(function() { setLoading(false); });
-    });
   }
 
   return React.createElement("div", { className: "card" },
     React.createElement("div", { className: "card-title" }, "⚙️ Admin"),
-
-    React.createElement("div", { className: "field" },
-      React.createElement("label", null, "Secret admin"),
-      React.createElement("input", { type: "password", placeholder: "ADMIN_SECRET", value: secret, onChange: function(e) { setSecret(e.target.value); } })
-    ),
-
-    React.createElement("hr", { style: { border: "none", borderTop: "1px solid var(--border)", margin: "16px 0" } }),
 
     React.createElement("div", { className: "card-title" }, "Variable d'environnement"),
     React.createElement("div", { className: "row" },

@@ -117,12 +117,12 @@ def _build_output_paths(config: PipelineConfig) -> OutputPaths:
     from pathlib import Path
     base = config.output_dir
     expression = config.expression.replace(" ", "_").replace("'", "")
-    stem = Path(config.sentence_file).stem
     tag = str(config.sent_list) if config.sent_list else f"{config.start_sent}_{config.max_sentences}"
+    mode = re.sub(r'(_.*?)','',config.mode)
     return OutputPaths(
-        excel=f"{base}/df_output_{expression}_{stem}_{tag}.xlsx",
-        excel_simple=f"{base}/df_output_{expression}_{stem}_{tag}_simple.xlsx",
-        pdf=f"{base}/Output_{expression}_{stem}_{tag}.pdf",
+        excel=f"{base}/{expression}_{tag}_{mode}.xlsx",
+        excel_simple=f"{base}/{expression}_{tag}_{mode}_simple.xlsx",
+        pdf=f"{base}/{expression}_{tag}_{mode}.pdf",
     )
 
 
@@ -385,12 +385,15 @@ def _build_dataframe(
 def _export(df: pd.DataFrame, config: PipelineConfig, state: SessionState) -> None:
     paths = _build_output_paths(config)
     state.total_time = time.perf_counter() - state.start_time
-    export_excel(df, paths.excel)
+    if config.exporting_mode == "full":
+        export_excel(df, paths.excel)
     export_excel_simple(df, paths.excel_simple, sentence_file=config.sentence_file, config=config) # added session state to account for sent id and fix indices problem
-    try:
-        export_pdf(df, state, paths.pdf, config.mode)
-    except Exception as e:
-        logger.warning("PDF export failed: %s", e)
+    if config.exporting_mode == "full":
+        try:
+	    	
+            export_pdf(df, state, paths.pdf, config.mode)
+        except Exception as e:
+            logger.warning("PDF export failed: %s", e)
 
 
 # ---------------------------------------------------------------------------

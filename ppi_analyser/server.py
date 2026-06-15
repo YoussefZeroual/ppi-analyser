@@ -19,8 +19,8 @@ load_dotenv()
 UPLOADS_DIR = Path(_os.getenv("PPI_UPLOAD_DIR", Path.home() / ".ppi_analyser" / "uploads"))
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
-USER_TURN_MODEL= _os.getenv("USER_TURN_MODEL","NO_MODEL")  
-ANALYSIS_MODEL=_os.getenv("ANALYSIS_MODEL","NO_MODEL") 
+USER_TURN_MODEL= _os.getenv("USER_TURN_MODEL","mistral_large")  
+ANALYSIS_MODEL=_os.getenv("ANALYSIS_MODEL","mistral_batch") 
 
 
 
@@ -108,7 +108,8 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
              use_analysis_cache: bool, selected_props: list[str] | None,
              queue: multiprocessing.Queue,
              analysis_model: str = "NO_MODEL",
-             speaker_detection_model: str = "NO_MODEL"):
+             speaker_detection_model: str = "NO_MODEL",
+             exporting_mode: str = "simple"):
     """
     Runs entirely in a child Process. Communicates back via queue messages:
       {"type": "log",    "msg": str}
@@ -178,6 +179,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
             str(Path.home() / ".ppi_analyser" / "analysis_cache.json")),
         speaker_detection_model=MODELS_MAPPING.get(speaker_detection_model, speaker_detection_model),
         custom_properties=props_for_pipeline,
+        exporting_mode=exporting_mode,
     )
 
     try:
@@ -342,6 +344,7 @@ async def start_analysis(
     n_threads:          int        = Form(8),
     use_analysis_cache: bool       = Form(True),
     selected_props:     str        = Form("[]"),
+    exporting_mode:     str        = Form("simple"),
 ):
     global _current_process, _current_job_id
 
@@ -379,6 +382,7 @@ async def start_analysis(
         original_file=file.filename, start_sent=start_sent,
         max_sentences=max_s, batch_size=batch_size, n_threads=n_threads,
         use_analysis_cache=use_analysis_cache, selected_props=props_list,
+        exporting_mode=exporting_mode,
     )
 
     with _jobs_lock:
@@ -392,7 +396,7 @@ async def start_analysis(
         args=(job_id, str(dest), expression, model, mode,
               start_sent, max_s, batch_size, n_threads,
               use_analysis_cache, props_list, queue,
-              ANALYSIS_MODEL, SPEAKER_DETECTION_MODEL),
+              ANALYSIS_MODEL, SPEAKER_DETECTION_MODEL, exporting_mode),
         daemon=True,
     )
     proc.start()
@@ -519,21 +523,11 @@ def health():
 
 # ── Admin endpoints ──────────────────────────────────────────────────────────
 
-_ADMIN_SECRET = _os.getenv("ADMIN_SECRET", "changeme")
-
-def _check_admin(x_admin_secret: str = None):
-    if x_admin_secret != _ADMIN_SECRET:
-        raise HTTPException(403, "Forbidden")
-
-from fastapi import Header as _Header
-
 @app.post("/admin/set-env")
 def admin_set_env(
     payload: dict,
-    x_admin_secret: str = _Header(None),
 ):
     global SPEAKER_DETECTION_MODEL, ANALYSIS_MODEL
-    _check_admin(x_admin_secret)
     key = payload.get("key", "").strip()
     value = payload.get("value", "")
     if not key:
@@ -547,8 +541,7 @@ def admin_set_env(
 
 
 @app.post("/admin/pull")
-def admin_pull(x_admin_secret: str = _Header(None)):
-    _check_admin(x_admin_secret)
+def admin_pull():
     import urllib.request, zipfile, io as _io
     GITHUB_REPO = _os.getenv("GITHUB_REPO", "YoussefZeroual/ppi-analyser")
     GITHUB_BRANCH = _os.getenv("GITHUB_BRANCH", "main")
