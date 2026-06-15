@@ -49,7 +49,7 @@ def _fill_nlp_preprocessed(
     """Compute NLP objects for a single sentence and append to state.nlp_preprocessed_turn."""
     from ppi_analyser.analysis.modifiers import get_ppi_sent
     # fix: double occurrence of same ppi in the same conv, we take the first one as the relevant one for the sentence
-
+    logger.warning("fixed %s",fixed)
     ppi_matches = re.findall(r'<PPI>(.*?)</PPI>', fixed, re.IGNORECASE)
     ppi_text = ppi_matches[0] if ppi_matches else ""
 
@@ -76,26 +76,28 @@ def _fill_nlp_preprocessed(
     occurrence_index = len(re.findall(re.escape(ppi_text_norm), pre_ppi_norm, re.IGNORECASE))
 
     full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
-    full_turn = full_turn.replace("-"," ").lower()
+    full_turn = full_turn.replace("-"," ")
+    
+    matches = re.findall(r"<PPI>(.*?)[:!,;?…]", full_turn)
+    if  matches[0] is None:
+    	logger.warning("Couldnt cut PPI from first punctuation")
+    full_turn_stripped = matches[0] if matches else full_turn
+    full_turn_stripped = re.sub(r"</?PPI>","",full_turn_stripped)
+    logger.warning("full_turn_stripped %s",full_turn_stripped)
+    
     full_turn = full_turn.replace("/", "")
     full_turn = re.sub(r'(<.*?>)', '', full_turn)
     full_turn = re.sub(r'(\[.*?\])', '', full_turn).strip()
     surface_sent = surface_sent.replace("-"," ").lower()
-    logger.warning("surface_sent %s",surface_sent)
     surface_sent = re.sub(r'(<.*?>)', '', surface_sent).strip()
     surface_sent_nlp = state.nlp(surface_sent)
     full_turn_nlp_doc = state.nlp(full_turn)
-    segments = re.split(r'[,;.?!…:]|\bque\b|\.\.\.', full_turn) # <--- added 'que' as a delimiter to exclude completives
-    full_turn_stripped = next(
-        (seg for seg in segments if surface_sent.lower() in seg.lower()),
-        full_turn,
-    )
+   
+
     full_turn_stripped = full_turn_stripped.replace("-"," ").lower()
-    logger.warning("surface_sent %s",surface_sent)
     full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
     sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
     if sent is None:
-        logger.warning("get_ppi_sent returned None for '%s', falling back to surface_sent_nlp", surface_sent[:60])
         forme_nlp_doc = surface_sent_nlp          # Document — fallback
     else:
         forme_nlp_doc = state.nlp(sent.text)      # re-parse Sentence → Document
