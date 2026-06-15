@@ -49,7 +49,7 @@ def _fill_nlp_preprocessed(
     """Compute NLP objects for a single sentence and append to state.nlp_preprocessed_turn."""
     from ppi_analyser.analysis.modifiers import get_ppi_sent
     # fix: double occurrence of same ppi in the same conv, we take the first one as the relevant one for the sentence
-    logger.warning("fixed %s",fixed)
+ 
     ppi_matches = re.findall(r'<PPI>(.*?)</PPI>', fixed, re.IGNORECASE)
     ppi_text = ppi_matches[0] if ppi_matches else ""
 
@@ -83,7 +83,7 @@ def _fill_nlp_preprocessed(
     	logger.warning("Couldnt cut PPI from first punctuation")
     full_turn_stripped = matches[0] if matches else full_turn
     full_turn_stripped = re.sub(r"</?PPI>","",full_turn_stripped)
-    logger.warning("full_turn_stripped %s",full_turn_stripped)
+ 
     
     full_turn = full_turn.replace("/", "")
     full_turn = re.sub(r'(<.*?>)', '', full_turn)
