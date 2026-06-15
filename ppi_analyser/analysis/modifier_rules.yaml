@@ -1,18 +1,22 @@
+# Les parties du discours des modifieurs
 upos:
   - ADV
   - ADJ
 
+# dépendances syntaxiques par rapport à la tête de la phrase
 deprel:
   - obl:mod
   - nmod
   - acl:relcl
   - dislocated
   - amod
- 
+# lemmes surajoutés à la PPI standard
 lemma:
   - dieu
   - diable
-  
+
+# à exclure
+
 excluded_upos:
   - PUNKT
 
