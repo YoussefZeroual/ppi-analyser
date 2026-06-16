@@ -78,7 +78,8 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
              queue: multiprocessing.Queue,
              analysis_model: str = "NO_MODEL",
              speaker_detection_model: str = "NO_MODEL",
-             exporting_mode: str = "simple"):
+             exporting_mode: str = "simple",
+             env_dict:dict = None):
     """
     Runs entirely in a child Process. Communicates back via queue messages:
       {"type": "log",    "msg": str}
@@ -86,6 +87,8 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
       {"type": "done",   "data": dict}   — final success payload
       {"type": "error",  "msg": str}     — traceback string
     """
+    import os
+    os.environ.update(env_dict)
     import re as _re
     from ppi_analyser.core import PPIAnalyser
     from ppi_analyser.config import PipelineConfig, AnalysisMode
@@ -369,7 +372,8 @@ async def start_analysis(
               start_sent, max_s, batch_size, n_threads,
               use_analysis_cache, props_list, queue,
               ANALYSIS_MODEL, SPEAKER_DETECTION_MODEL, exporting_mode),
-        daemon=True,
+        kwargs={"env_dict":dict(_os.environ)},
+        daemon=True
     )
     proc.start()
 
