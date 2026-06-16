@@ -240,7 +240,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .ftype{display:inline-block;margin-top:5px;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:3px}
 .ftype.xlsx{background:color-mix(in srgb,var(--accent2) 15%,transparent);color:var(--accent2)}
 .ftype.pdf{background:color-mix(in srgb,#f97316 15%,transparent);color:#f97316}
-.ftype.json{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
+.ftype.html{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
 .ftype.other{background:var(--border);color:var(--muted)}
 .error-box{background:color-mix(in srgb,var(--danger) 8%,transparent);border:1px solid color-mix(in srgb,var(--danger) 30%,transparent);border-radius:var(--radius);padding:14px;font-size:11px;font-family:var(--mono);color:color-mix(in srgb,var(--danger) 80%,var(--text));white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto}
 
@@ -1670,10 +1670,13 @@ function ResultsPanel(_ref13) {
     setFiles = _useState32[1];
   useEffect(function () {
     if (job.status !== "done") return;
+    var ALLOWED_SUFFIXES = [".xlsx", ".pdf", ".html"];
     fetch("".concat(API, "/results/").concat(job.id)).then(function (r) {
       return r.json();
     }).then(function (d) {
-      return setFiles(d.files);
+      return setFiles((d.files || []).filter(function (f) {
+        return ALLOWED_SUFFIXES.indexOf(f.suffix) !== -1;
+      }));
     })["catch"](function () {
       return setFiles([]);
     });
@@ -1681,7 +1684,7 @@ function ResultsPanel(_ref13) {
   function typeClass(s) {
     if (s === ".xlsx") return "xlsx";
     if (s === ".pdf") return "pdf";
-    if (s === ".json") return "json";
+    if (s === ".html") return "html";
     return "other";
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -2307,26 +2310,10 @@ function AdminPanel() {
   );
 }
 
-// Patch App to support admin tab
-var _OrigApp = App;
-App = function AppWithAdmin() {
-  var showAdmin = window.location.search.includes("admin=1");
-  var el = _OrigApp();
-  if (!showAdmin) return el;
+// Patch App to support admin tab (always enabled — see wrapper below)
 
-  // Inject admin tab by cloning the element tree
-  // Simpler: just render our own wrapper
-  return el;
-};
-
-// Override render to inject admin tab when ?admin=1
+// Always wrap App with the admin toggle
 (function() {
-  var showAdmin = window.location.search.includes("admin=1");
-  if (!showAdmin) {
-    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App, null));
-    return;
-  }
-
   // Wrap App to add admin tab
   function AppWithAdmin() {
     var _useState_tab = useState("launch"), _useState_tab2 = _slicedToArray(_useState_tab, 2), adminTab = _useState_tab2[0], setAdminTab = _useState_tab2[1];
