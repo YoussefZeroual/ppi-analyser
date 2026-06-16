@@ -36,39 +36,8 @@ def _get_client_ip(request: Request) -> str:
 _current_process: multiprocessing.Process | None = None
 _current_job_id: str | None = None
 
-# stanza server: required for position detection 
-
-import subprocess
-import sys
-from pathlib import Path
-
-_stanza_process = None
-
-def start_stanza_server():
-    global _stanza_process
-    script_path = Path(__file__).parent / "stanza" / "stanza_api.py"
-    if not script_path.exists():
-        print(f"Warning: {script_path} not found, stanza server not started")
-        return
-    _stanza_process = subprocess.Popen(
-        [sys.executable, str(script_path)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        start_new_session=True  # so we can kill process group
-    )
-    print(f"Started stanza server (PID: {_stanza_process.pid})")
-
-def shutdown_stanza_server():
-    global _stanza_process
-    if _stanza_process and _stanza_process.poll() is None:
-        _stanza_process.terminate()
-        try:
-            _stanza_process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            _stanza_process.kill()
-        print("Stopped stanza server")
-
-
+# Note: the stanza server (required for position detection) is started by the
+# container entrypoint, not by this server. We neither start nor manage it here.
 
 
 # ── Job store helpers ────────────────────────────────────────────────────────
@@ -287,9 +256,12 @@ def _queue_reader(job_id: str, queue: multiprocessing.Queue):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    start_stanza_server()
+    try:
+        result = pull_from_github()
+        print(f"Startup GitHub pull: {result}")
+    except Exception as e:
+        print(f"Warning: startup GitHub pull failed: {type(e).__name__}: {e}")
     yield
-    shutdown_stanza_server()
 
 app = FastAPI(title="PPI Analyser API", version="1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -540,30 +512,39 @@ def admin_set_env(
     return {"set": key}
 
 
-@app.post("/admin/pull")
-def admin_pull():
+def pull_from_github() -> dict:
+    """
+    Downloads the configured branch of the GitHub repo as a zip and overwrites
+    any changed files on disk. Used both at server startup and via the
+    /admin/pull endpoint.
+    """
     import urllib.request, zipfile, io as _io
     GITHUB_REPO = _os.getenv("GITHUB_REPO", "YoussefZeroual/ppi-analyser")
     GITHUB_BRANCH = _os.getenv("GITHUB_BRANCH", "main")
     url = f"https://github.com/{GITHUB_REPO}/archive/refs/heads/{GITHUB_BRANCH}.zip"
     cwd = Path(__file__).parent.parent
+    with urllib.request.urlopen(url) as r:
+        z = zipfile.ZipFile(_io.BytesIO(r.read()))
+    updated = 0
+    for member in z.namelist():
+        parts = Path(member).parts
+        if len(parts) < 2:
+            continue
+        target = cwd / Path(*parts[1:])
+        if member.endswith("/"):
+            target.mkdir(parents=True, exist_ok=True)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            data = z.read(member)
+            if not target.exists() or target.read_bytes() != data:
+                target.write_bytes(data)
+                updated += 1
+    return {"status": "ok", "files_updated": updated, "repo": GITHUB_REPO, "branch": GITHUB_BRANCH}
+
+
+@app.post("/admin/pull")
+def admin_pull():
     try:
-        with urllib.request.urlopen(url) as r:
-            z = zipfile.ZipFile(_io.BytesIO(r.read()))
-        updated = 0
-        for member in z.namelist():
-            parts = Path(member).parts
-            if len(parts) < 2:
-                continue
-            target = cwd / Path(*parts[1:])
-            if member.endswith("/"):
-                target.mkdir(parents=True, exist_ok=True)
-            else:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                data = z.read(member)
-                if not target.exists() or target.read_bytes() != data:
-                    target.write_bytes(data)
-                    updated += 1
-        return {"status": "ok", "files_updated": updated, "repo": GITHUB_REPO, "branch": GITHUB_BRANCH}
+        return pull_from_github()
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {e}")
