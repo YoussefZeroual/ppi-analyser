@@ -21,5 +21,9 @@ excluded_upos:
   - PUNKT
 
 excluded_deprel:
-  -
-
+  - 
+excluded_lemma:
+  - ne
+  - pour
+  - de
+  - avec
