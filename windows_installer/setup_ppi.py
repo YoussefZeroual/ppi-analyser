@@ -60,9 +60,36 @@ def compose_run(args):
     return wsl(f"cd '{wsl_dir}' && podman compose {args}")
 
 
+# ── WSL checks ───────────────────────────────
+
 def wsl_available():
+    """WSL est installé et fonctionnel."""
     code, _, _ = run("wsl --version")
     return code == 0
+
+
+def wsl_distro_installed():
+    """Au moins une distro Linux est enregistrée."""
+    code, out, _ = run("wsl --list --quiet")
+    distros = [l.strip().replace('\x00', '') for l in out.splitlines()
+               if l.strip().replace('\x00', '')]
+    return len(distros) > 0
+
+
+def wsl_distro_ready():
+    """La distro par défaut répond aux commandes bash."""
+    code, _, _ = run('wsl bash -lc "echo ok"')
+    return code == 0
+
+
+def wsl_is_v2():
+    """La distro par défaut tourne en WSL2 (pas WSL1)."""
+    code, out, _ = run("wsl --list --verbose")
+    for line in out.splitlines():
+        clean = line.replace('\x00', '')
+        if '*' in clean and '2' in clean:
+            return True
+    return False
 
 
 def wsl_podman_available():
@@ -118,7 +145,7 @@ class SetupApp(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _build_ui(self):
-        self.geometry("860x500")
+        self.geometry("860x520")
 
         style = ttk.Style()
         style.theme_use("clam")
@@ -146,8 +173,10 @@ class SetupApp(tk.Tk):
         self.step_icons  = {}
         steps = [
             ("python",   "Python"),
-            ("wsl",      "WSL2"),
-            ("podman",   "Podman (dans WSL)"),
+            ("wsl",      "WSL2 (noyau)"),
+            ("distro",   "Ubuntu (distro)"),
+            ("wsl2",     "WSL2 (version)"),
+            ("podman",   "Podman"),
             ("compose",  "podman-compose"),
             ("pull",     "Image Docker"),
             ("run",      "Conteneur"),
@@ -223,7 +252,9 @@ class SetupApp(tk.Tk):
     def _run_setup(self):
         steps = [
             ("python",  self._step_python),
-            ("wsl",     self._step_wsl),
+            ("wsl",     self._step_wsl_kernel),
+            ("distro",  self._step_wsl_distro),
+            ("wsl2",    self._step_wsl_v2),
             ("podman",  self._step_podman),
             ("compose", self._step_compose),
             ("pull",    self._step_pull),
@@ -255,26 +286,72 @@ class SetupApp(tk.Tk):
             raise StepSkipped(f"Python déjà installé ({out})")
         raise StepError("Python introuvable — relance via LANCER_PPI.bat")
 
-    def _step_wsl(self):
+    def _step_wsl_kernel(self):
+        """Vérifie / installe le noyau WSL2."""
         self._log("Vérification de WSL2…")
         if wsl_available():
-            code, out, _ = run("wsl --version")
-            # Extrait juste la 1re ligne (version WSL)
-            version_line = out.splitlines()[0] if out else "WSL disponible"
-            raise StepSkipped(version_line)
+            _, out, _ = run("wsl --version")
+            line = out.splitlines()[0] if out else "WSL disponible"
+            raise StepSkipped(line)
 
-        self._log("Installation de WSL2…", "#fab387")
-        self._log("  (nécessite un redémarrage Windows)", "#fab387")
+        self._log("Installation de WSL2 (noyau)…", "#fab387")
         code, _, err = run("wsl --install --no-distribution")
         if code != 0:
             raise StepError(
                 f"Échec installation WSL2 : {err}\n"
-                "Activez manuellement : Panneau de configuration → "
-                "Fonctionnalités Windows → Sous-système Windows pour Linux"
+                "Active manuellement dans : Fonctionnalités Windows "
+                "→ Sous-système Windows pour Linux + Virtual Machine Platform"
             )
-        raise StepError(
-            "WSL2 installé — REDÉMARRE Windows puis relance ce script."
-        )
+        # WSL installé mais redémarrage requis avant de continuer
+        raise StepError("WSL2 installé — REDÉMARRE Windows puis relance ce script.")
+
+    def _step_wsl_distro(self):
+        """Installe Ubuntu si aucune distro présente."""
+        self._log("Vérification de la distro Linux (Ubuntu)…")
+        if wsl_distro_installed() and wsl_distro_ready():
+            _, out, _ = run("wsl --list --quiet")
+            distros = [l.strip().replace('\x00', '') for l in out.splitlines()
+                       if l.strip().replace('\x00', '')]
+            raise StepSkipped(f"Distro(s) présente(s) : {', '.join(distros)}")
+
+        self._log("Installation d'Ubuntu dans WSL…", "#fab387")
+        self._log("  (première installation : peut prendre 2-5 min)", "#585b70")
+        # --root évite la création interactive d'un compte utilisateur
+        code, _, err = run("wsl --install -d Ubuntu --no-launch")
+        if code != 0:
+            raise StepError(f"Échec installation Ubuntu : {err}")
+
+        # Initialisation silencieuse (configure sans prompt)
+        self._log("  Configuration initiale d'Ubuntu…", "#fab387")
+        run('wsl -d Ubuntu -- bash -lc "true"')
+
+        # Attendre que bash réponde
+        for i in range(12):
+            if wsl_distro_ready():
+                self._log("  Ubuntu prêt.", "#a6e3a1")
+                return
+            time.sleep(5)
+            self._log(f"  … attente distro {(i+1)*5}s", "#585b70")
+        raise StepError("Ubuntu installé mais ne répond pas. Redémarre et relance.")
+
+    def _step_wsl_v2(self):
+        """S'assure que la distro tourne en WSL2 et pas WSL1."""
+        self._log("Vérification version WSL (doit être WSL2)…")
+        if wsl_is_v2():
+            raise StepSkipped("Distro par défaut en WSL2")
+
+        self._log("  Conversion en WSL2…", "#fab387")
+        # Récupère le nom de la distro par défaut
+        _, out, _ = run("wsl --list --quiet")
+        distros = [l.strip().replace('\x00', '') for l in out.splitlines()
+                   if l.strip().replace('\x00', '')]
+        default = distros[0] if distros else "Ubuntu"
+
+        code, _, err = run(f"wsl --set-version {default} 2")
+        if code != 0:
+            raise StepError(f"Impossible de passer en WSL2 : {err}")
+        run("wsl --set-default-version 2")
+        self._log("  Conversion WSL2 terminée.", "#a6e3a1")
 
     def _step_podman(self):
         self._log("Vérification de Podman dans WSL…")
@@ -283,11 +360,7 @@ class SetupApp(tk.Tk):
             raise StepSkipped(f"Podman déjà présent ({out})")
 
         self._log("Installation de Podman dans WSL (apt)…", "#fab387")
-        steps_apt = [
-            "sudo apt-get update -qq",
-            "sudo apt-get install -y podman",
-        ]
-        for cmd in steps_apt:
+        for cmd in ["sudo apt-get update -qq", "sudo apt-get install -y podman"]:
             self._log(f"  $ {cmd}", "#585b70")
             code, _, err = wsl(cmd)
             if code != 0:
@@ -302,16 +375,15 @@ class SetupApp(tk.Tk):
         self._log("Vérification de podman-compose dans WSL…")
         code, out, _ = wsl("podman compose version")
         if code == 0:
-            raise StepSkipped(f"podman-compose déjà présent ({out.splitlines()[0]})")
+            raise StepSkipped(out.splitlines()[0] if out else "podman-compose présent")
 
         self._log("Installation de podman-compose…", "#fab387")
-        # Essai 1 : apt
         code, _, _ = wsl("sudo apt-get install -y podman-compose")
         if code != 0:
-            # Essai 2 : pip
             code, _, err = wsl("pip3 install --user podman-compose")
             if code != 0:
                 raise StepError(f"Échec installation podman-compose : {err}")
+
         code2, out2, _ = wsl("podman compose version")
         if code2 != 0:
             raise StepError("podman-compose installé mais introuvable — redémarre et relance.")
@@ -342,7 +414,7 @@ class SetupApp(tk.Tk):
         self._log(f"  Application sur {self.app_url}", "#89b4fa")
 
     def _step_ready(self):
-        self._log(f"Attente de l'application…")
+        self._log("Attente de l'application…")
         for i in range(20):
             if app_ready(self.app_url):
                 self._log("Application prête !", "#a6e3a1")
