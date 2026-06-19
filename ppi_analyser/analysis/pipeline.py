@@ -75,7 +75,7 @@ def _fill_nlp_preprocessed(
 
     occurrence_index = len(re.findall(re.escape(ppi_text_norm), pre_ppi_norm, re.IGNORECASE))
 
-    full_turn, surface_sent = get_loc_full_turn(fixed, AnalysisMode.ORAL)
+    full_turn, surface_sent = get_loc_full_turn(fixed, mode)
     full_turn = full_turn.replace("-"," ")
     
     matches = re.findall(r"<PPI>[:!,;?…,que](.*?)[:!,;?…,que]", full_turn)
