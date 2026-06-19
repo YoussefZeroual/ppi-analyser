@@ -87,7 +87,7 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
     ppi_modifs = [
         w for w in ppi_sent.words
         if (
-            w.head == ppi_form_head_id and
+            w.head in ppi_form_heads_ids and
             (w.upos in rules["upos"]
             or w.deprel in rules["deprel"]
             or w.lemma in rules["lemma"])
