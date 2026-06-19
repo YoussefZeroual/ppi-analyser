@@ -27,7 +27,7 @@ def is_clausative(conv: str, mode: str) -> bool:
 
 def get_loc_full_turn(conv: str, mode: str) -> tuple[str, str]:
     if mode == "écrit_ia":
-        import logger
+        import logging
         logger = logging.getLogger(__name__)
         logger.warning("%s",conv)
         conv = re.sub(r'(?<!\n)\[', '\n[', conv)
