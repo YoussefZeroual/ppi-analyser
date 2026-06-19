@@ -441,9 +441,27 @@ class SetupApp(tk.Tk):
         if vm_running():
             raise StepSkipped("VM déjà en cours d'exécution")
         code, _, err = run("podman machine start")
-        if code != 0:
+        if code == 0:
+            time.sleep(3)
+            return
+        # Erreur connue Windows : "key already exists" (32773)
+        # La VM est dans un état corrompu → reset et retry
+        if "key already exists" in err or "32773" in err:
+            self._log("  ⚠ VM corrompue (key already exists), réinitialisation…", "#fab387")
+            run("podman machine stop")
+            run("podman machine rm -f")
+            time.sleep(2)
+            self._log("  Recréation de la VM…", "#fab387")
+            code2, _, err2 = run("podman machine init")
+            if code2 != 0:
+                raise StepError(f"Échec re-init VM : {err2}")
+            code3, _, err3 = run("podman machine start")
+            if code3 != 0:
+                raise StepError(f"Échec démarrage VM après reset : {err3}")
+            time.sleep(3)
+            self._log("  VM redémarrée après reset.", "#a6e3a1")
+        else:
             raise StepError(f"Échec démarrage VM : {err}")
-        time.sleep(3)
 
     def _step_pull(self):
         ensure_compose_file()
