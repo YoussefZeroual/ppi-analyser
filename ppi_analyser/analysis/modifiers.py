@@ -94,6 +94,7 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
         and _stemmer.stem(w.lemma) not in ppi_standard_stems
         and w.upos not in rules["excluded_upos"]
         and w.deprel not in rules["excluded_deprel"]
+        and w.lemma not in rules["excluded_lemma"]
         
     ]
 
