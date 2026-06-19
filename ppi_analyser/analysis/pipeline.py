@@ -155,6 +155,7 @@ def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState,sentid
             cleaned = cleaned.replace('[', '\n[')[1:]
             fixed = fix_speaker_turns(raw, config.mode)
             fixed = re.sub(r'(\[.*?\])', '', fixed)
+            fixed = fixed.replace("' ","'") # fixing c' est problem
             logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sentid, raw[:100])
             _fill_nlp_preprocessed(fixed, config.mode, state,sentid)
             state.conversation.append(cleaned)
