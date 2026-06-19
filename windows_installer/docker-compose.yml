@@ -1,0 +1,22 @@
+# docker-compose.yml
+# ─────────────────────────────────────────────────────────────────────────────
+#   docker compose up -d
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  ppi:
+    build: .
+    image: youssefzeroual/ppi_analyser:latest
+    pull_policy: always
+    container_name: ppi_analyser
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-5000}:8000"
+    volumes:
+      - ppi_data:/data
+      - stanza_models:/root/stanza_resources
+    environment:
+      UVICORN_WORKERS: "1"
+      UVICORN_RELOAD: "1"
+volumes:
+  ppi_data:
+  stanza_models:
