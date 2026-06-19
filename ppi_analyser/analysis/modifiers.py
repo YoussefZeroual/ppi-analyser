@@ -79,6 +79,8 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
         return [], []
     ppi_standard_form_lemmas = [w.lemma for s in lemme_doc.sentences for w in s.words]
     ppi_standard_form_head = [w.lemma for s in lemme_doc.sentences for w in s.words if w.head == 0][0]
+    ppi_form_head_id = [w.id for s in lemme_doc.sentences for w in s.words if w.lemma ==ppi_standard_form_head][0]
+    
     logger.warning("ppi_standard_form_lemmas %s",ppi_standard_form_lemmas)
     ppi_standard_stems = {_stemmer.stem(w.lemma) for s in lemme_doc.sentences for w in s.words} #<-- utilisation des radicaux car le lemme est différent pour désolé et désolée (probleme stanza)
     logger.warning("ppi_standard_stems %s",ppi_standard_stems)
@@ -86,6 +88,7 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
     ppi_modifs = [
         w for w in ppi_sent.words
         if (
+            w.head == ppi_form_head_id
             w.upos in rules["upos"]
             or w.deprel in rules["deprel"]
             or w.lemma in rules["lemma"]
