@@ -13,6 +13,7 @@ def load_sentences(file: str, sent_list: list[int] | None = None) -> list[str]:
     for i, row in df.iterrows():
         left = row["left"].strip().replace("<span class='selectedSent'>", "")
         node = row["node"].strip().replace("<span class='selectedSent'>", "")
+        node = node.replace("' ","'") # c' est problem
         right = row["right"].strip().replace("<span class='selectedSent'>", "")
         node = ''.join(c for c in node )#if c.isalnum() or c.isspace())
         if re.match(r'^\[', right):
