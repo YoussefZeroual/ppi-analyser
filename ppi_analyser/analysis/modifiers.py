@@ -72,13 +72,13 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
         return [], []
 
     ppi_sent = tagged_ppi_nlp
-    ppi_sent = tagged_ppi_nlp
     if hasattr(ppi_sent, 'sentences'):  # Document passed instead of Sentence
         ppi_sent = ppi_sent.sentences[0] if ppi_sent.sentences else None
     if ppi_sent is None:
         logger.debug("find_modifier: PPI sentence not found in text")
         return [], []
     ppi_standard_form_lemmas = [w.lemma for s in lemme_doc.sentences for w in s.words]
+    ppi_standard_form_head = [w.lemma for s in lemme_doc.sentences for w in s.words if w.head == 0][0]
     logger.warning("ppi_standard_form_lemmas %s",ppi_standard_form_lemmas)
     ppi_standard_stems = {_stemmer.stem(w.lemma) for s in lemme_doc.sentences for w in s.words} #<-- utilisation des radicaux car le lemme est différent pour désolé et désolée (probleme stanza)
     logger.warning("ppi_standard_stems %s",ppi_standard_stems)
