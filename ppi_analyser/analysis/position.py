@@ -30,8 +30,8 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, stat
     
     
     
-    expansion_tokens = [w.text for w in expansion[0]["tokens"] if w.upos != "PUNCT"] 
-    expression_tokens = [w.text for s in state.nlp_preprocessed_turn[sent_id]["surface_sent_nlp"].sentences for w in s.words if w.upos != "PUNCT"]
+    expansion_tokens = [w.text.lower() for w in expansion[0]["tokens"] if w.upos != "PUNCT"] 
+    expression_tokens = [w.text.lower() for s in state.nlp_preprocessed_turn[sent_id]["surface_sent_nlp"].sentences for w in s.words if w.upos != "PUNCT"]
     extended_expression = expression_tokens+expansion_tokens
     
     
@@ -43,17 +43,19 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, stat
 
     # Récupérer les docs précalculés
     full_turn_doc = state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"]
-    forme_doc = state.nlp_preprocessed_turn[sent_id]["forme_nlp_doc"]
+    forme_doc = state.nlp_preprocessed_turn[sent_id]["surface_sent_nlp"]
 
     # Tokens du tour complet
-    nlp_turn = [w.text for s in full_turn_doc.sentences for w in s.words if w.upos != "PUNCT"]
+    nlp_turn = [w.text.lower() for s in full_turn_doc.sentences for w in s.words if w.upos != "PUNCT"]
     #logger.debug("traitement de la position sentid= %s:full turn %s , expression + expansion %s , %s",sent_id,nlp_turn,extended_expression)
     # Tokens de la forme PPI
     forme_lemmas = [w.lemma for s in forme_doc.sentences for w in s.words if w.upos != "PUNCT"]
 
    
     nlp_sent = extended_expression
-
+    
+    logger.warning("%s",extended_expression)
+    
     # Calculer la position
     turn_l = len(nlp_turn)
     sent_l = len(nlp_sent)
