@@ -200,7 +200,7 @@ def _handle_no_model_batch(
             else:
                 val = json.dumps({"Propriété": "Indéterminé", "Justification": "Position non calculée"}, ensure_ascii=False)
         elif prompt_type == "Expansions":
-            logger.info("traitement de la propriété %s par le modèle %s",prompt_type,"TAL (Stanza)")
+            logger.info("traitement de la propriété %s par %s",prompt_type,"TAL (Stanza)")
             from ppi_analyser.analysis.expansion import detect_expansion
             conv = conversations[i]
             ppi_text, _ = extract_ppi_sentence(conv)

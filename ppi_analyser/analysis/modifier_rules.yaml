@@ -23,7 +23,4 @@ excluded_upos:
 excluded_deprel:
   - 
 excluded_lemma:
-  - ne
-  - pour
-  - de
-  - avec
+  - 
