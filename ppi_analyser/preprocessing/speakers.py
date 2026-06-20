@@ -29,7 +29,7 @@ def get_loc_full_turn(conv: str, mode: str) -> tuple[str, str]:
     if mode == "écrit_ia":
         import logging
         logger = logging.getLogger(__name__)
-        logger.warning("%s",conv)
+        #logger.warning("%s",conv)
         conv = re.sub(r'(?<!\n)\[', '\n[', conv)
         for line in conv.split("\n"):
             if re.findall(r'<PPI>(.*?)</PPI>', line):
