@@ -23,4 +23,5 @@ excluded_upos:
 excluded_deprel:
   - 
 excluded_lemma:
-  - 
+  - ne
+  - pas
