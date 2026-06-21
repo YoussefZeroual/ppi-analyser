@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, state=None,sent_id:int =None) -> tuple | None:
     from ppi_analyser.preprocessing.speakers import get_loc_full_turn, detect_speakers
     from ppi_analyser.analysis.expansion import detect_expansion
+    from ppi_analyser.config import AnalysisMode
     full_turn_lemmas = [w.lemma for s in state.nlp_preprocessed_turn[sent_id]["full_turn_stripped_nlp_doc"].sentences for w in s.words]
     forme_doc = state.nlp_preprocessed_turn[sent_id]["forme_nlp_doc"]
     form_lemmas = [w.lemma for s in forme_doc.sentences for  w in s.words] if forme_doc is not None else []
@@ -51,9 +52,10 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, stat
     # Tokens de la forme PPI
     forme_lemmas = [w.lemma for s in forme_doc.sentences for w in s.words if w.upos != "PUNCT"]
 
-   
-    nlp_sent = extended_expression
-    
+    if mode == AnalysisMode.ECRIT_IA:
+        nlp_sent = extended_expression
+    else:
+    	nlp_sent = expression_tokens
     logger.warning("%s",extended_expression)
     
     # Calculer la position

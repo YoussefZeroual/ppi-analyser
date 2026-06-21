@@ -78,7 +78,7 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
         logger.debug("find_modifier: PPI sentence not found in text")
         return [], []
     ppi_standard_form_lemmas = [w.lemma for s in lemme_doc.sentences for w in s.words]
-    ppi_form_heads_ids = [w.id for s in lemme_doc.sentences for w in s.words if w.lemma in ppi_standard_form_lemmas]
+    ppi_form_heads_ids = [w.id for s in tagged_ppi_nlp.sentences for w in s.words if w.lemma in ppi_standard_form_lemmas]
     
     #logger.warning("ppi_standard_form_lemmas %s",ppi_standard_form_lemmas)
     ppi_standard_stems = {_stemmer.stem(w.lemma) for s in lemme_doc.sentences for w in s.words} #<-- utilisation des radicaux car le lemme est différent pour désolé et désolée (probleme stanza)
@@ -94,12 +94,13 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
         )
         and w.lemma not in ppi_standard_form_lemmas
         and _stemmer.stem(w.lemma) not in ppi_standard_stems
+        
         and w.upos not in rules["excluded_upos"]
         and w.deprel not in rules["excluded_deprel"]
         and w.lemma not in rules["excluded_lemma"]
         
     ]
-
+    
     subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp, occurrence)}</MOD>" for w in ppi_modifs]
     labels   = [_upos_fr(w.upos) for w in ppi_modifs]
     logger.debug(
