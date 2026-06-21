@@ -2,7 +2,7 @@
 upos:
   - ADV
   - ADJ
-
+  - NOUN
 # dépendances syntaxiques par rapport à la tête de la phrase
 deprel:
   - obl:mod
@@ -10,6 +10,7 @@ deprel:
   - acl:relcl
   - dislocated
   - amod
+ 
 # lemmes surajoutés à la PPI standard
 lemma:
   - dieu

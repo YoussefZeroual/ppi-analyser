@@ -78,13 +78,13 @@ def _fill_nlp_preprocessed(
     full_turn, surface_sent = get_loc_full_turn(fixed, mode)
     full_turn = full_turn.replace("-"," ")
     
-    matches = re.findall(r"<PPI>[:!,;?…,que](.*?)[:!,;?…,que]", full_turn)
+    matches = re.findall(r"<PPI>(.*?)[.!,;:?…]", full_turn)
     if  matches is None:
     	logger.warning("Couldnt cut PPI from first punctuation")
     full_turn_stripped = matches[0] if matches else full_turn
     full_turn_stripped = re.sub(r"</?PPI>","",full_turn_stripped)
  
-    
+    logger.warning("%s",full_turn_stripped)
     full_turn = full_turn.replace("/", "")
     full_turn = re.sub(r'(<.*?>)', '', full_turn)
     full_turn = re.sub(r'(\[.*?\])', '', full_turn).strip()
