@@ -54,6 +54,10 @@ def get_subtree(head_word, words, exclude_ids=set()):
 
 
 def get_expansion_from_sentence(sentence, ppi_text):
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    #logger.warning("%s",[f"{w.text}_{w.upos}:{w.deprel}" for w in sentence.words])
     ppi_ids = get_ppi_ids(sentence, ppi_text)
     if not ppi_ids:
         return [{"type": None, "tokens": []}]
@@ -63,6 +67,7 @@ def get_expansion_from_sentence(sentence, ppi_text):
     words = sentence.words
     dependants = [w for w in words if w.head == ppi_head.id and w.id not in ppi_ids]
     expansions = []
+    #logger.warning("%s",[f"{dep.text}_{dep.deprel}_{dep.upos}" for dep in dependants])
     for dep in dependants:
         deprel = dep.deprel
         upos = dep.upos
@@ -72,7 +77,7 @@ def get_expansion_from_sentence(sentence, ppi_text):
         elif deprel in ("ccomp", "csubj"):
             subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
             expansions.append({"type": "completive_que", "tokens": subtree})
-        elif deprel in ("nmod", "obl", "obl:arg", "obj") and upos in ("NOUN", "PRON", "ADP"):
+        elif deprel in ("nmod", "obl", "obl:arg", "obj","advcl") and upos in ("NOUN", "PRON", "VERB"):
             subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
             expansions.append({"type": "nominal_prep", "tokens": subtree})
     return expansions[:1] if expansions else [{"type": None, "tokens": []}]
