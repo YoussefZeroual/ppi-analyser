@@ -29,7 +29,7 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, stat
     ppi_text, _ = extract_ppi_sentence(conv)
     expansion = detect_expansion(state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"], ppi_text,state.nlp_preprocessed_turn[sent_id]["ppi_occurrence"])
     
-    
+     
     
     expansion_tokens = [w.text.lower() for w in expansion[0]["tokens"] if w.upos != "PUNCT"] 
     expression_tokens = [w.text.lower() for s in state.nlp_preprocessed_turn[sent_id]["surface_sent_nlp"].sentences for w in s.words if w.upos != "PUNCT"]
