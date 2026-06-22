@@ -97,17 +97,12 @@ def _fill_nlp_preprocessed(
     full_turn_stripped = full_turn_stripped.replace("-"," ").lower()
     full_turn_stripped_nlp_doc = state.nlp(full_turn_stripped)
     sent, _ = get_ppi_sent(surface_sent_nlp, full_turn_stripped_nlp_doc, state.nlp)
-    if sent is None:
-        forme_nlp_doc = surface_sent_nlp          # Document — fallback
-    else:
-        forme_nlp_doc = state.nlp(sent.text)      # re-parse Sentence → Document
     expression = state.expression.replace("-"," ").lower()  # expression --> standard forme  
     expression_nlp_doc = state.nlp(expression)
     state.nlp_preprocessed_turn.append({
 	    "full_turn_nlp_doc": full_turn_nlp_doc,
 	    "full_turn_stripped_nlp_doc": full_turn_stripped_nlp_doc,
 	    "expression_nlp_doc": expression_nlp_doc,
-	    "forme_nlp_doc": forme_nlp_doc,           # always a Document
 	    "surface_sent_nlp": surface_sent_nlp,
 	    "index": index,
 	    "ppi_occurrence": occurrence_index,
@@ -155,8 +150,7 @@ def _preprocess_one(raw: str, config: PipelineConfig, state: SessionState,sentid
             cleaned = cleaned.replace('[', '\n[')[1:]
             fixed = fix_speaker_turns(raw, config.mode)
             fixed = re.sub(r'(\[.*?\])', '', fixed)
-            logger.info("Prétraitement des tours de parole avec Stanza:(%s) %s ... ", sentid, raw[:100])
-            _fill_nlp_preprocessed(fixed, config.mode, state,sentid)
+            _fill_nlp_preprocessed(cleaned, config.mode, state,sentid)
             state.conversation.append(cleaned)
 
         case AnalysisMode.ECRIT_IA:

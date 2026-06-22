@@ -205,7 +205,8 @@ def _handle_no_model_batch(
             conv = conversations[i]
             ppi_text, _ = extract_ppi_sentence(conv)
             if ppi_text and state.nlp is not None:
-                result = detect_expansion(state.nlp_preprocessed_turn[i+start_offset]["full_turn_nlp_doc"], ppi_text,state.nlp_preprocessed_turn[i+start_offset]["ppi_occurrence"])
+            # using stripped turn instead of full turn
+                result = detect_expansion(state.nlp_preprocessed_turn[i+start_offset]["full_turn_stripped_nlp_doc"], ppi_text,state.nlp_preprocessed_turn[i+start_offset]["ppi_occurrence"])
                 expansion_text = " ".join(w.text for w in result[0]["tokens"]) if result[0]["tokens"] else ""
             else:
                 if state.nlp is None:

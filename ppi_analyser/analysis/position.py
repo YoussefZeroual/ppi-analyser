@@ -22,12 +22,12 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, stat
     from ppi_analyser.preprocessing.speakers import get_loc_full_turn, detect_speakers
     from ppi_analyser.analysis.expansion import detect_expansion
     from ppi_analyser.config import AnalysisMode
-    full_turn_lemmas = [w.lemma for s in state.nlp_preprocessed_turn[sent_id]["full_turn_stripped_nlp_doc"].sentences for w in s.words]
-    forme_doc = state.nlp_preprocessed_turn[sent_id]["forme_nlp_doc"]
+    full_turn_lemmas = [w.lemma for s in state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"].sentences for w in s.words]
+    forme_doc = state.nlp_preprocessed_turn[sent_id]["surface_sent_nlp"]
     form_lemmas = [w.lemma for s in forme_doc.sentences for  w in s.words] if forme_doc is not None else []
     from ppi_analyser.analysis.expansion import extract_ppi_sentence,detect_expansion
     ppi_text, _ = extract_ppi_sentence(conv)
-    expansion = detect_expansion(state.nlp_preprocessed_turn[sent_id]["full_turn_nlp_doc"], ppi_text,state.nlp_preprocessed_turn[sent_id]["ppi_occurrence"])
+    expansion = detect_expansion(state.nlp_preprocessed_turn[sent_id]["full_turn_stripped_nlp_doc"], ppi_text,state.nlp_preprocessed_turn[sent_id]["ppi_occurrence"])
     
      
     
