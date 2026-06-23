@@ -4,9 +4,9 @@ requires = ["setuptools>=72", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ppi-analyser"
-version = "0.1.6"
-description = "Analyse automatique de phrases préfabriquées d'interaction (PPI) — pipeline NLP + serveur FastAPI"
+name = "ppi_analyser"
+version = "0.1.1"
+description = "Analyse automatique de phrases préfabriquées des interactions (PPI) — pipeline NLP + serveur FastAPI"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
@@ -62,7 +62,7 @@ dependencies = [
 dev = ["pytest", "mypy", "ruff", "build", "twine"]
 
 [project.scripts]
-ppi-analyser = "ppi_analyser.server:main"
+ppi_analyser = "ppi_analyser.server:main"
 
 [project.urls]
 Homepage = "https://github.com/YoussefZeroual/ppi-analyser"
@@ -73,7 +73,19 @@ Issues = "https://github.com/YoussefZeroual/ppi-analyser/issues"
 where = ["."]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", "*.yml", "*.json", "*.txt", "*.md", "*.py"]
+"ppi_analyser" = [
+    "*.yaml", "*.yml", "*.json", "*.txt", "*.md", "*.py",
+    "ui/*",
+    "ui/**/*",
+    "analysis/*.yaml",
+    "analysis/*.txt",
+    "analysis/*.py",
+    "stanza/*.py",
+    "stanza/*.txt",
+    "exporters/*.py",
+    "models/*.py",
+    "preprocessing/*.py",
+]
 
 [tool.ruff]
 line-length = 100
