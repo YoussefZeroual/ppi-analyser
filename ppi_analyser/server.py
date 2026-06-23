@@ -5,7 +5,8 @@ import uuid, shutil, threading, traceback, logging, json, io, multiprocessing
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
+import subprocess, sys
+import uvicorn
 import openpyxl
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
@@ -22,7 +23,7 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 USER_TURN_MODEL= _os.getenv("USER_TURN_MODEL","mistral_large")  
 ANALYSIS_MODEL=_os.getenv("ANALYSIS_MODEL","mistral_batch") 
 
-NO_PUUL = _os.getenv("NO_PUUL",True)  
+NO_PUUL = _os.getenv("NO_PUUL",False)  
 
 
 jobs: dict[str, dict[str, Any]] = {}
@@ -554,3 +555,72 @@ def admin_pull():
         return pull_from_github()
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {e}")
+
+
+# ── Entrypoint ───────────────────────────────────────────────────────────────
+
+def _ensure_stanza_server(
+    host: str = "127.0.0.1",
+    port: int = 5000,
+    script: str = "stanza/stanza_api.py",
+    timeout: float = 30.0,
+) -> subprocess.Popen | None:
+    """
+    Check whether a server is already listening on *port*.
+    If not, launch *script* with the current Python interpreter and wait until
+    it accepts connections (up to *timeout* seconds).
+    Returns the Popen handle (or None if the server was already running).
+    """
+    import socket, time
+
+    def _reachable() -> bool:
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                return True
+        except OSError:
+            return False
+
+    if _reachable():
+        print(f"[startup] Stanza server already running on port {port}.")
+        return None
+
+    print(f"[startup] Stanza server not found on port {port} — launching {script} …")
+    proc = subprocess.Popen(
+        [sys.executable, script],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if proc.poll() is not None:
+            out, _ = proc.communicate()
+            raise RuntimeError(
+                f"Stanza server exited prematurely (rc={proc.returncode}).\n"
+                + (out.decode(errors="replace") if out else "")
+            )
+        if _reachable():
+            print(f"[startup] Stanza server ready on port {port}.")
+            return proc
+        time.sleep(0.5)
+
+    proc.terminate()
+    raise TimeoutError(f"Stanza server did not become reachable within {timeout}s.")
+
+
+if __name__ == "__main__":
+
+
+    _stanza_proc = _ensure_stanza_server(port=5000, script="stanza/stanza_api.py")
+
+    host = _os.getenv("PPI_HOST", "0.0.0.0")
+    port = int(_os.getenv("PPI_PORT", "8000"))
+    reload = _os.getenv("PPI_RELOAD", "0") == "1"
+
+    print(f"[startup] Starting uvicorn on {host}:{port} (reload={reload})")
+    try:
+        uvicorn.run("server:app", host=host, port=port, reload=reload)
+    finally:
+        if _stanza_proc is not None:
+            print("[shutdown] Terminating Stanza server …")
+            _stanza_proc.terminate()

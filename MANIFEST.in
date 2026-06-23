@@ -1,0 +1,4 @@
+exclude .env
+exclude .env.*
+recursive-exclude * .env
+recursive-exclude * .env.*

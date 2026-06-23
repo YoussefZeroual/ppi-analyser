@@ -26,3 +26,7 @@ Thumbs.db
 .env
 *.egg-info/
 test.py
+.env
+**/.env
+.env.*
+**/.env.*
