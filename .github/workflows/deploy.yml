@@ -1,4 +1,5 @@
-
+on: [push]
+jobs:
   pypi:
     runs-on: ubuntu-latest
     needs: build
