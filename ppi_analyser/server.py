@@ -587,8 +587,8 @@ def _ensure_stanza_server(
     print(f"[startup] Stanza server not found on port {port} — launching {script} …")
     proc = subprocess.Popen(
         [sys.executable, script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
 
     deadline = time.monotonic() + timeout
@@ -597,7 +597,6 @@ def _ensure_stanza_server(
             out, _ = proc.communicate()
             raise RuntimeError(
                 f"Stanza server exited prematurely (rc={proc.returncode}).\n"
-                + (out.decode(errors="replace") if out else "")
             )
         if _reachable():
             print(f"[startup] Stanza server ready on port {port}.")

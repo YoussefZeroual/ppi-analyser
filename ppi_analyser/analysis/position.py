@@ -56,7 +56,7 @@ def get_pos(conv: str, mode: str, tokenization_mode: str = "nlp", nlp=None, stat
         nlp_sent = extended_expression
     else:
     	nlp_sent = expression_tokens
-    logger.warning("%s",extended_expression)
+    #logger.warning("%s",extended_expression)
     
     # Calculer la position
     turn_l = len(nlp_turn)
