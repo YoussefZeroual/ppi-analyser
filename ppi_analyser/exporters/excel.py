@@ -558,7 +558,7 @@ def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None, 
     df_simple = df_simple.drop(justification_cols,axis=1)
     
     # save
-    df_simple.to_csv("/tmp/debug_before_format.csv", index=False)
+    #df_simple.to_csv("/tmp/debug_before_format.csv", index=False)
     format_ppi_bold(df_simple, path)
     logger.info("Simple Excel exported to %s", path)
     
