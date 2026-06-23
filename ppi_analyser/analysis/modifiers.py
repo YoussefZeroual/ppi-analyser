@@ -110,7 +110,6 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
     for modif in ppi_modifs:
     	if modif.lemma in ("ne","pas") and is_neg(ppi_standard_form_lemmas):
     		ppi_modifs.remove(modif)
-    		logger.warning("zzzabbba")
     if ppi_modifs is not None:
     	subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp, occurrence)}</MOD>" for w in ppi_modifs]
     	labels   = [_upos_fr(w.upos) for w in ppi_modifs]

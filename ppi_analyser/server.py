@@ -23,7 +23,7 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 USER_TURN_MODEL= _os.getenv("USER_TURN_MODEL","mistral_large")  
 ANALYSIS_MODEL=_os.getenv("ANALYSIS_MODEL","mistral_batch") 
 
-NO_PUUL = _os.getenv("NO_PUUL",False)  
+NO_PUUL = _os.getenv("NO_PUUL",True)  
 
 
 jobs: dict[str, dict[str, Any]] = {}
@@ -607,6 +607,18 @@ def _ensure_stanza_server(
     proc.terminate()
     raise TimeoutError(f"Stanza server did not become reachable within {timeout}s.")
 
+def main():
+    stanza_proc = _ensure_stanza_server(
+        port=5000,
+        script=str(Path(__file__).parent / "stanza" / "stanza_api.py")
+    )
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+    finally:
+        if stanza_proc is not None:
+            print("[shutdown] Arrêt du serveur Stanza…")
+            stanza_proc.terminate()
+            stanza_proc.wait()
 
 if __name__ == "__main__":
 

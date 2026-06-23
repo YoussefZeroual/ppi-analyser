@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ppi-analyser"
-version = "0.1.0"
+version = "0.1.6"
 description = "Analyse automatique de phrases préfabriquées d'interaction (PPI) — pipeline NLP + serveur FastAPI"
 readme = "README.md"
 license = { text = "MIT" }
@@ -73,7 +73,7 @@ Issues = "https://github.com/YoussefZeroual/ppi-analyser/issues"
 where = ["."]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", "*.yml", "*.json", "*.txt", "*.md"]
+"*" = ["*.yaml", "*.yml", "*.json", "*.txt", "*.md", "*.py"]
 
 [tool.ruff]
 line-length = 100

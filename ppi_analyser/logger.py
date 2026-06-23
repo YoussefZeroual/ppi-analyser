@@ -4,8 +4,12 @@ import logging
 import os
 from datetime import datetime
 
+from pathlib import Path
 
-def setup_logging(session_id: str = None, log_dir: str = "./ppi_analyser_logs") -> logging.Logger:
+LOG_DIR = Path.home() / ".ppi_analyser" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+def setup_logging(session_id: str = None, log_dir: Path = LOG_DIR) -> logging.Logger:
     os.makedirs(log_dir, exist_ok=True)
 
     if session_id is None:
