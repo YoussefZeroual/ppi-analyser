@@ -25,7 +25,7 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 USER_TURN_MODEL= _os.getenv("USER_TURN_MODEL","mistral_large")  
 ANALYSIS_MODEL=_os.getenv("ANALYSIS_MODEL","mistral_batch") 
 
-NO_PUUL = _os.getenv("NO_PUUL",True)  
+NO_PULL = _os.getenv("NO_PULL",False)  
 
 
 jobs: dict[str, dict[str, Any]] = {}
@@ -520,7 +520,7 @@ def admin_set_env(
 
 
 def pull_from_github() -> dict:
-    if NO_PUUL:
+    if NO_PULL:
     	return {"no pull":"no pull"}
     """
     Downloads the configured branch of the GitHub repo as a zip and overwrites
