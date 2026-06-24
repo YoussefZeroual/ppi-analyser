@@ -16,6 +16,8 @@ from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import os as _os
 from dotenv import load_dotenv
+import webbrowser
+
 load_dotenv()
 UPLOADS_DIR = Path(_os.getenv("PPI_UPLOAD_DIR", Path.home() / ".ppi_analyser" / "uploads"))
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
@@ -611,8 +613,11 @@ def main():
         port=5000,
         script=str(Path(__file__).parent / "stanza" / "stanza_api.py")
     )
+    import webbrowser
+    webbrowser.open("http://localhost:8000")
     try:
         uvicorn.run(app, host="0.0.0.0", port=8000)
+
     finally:
         if stanza_proc is not None:
             print("[shutdown] Arrêt du serveur Stanza…")
