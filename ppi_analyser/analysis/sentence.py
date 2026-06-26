@@ -226,7 +226,7 @@ def _handle_no_model_batch(
             logger.info("traitement de la propriété %s par le modèle %s",prompt_type,"TAL (Stanza)")
             from ppi_analyser.analysis.modifiers import find_modifier, format_modifiers
             if state.nlp is not None:
-                logger.warning("full_turn_stripped_nlp_doc words: %s", [w.text for s in state.nlp_preprocessed_turn[i+start_offset]["full_turn_stripped_nlp_doc"].sentences for w in s.words])
+                #logger.warning("full_turn_stripped_nlp_doc words: %s", [w.text for s in state.nlp_preprocessed_turn[i+start_offset]["full_turn_stripped_nlp_doc"].sentences for w in s.words])
                 labels, subtrees = find_modifier(
                     state.nlp_preprocessed_turn[i+start_offset]["surface_sent_nlp"],
                     state.nlp_preprocessed_turn[i+start_offset]["expression_nlp_doc"],

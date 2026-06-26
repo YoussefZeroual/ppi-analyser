@@ -116,12 +116,14 @@ def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
     if ppi_modifs is not None:
         subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp, occurrence)}</MOD>" for w in ppi_modifs]
         labels   = [_upos_fr(w.upos) for w in ppi_modifs]
-        #logger.debug(
+        """
+        logger.debug(
             "find_modifier | standard_form_lemmas: %s | ppi_sent lemmas: %s | detected modifs: %s",
             ppi_standard_form_lemmas,
             [w.lemma for w in ppi_sent.words],
             [(w.lemma, w.upos, w.deprel) for w in ppi_modifs],
         )
+        """
         return labels, subtrees
     return None, None
 
