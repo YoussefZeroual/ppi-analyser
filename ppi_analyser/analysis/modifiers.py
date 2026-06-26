@@ -66,61 +66,64 @@ def get_ppi_sent(tagged_ppi_nlp, text_nlp, nlp):
 
 def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
     def is_neg(standard_form_lemmas):
-    	for lemma in standard_form_lemmas:
-    		if lemma in ("rien","pas","nullement","pas"):
-    			return True
-    	return False
-    	
+        for lemma in standard_form_lemmas:
+            if lemma in ("rien","pas","nullement","pas"):
+                return True
+        return False
+        
     rules = MODIFIER_RULES
     if nlp is None:
         logger.debug("find_modifier: no nlp object was passed, skipping modifier detection")
         return [], []
-
     ppi_sent = tagged_ppi_nlp
-    if hasattr(ppi_sent, 'sentences'):  # Document passed instead of Sentence
+    if hasattr(ppi_sent, 'sentences'):
         ppi_sent = ppi_sent.sentences[0] if ppi_sent.sentences else None
     if ppi_sent is None:
         logger.debug("find_modifier: PPI sentence not found in text")
         return [], []
         
     ppi_standard_form_lemmas = [w.lemma for s in lemme_doc.sentences for w in s.words]
-    ppi_form_heads_ids = [w.id for s in tagged_ppi_nlp.sentences for w in s.words ]
-    
-    #logger.warning("%s",[f"{w.text}_{w.upos}:{w.deprel}:{w.head}_{w.id}" for s in text_nlp.sentences for w in s.words  ])
-    ppi_standard_stems = {_stemmer.stem(w.lemma) for s in lemme_doc.sentences for w in s.words} #<-- utilisation des radicaux car le lemme est différent pour désolé et désolée (probleme stanza)
-    #logger.warning("ppi_standard_stems %s",ppi_standard_stems)
-    ppi_sent_stems =  {_stemmer.stem(w.lemma) for w in ppi_sent.words}
+    ppi_standard_stems = {_stemmer.stem(w.lemma) for s in lemme_doc.sentences for w in s.words}
+    ppi_standard_lemma_set = set(ppi_standard_form_lemmas)
+
     ppi_modifs = [
-        w  for s in text_nlp.sentences  for w in s.words
+        w for s in text_nlp.sentences for w in s.words
         if (
-            w.head in ppi_form_heads_ids and
-            (w.upos in rules["upos"]
-            or w.deprel in rules["deprel"]
-            or w.lemma in rules["lemma"])
+            any(
+                gov.lemma in ppi_standard_lemma_set or
+                _stemmer.stem(gov.lemma) in ppi_standard_stems
+                for gov in s.words if gov.id == w.head
+            )
+            and (
+                w.upos in rules["upos"]
+                or w.deprel in rules["deprel"]
+                or w.lemma in rules["lemma"]
+            )
         )
         and w.lemma not in ppi_standard_form_lemmas
         and _stemmer.stem(w.lemma) not in ppi_standard_stems
-        
         and w.upos not in rules["excluded_upos"]
         and w.deprel not in rules["excluded_deprel"]
         and w.lemma not in rules["excluded_lemma"]
-        
     ]
-    # handle cases of informal negation making "ne" detected as a modifier because its not in informal standard form
+    logger.warning("%s", [f"{w.text}_{w.upos}:{w.deprel}:head={w.head}_id={w.id}" for s in text_nlp.sentences for w in s.words])
+    logger.warning("ppi_lemma_set: %s", ppi_standard_lemma_set)
+    logger.warning("ppi_stems: %s", ppi_standard_stems)
     for modif in ppi_modifs:
-    	if modif.lemma in ("ne","pas") and is_neg(ppi_standard_form_lemmas):
-    		ppi_modifs.remove(modif)
+        if modif.lemma in ("ne","pas") and is_neg(ppi_standard_form_lemmas):
+            ppi_modifs.remove(modif)
+
     if ppi_modifs is not None:
-    	subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp, occurrence)}</MOD>" for w in ppi_modifs]
-    	labels   = [_upos_fr(w.upos) for w in ppi_modifs]
-    	logger.debug(
-    "find_modifier | standard_form_lemmas: %s | ppi_sent lemmas: %s | detected modifs: %s",
-    	ppi_standard_form_lemmas,
-    	[w.lemma for w in ppi_sent.words],
-    	[(w.lemma, w.upos, w.deprel) for w in ppi_modifs],
-    	)
-    	return labels, subtrees
-    return None,None
+        subtrees = [f"<MOD>{get_tree(w.lemma, text_nlp, nlp, occurrence)}</MOD>" for w in ppi_modifs]
+        labels   = [_upos_fr(w.upos) for w in ppi_modifs]
+        logger.debug(
+            "find_modifier | standard_form_lemmas: %s | ppi_sent lemmas: %s | detected modifs: %s",
+            ppi_standard_form_lemmas,
+            [w.lemma for w in ppi_sent.words],
+            [(w.lemma, w.upos, w.deprel) for w in ppi_modifs],
+        )
+        return labels, subtrees
+    return None, None
 
 def format_modifiers(labels: list[str], subtrees: list[str]) -> str:
     if (labels is None) or (subtrees is None):
