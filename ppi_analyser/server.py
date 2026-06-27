@@ -1,6 +1,6 @@
 # server.py — drop next to core.py
 # Run: uvicorn server:app --reload --port 8000
- 
+from dotenv import load_dotenv; load_dotenv(override=True)
 import uuid, shutil, threading, traceback, logging, json, io, multiprocessing
 from datetime import datetime, timezone
 from pathlib import Path
