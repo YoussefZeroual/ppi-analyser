@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ppi_analyser"
-version = "0.1.8.6"
+version = "0.1.8.7"
 description = "Analyse automatique de phrases préfabriquées des interactions (PPI) — pipeline NLP + serveur FastAPI"
 readme = "README.md"
 license = { text = "MIT" }

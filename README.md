@@ -1,6 +1,6 @@
 # PPI Analyser
 
-A semi-automatic pipeline for the linguistic analysis of **Phrases Préfabriquées d'Interaction** (PPI) in French. The pipeline orchestrates LLM API calls and classical NLP tools (Stanza) to produce structured, human-verifiable analyses of conversational formulae according to the PREFAB project's linguistic annotation grid.
+A semi-automatic pipeline for the linguistic analysis of **Interactional prefabricated sentences (phrases préfabriquées des interactions) ** (PPI) in French. The pipeline orchestrates LLM API calls and classical NLP tools (Stanza) to produce structured, human-verifiable analyses of conversational formulae according to the PREFAB project's linguistic annotation grid.
 
 ---
 
