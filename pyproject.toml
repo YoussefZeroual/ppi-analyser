@@ -5,14 +5,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ppi_analyser"
-version = "0.1.8.7.1"
+version = "0.1.8.7.2"
 description = "Analyse automatique de phrases préfabriquées des interactions (PPI) — pipeline NLP + serveur FastAPI"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
-authors = [
-    { name = "Youssef Zeroual" },
-]
+authors =  [{name = "Youssef ZEROUAL", email = "youssef.zeroual87@gmail.com"}]
 keywords = ["nlp", "phraseology", "french", "corpus-linguistics", "fastapi", "stanza"]
 classifiers = [
     "Development Status :: 3 - Alpha",
