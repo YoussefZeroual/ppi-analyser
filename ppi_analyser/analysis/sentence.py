@@ -214,7 +214,7 @@ def _handle_no_model_batch(
                 expansion_text = ""
             if expansion_text:
                 val = json.dumps({
-                    "Propriété": f"<EXP>{expansion_text}</EXP>",
+                    "Propriété": f"<MD>{expansion_text}</MD>",
                     "Justification": f"Expansion syntaxique de '{ppi_text}' détectée par analyse des dépendances"
                 }, ensure_ascii=False)
             else:

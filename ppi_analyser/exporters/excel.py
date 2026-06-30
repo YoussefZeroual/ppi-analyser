@@ -11,11 +11,11 @@ ORIGINAL_COLS = [
 ]
 
 TAG_REPLACEMENTS = [
-    ("</MD>",  "(MD)</MD>"),
-    ("</EXP>", "(Expansion)</EXP>"),
-    ("</MOD>", "(Modifieur)</MOD>"),
-    ("</POR>", "(Portée)</POR>"),
-    ("</APP>", "(Appellatif)</APP>"),
+    ("</MD>",  " (MD)</MD>"),
+    ("</EXP>", " (Expansion)</EXP>"),
+    ("</MOD>", " (Modifieur)</MOD>"),
+    ("</POR>", " (Portée)</POR>"),
+    ("</APP>", " (Appellatif)</APP>"),
 ]
 
 import re
@@ -50,7 +50,6 @@ def format_ppi_bold(df, filename, tag_color_map=None):
     # Validate that all tags are properly formatted (uppercase without brackets)
     # Convert tag names to uppercase for consistency
     tag_color_map = {tag.upper(): color for tag, color in tag_color_map.items()}
-    
     # Remove any unnamed columns
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     df = df.reset_index(drop=True)
@@ -185,6 +184,8 @@ def format_ppi_bold(df, filename, tag_color_map=None):
                     
                     if has_tags:
                         parts = re.split(pattern, text)
+                        if 'EXP' in text:
+                            logger.warning("parts: %s", parts)
                         
                         rich_string = []
                         tag_states = {tag: False for tag in tag_color_map.keys()}
@@ -246,17 +247,29 @@ def format_ppi_bold(df, filename, tag_color_map=None):
                                     rich_string.append(part)
                         
                         # Write the rich string to Excel
+                        logger.warning("checking rich string here: %s",rich_string)
+                        
                         if rich_string:
                             rich_string = [item for item in rich_string if item != '']
-                            
                             if len(rich_string) > 0:
+                                from xlsxwriter.format import Format as XLFormat
+                                if isinstance(rich_string[0], XLFormat):
+                                    rich_string.insert(0, ' ')
+                                text_count = sum(1 for item in rich_string if isinstance(item, str))
+                                if text_count < 2:
+                                    rich_string.append(regular)
+                                    rich_string.append(' ')
+                                rich_string = [item.replace('\x00', '') if isinstance(item, str) else item for item in rich_string]
                                 try:
                                     worksheet.write_rich_string(excel_row, col_num, *rich_string)
-                                except Exception:
-                                    clean_text = re.sub(r'<[^>]+>', '', text)
+                                except Exception as e:
+                                    logger.warning("EXCEPTION: %s", e)
+                                    clean_text = re.sub(r'<[^>]+>', '', text).replace('\x00', '')
                                     worksheet.write(excel_row, col_num, clean_text, regular)
                         else:
-                            worksheet.write(excel_row, col_num, text, regular)
+                            worksheet.write(excel_row, col_num, text, regular)                       
+                        
+                        
                     else:
                         worksheet.write(excel_row, col_num, text, regular)
                 else:
@@ -543,8 +556,10 @@ def export_excel_simple(df: pd.DataFrame, path: str, sentence_file: str = None, 
     for col in ["left", "right", "node"]:
         if col not in df_simple.columns:
             continue
-        for old, new in TAG_REPLACEMENTS:
-            df_simple[col] = df_simple[col].apply(lambda x: str(x).replace(old, new))
+        for tag, label in [("EXP", "Expansion"), ("MOD", "Modifieur"), ("POR", "Portée"), ("APP", "Appellatif"), ("MD", "MD")]:
+            df_simple[col] = df_simple[col].apply(
+                lambda x: re.sub(rf'</{tag}>', f' ({label})</{tag}>', str(x))
+            )
 
     if "node" in df_simple.columns:
         df_simple["node"] = df_simple["node"].apply(lambda x: f"  <PPI>{x}</PPI>  ")
