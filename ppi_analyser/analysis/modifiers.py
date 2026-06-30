@@ -65,6 +65,8 @@ def get_ppi_sent(tagged_ppi_nlp, text_nlp, nlp):
     return None, None
 
 def find_modifier(tagged_ppi_nlp, lemme_doc, text_nlp, nlp, occurrence=0):
+    tagged_ppi_lemmas = [f"{w.text}_{w.upos}:{w.deprel}" for s in text_nlp.sentences for w in s.words]
+    logger.warning(tagged_ppi_lemmas)
     def is_neg(standard_form_lemmas):
         for lemma in standard_form_lemmas:
             if lemma in ("rien","pas","nullement","pas"):
