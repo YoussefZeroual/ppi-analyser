@@ -3,7 +3,8 @@ import re
 import pandas as pd
 from ppi_analyser.stanza.stanza_client import StanzaClient
 from ppi_analyser.exporters.excel import format_ppi_bold
-
+import logging
+logger = logging.getLogger(__name__)
 client = StanzaClient()
 
 
@@ -23,12 +24,15 @@ def extract_ppi_sentence(tagged_line):
     return ppi_text, clean_seg
 
 def get_ppi_ids(sentence, ppi_text):
+    
     words = sentence.words
     ppi_clean = re.sub(r'\s*-\s*', '-', ppi_text.lower()).strip()
+    ppi_clean = re.sub(r"['\u2019]\s+", lambda m: m.group()[0], ppi_clean)
     for i in range(len(words)):
         for j in range(i+1, len(words)+1):
             window = words[i:j]
-            surface = re.sub(r'\s*-\s*', '-', " ".join(w.text for w in window).lower())
+            surface = re.sub(r'\s*-\s*', '-', " ".join(w.text.strip().lower() for w in window).lower())
+            surface = re.sub(r"['\u2019]\s+", lambda m: m.group()[0], surface) # the apostrophe space problem
             if surface == ppi_clean:
                 return set(w.id for w in window)
     return set()
@@ -54,10 +58,6 @@ def get_subtree(head_word, words, exclude_ids=set()):
 
 
 def get_expansion_from_sentence(sentence, ppi_text):
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    #logger.warning("%s",[f"{w.text}_{w.upos}:{w.deprel}" for w in sentence.words])
     ppi_ids = get_ppi_ids(sentence, ppi_text)
     if not ppi_ids:
         return [{"type": None, "tokens": []}]
@@ -65,7 +65,7 @@ def get_expansion_from_sentence(sentence, ppi_text):
     if not ppi_head:
         return [{"type": None, "tokens": []}]
     words = sentence.words
-    dependants = [w for w in words if w.head == ppi_head.id and w.id not in ppi_ids]
+    dependants = [w for w in words if w.head in ppi_ids and w.id not in ppi_ids]
     expansions = []
     #logger.warning("%s",[f"{dep.text}_{dep.deprel}_{dep.upos}" for dep in dependants])
     for dep in dependants:
@@ -76,7 +76,7 @@ def get_expansion_from_sentence(sentence, ppi_text):
             expansions.append({"type": "infinitive", "tokens": subtree})
         elif deprel in ("ccomp", "csubj"):
             subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
-            expansions.append({"type": "completive_que", "tokens": subtree})
+            expansions.append({"type": "Complétive", "tokens": subtree})
         elif deprel in ("nmod", "obl", "obl:arg", "obj","advcl") and upos in ("NOUN", "PRON", "VERB"):
             subtree = get_subtree(dep, words, exclude_ids=ppi_ids)
             expansions.append({"type": "nominal_prep", "tokens": subtree})
