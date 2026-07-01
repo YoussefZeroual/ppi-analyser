@@ -796,7 +796,7 @@ config = PipelineConfig(
 | `models/factory.py` | Provider instantiation from model string |
 | `modifier_rules.yaml` | YAML configuration for modifier detection rules |
 | `system_prompts.txt` | System prompts for each linguistic property |
-| `prompts.txt` | Optional additional user prompt templates |
+| `prompts.txt` | user prompt templates |
 
 ---
 
