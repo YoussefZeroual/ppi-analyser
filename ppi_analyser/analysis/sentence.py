@@ -56,7 +56,8 @@ def process_sentences_batch(
         interlocuteur_list=interlocuteurs,
         mode=mode,
     )
-
+    for sp,bp in zip(system_prompts, batched_prompts):
+        logger.warning("system prompt: %s\nBatched prompt:%s",sp,bp)
     futures = []
     results_per_property = [None] * len(system_prompts)
 

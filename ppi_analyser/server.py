@@ -23,7 +23,7 @@ UPLOADS_DIR = Path(_os.getenv("PPI_UPLOAD_DIR", Path.home() / ".ppi_analyser" / 
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 USER_TURN_MODEL= _os.getenv("USER_TURN_MODEL","mistral_large")  
-ANALYSIS_MODEL=_os.getenv("ANALYSIS_MODEL","mistral_batch") 
+ANALYSIS_MODEL=_os.getenv("ANALYSIS_MODEL","mistral_large") 
 
 NO_PULL = _os.getenv("NO_PULL",False)  
 
@@ -148,7 +148,7 @@ def _run_job(job_id: str, sentence_file: str, expression: str,
         max_sentences=max_sentences,
         batch_mode=True,
         batch_size=batch_size,
-        n_threads=8, # 8 override for mistral
+        n_threads=4, # 8 override for mistral
         use_analysis_cache=use_analysis_cache,
         analysis_cache_path=_os.getenv("PPI_CACHE_PATH",
             str(Path.home() / ".ppi_analyser" / "analysis_cache.json")),
@@ -319,7 +319,7 @@ async def start_analysis(
     start_sent:         int        = Form(0),
     max_sentences:      str        = Form("all"),
     batch_size:         int        = Form(5),
-    n_threads:          int        = Form(8),
+    n_threads:          int        = Form(4),
     use_analysis_cache: bool       = Form(True),
     selected_props:     str        = Form("[]"),
     exporting_mode:     str        = Form("simple"),
