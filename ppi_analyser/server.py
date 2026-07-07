@@ -60,7 +60,7 @@ def _new_job(job_id: str, params: dict, client_ip: str = "") -> dict:
 # ── Constants ────────────────────────────────────────────────────────────────
 
 MODELS_MAPPING = {
-    "mistral_large":  "mistral_mistral-large-2411",
+    "mistral_large":  "mistral-large-latest",
     "mistral_medium": "mistral_mistral-medium-2508",
     "deepseek":       "deepseek_deepseek",
     "gemma":          "ollama_gemma3:27b",
