@@ -184,8 +184,8 @@ def format_ppi_bold(df, filename, tag_color_map=None):
                     
                     if has_tags:
                         parts = re.split(pattern, text)
-                        if 'EXP' in text:
-                            logger.warning("parts: %s", parts)
+                        #if 'EXP' in text:
+                            #logger.warning("parts: %s", parts)
                         
                         rich_string = []
                         tag_states = {tag: False for tag in tag_color_map.keys()}
@@ -247,7 +247,7 @@ def format_ppi_bold(df, filename, tag_color_map=None):
                                     rich_string.append(part)
                         
                         # Write the rich string to Excel
-                        logger.warning("checking rich string here: %s",rich_string)
+                        #logger.warning("checking rich string here: %s",rich_string)
                         
                         if rich_string:
                             rich_string = [item for item in rich_string if item != '']
