@@ -1,0 +1,54 @@
+INFO:__main__:Loading Stanza pipeline for fr...
+Traceback (most recent call last):
+  File "/home/joe/Downloads/ppi-analyser/ppi_analyser/stanza/stanza_api.py", line 62, in <module>
+    nlp_processor = StanzaNLP()
+  File "/home/joe/Downloads/ppi-analyser/ppi_analyser/stanza/stanza_api.py", line 17, in __init__
+    self.nlp = stanza.Pipeline(
+               ~~~~~~~~~~~~~~~^
+        language,
+        ^^^^^^^^^
+        processors=processors,
+        ^^^^^^^^^^^^^^^^^^^^^^
+        verbose=False  # Reduce console output
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/stanza/pipeline/core.py", line 307, in __init__
+    self.processors[processor_name] = NAME_TO_PROCESSOR_CLASS[processor_name](config=curr_processor_config,
+                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                              pipeline=self,
+                                                                              ^^^^^^^^^^^^^^
+                                                                              device=self.device)
+                                                                              ^^^^^^^^^^^^^^^^^^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/stanza/pipeline/processor.py", line 193, in __init__
+    self._set_up_model(config, pipeline, device)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/stanza/pipeline/tokenize_processor.py", line 231, in _set_up_model
+    self._trainer = Trainer(args=args, model_file=config['model_path'], device=device, foundation_cache=pipeline.foundation_cache)
+                    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/stanza/models/tokenization/trainer.py", line 36, in __init__
+    self.model = self.model.to(device)
+                 ~~~~~~~~~~~~~^^^^^^^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/torch/nn/modules/module.py", line 1388, in to
+    return self._apply(convert)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/torch/nn/modules/module.py", line 933, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/torch/nn/modules/rnn.py", line 304, in _apply
+    self._init_flat_weights()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/torch/nn/modules/rnn.py", line 228, in _init_flat_weights
+    self.flatten_parameters()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/torch/nn/modules/rnn.py", line 260, in flatten_parameters
+    or not torch.backends.cudnn.is_acceptable(fw)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/torch/backends/cudnn/__init__.py", line 141, in is_acceptable
+    if not _init():
+           ~~~~~^^
+  File "/home/joe/ppi-env/lib64/python3.14/site-packages/torch/backends/cudnn/__init__.py", line 74, in _init
+    raise RuntimeError(
+    ...<3 lines>...
+    )
+RuntimeError: cuDNN version incompatibility: PyTorch was compiled  against (9, 10, 2) but found runtime version (9, 1, 0). PyTorch already comes bundled with cuDNN. One option to resolving this error is to ensure PyTorch can find the bundled cuDNN. Looks like your LD_LIBRARY_PATH contains incompatible version of cudnn. Please either remove it from the path or install cudnn (9, 10, 2)

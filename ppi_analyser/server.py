@@ -25,7 +25,7 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 USER_TURN_MODEL= _os.getenv("USER_TURN_MODEL","mistral_large")  
 ANALYSIS_MODEL=_os.getenv("ANALYSIS_MODEL","mistral_large") 
 
-NO_PULL = _os.getenv("NO_PULL",False)  
+NO_PULL = _os.getenv("NO_PULL",False)
 
 
 jobs: dict[str, dict[str, Any]] = {}
@@ -64,6 +64,7 @@ MODELS_MAPPING = {
     "mistral_medium": "mistral_mistral-medium-2508",
     "deepseek":       "deepseek_deepseek",
     "gemma":          "ollama_gemma3:27b",
+    "qwen":          "ollama_qwen2.5:3b",
     "mistral_local":"ollama_mistral:latest",
     "deepseek_local":"ollama_deepseek-r1:32b",
     "mistral_batch":"mistral_batch_mistral-large-latest",
