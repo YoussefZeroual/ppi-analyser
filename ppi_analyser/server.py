@@ -64,7 +64,7 @@ MODELS_MAPPING = {
     "mistral_medium": "mistral_mistral-medium-2508",
     "deepseek":       "deepseek_deepseek",
     "gemma":          "ollama_gemma3:27b",
-    "qwen":          "ollama_qwen2.5:3b",
+    "qwen":          "ollama_qwen3.6:35b",
     "mistral_local":"ollama_mistral:latest",
     "deepseek_local":"ollama_deepseek-r1:32b",
     "mistral_batch":"mistral_batch_mistral-large-latest",
