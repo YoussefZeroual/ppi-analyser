@@ -17,6 +17,7 @@ class OllamaProvider(LLMProvider):
                     {"role": "system", "content": system_prompt},
                     {"role": "user",   "content": user_prompt},
                 ],
+                think=False
             )
             return response["message"]["content"]
         except ConnectionError as e:
